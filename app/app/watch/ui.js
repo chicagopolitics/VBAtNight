@@ -43,7 +43,8 @@ const fmtDate = d => {
 
 export default function Highlights({ games }) {
   const sp = useSearchParams();
-  const [game, setGame] = useState("all");
+  const [game, setGame] = useState(() =>
+    games.some(g => String(g.id) === sp.get("game")) ? sp.get("game") : "all");
   const [player, setPlayer] = useState(sp.get("player") || "all");
   const [stat, setStat] = useState(STATS[sp.get("stat")] ? sp.get("stat") : "all");
   const [open, setOpen] = useState(() => new Set());
@@ -128,9 +129,13 @@ export default function Highlights({ games }) {
             role="button" aria-expanded={isOpen}>
             <div className="row" style={{ justifyContent: "space-between" }}>
               <b>{g.name}</b>
-              <span className="muted">
-                {[fmtDate(g.date), `${g.rallies.length} rall${g.rallies.length === 1 ? "y" : "ies"}`]
-                  .filter(Boolean).join(" · ")} {isOpen ? "▾" : "▸"}
+              <span className="row" style={{ gap: 8 }}>
+                <a className="abtn" href={`/stats?game=${g.id}`}
+                  onClick={e => e.stopPropagation()}>stats</a>
+                <span className="muted">
+                  {[fmtDate(g.date), `${g.rallies.length} rall${g.rallies.length === 1 ? "y" : "ies"}`]
+                    .filter(Boolean).join(" · ")} {isOpen ? "▾" : "▸"}
+                </span>
               </span>
             </div>
             {g.score && (

@@ -70,13 +70,14 @@ const BOARDS = {
   },
 };
 
-// link a count to its clips on the watch page; zeroes have nothing to show
-const linkFor = p => (v, stat) => v > 0
+// link a count to its clips on the watch page; zeroes have nothing to show.
+// A game filter carries through so single-game stats link to that game's clips.
+const linkFor = (p, gameId) => (v, stat) => v > 0
   ? <a className="statlink" title={`watch these ${v === 1 ? "clip" : "clips"}`}
-      href={`/watch?player=${encodeURIComponent(p.name)}&stat=${stat}`}>{v}</a>
+      href={`/watch?player=${encodeURIComponent(p.name)}&stat=${stat}${gameId ? `&game=${gameId}` : ""}`}>{v}</a>
   : v;
 
-export default function Boards({ rows, nGames, nScored }) {
+export default function Boards({ rows, nGames, nScored, game }) {
   const [tab, setTab] = useState("scorers");
   const b = BOARDS[tab];
   const ranked = [...rows]
@@ -85,7 +86,9 @@ export default function Boards({ rows, nGames, nScored }) {
 
   return (
     <div>
-      <h1>Leaderboards</h1>
+      <h1>Leaderboards{game && <> · {game.name}</>}</h1>
+      {game && <p className="muted">
+        Showing <b>{game.name}</b> only · <a href="/stats">all games</a></p>}
       <p className="muted">
         {nGames} published game{nGames === 1 ? "" : "s"} · {nScored} scored
         rall{nScored === 1 ? "y" : "ies"} · quality stats derived from touch
@@ -115,7 +118,7 @@ export default function Boards({ rows, nGames, nScored }) {
               <tr key={p.key ?? p.name} style={i < 3 ? { fontWeight: 600 } : undefined}>
                 <td style={{ color: i < 3 ? "#c9a227" : undefined }}>{i + 1}</td>
                 <td style={{ textAlign: "left" }}>{p.name}</td>
-                {b.row(p, linkFor(p)).map((v, j) => <td key={j}>{v}</td>)}
+                {b.row(p, linkFor(p, game?.id)).map((v, j) => <td key={j}>{v}</td>)}
                 <td className="muted">{p.games}</td>
               </tr>
             ))}

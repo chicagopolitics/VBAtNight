@@ -134,6 +134,10 @@ nav a { margin-right: 14px; }
 .filters { position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 10px rgba(60,65,80,.06); }
 .gamecard { cursor: pointer; user-select: none; transition: border-color .1s; }
 .gamecard:hover { border-color: #a9b6c9; }
+/* anchor styled like a button (valid markup for links-as-actions) */
+.abtn { display: inline-block; background: #fff; color: #3a3f4a; border: 1px solid #ccd4df;
+  border-radius: 6px; padding: 4px 10px; font-size: 13px; }
+.abtn:hover { background: #eef1f6; }
 /* stats: leaderboard tabs + horizontally scrollable table w/ pinned rank+player */
 .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
 .tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }

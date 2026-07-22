@@ -3,28 +3,37 @@ import { deriveGrades, teamMap } from "@/lib/grades";
 import Boards from "./ui";
 export const dynamic = "force-dynamic";
 
-export default async function Stats() {
+export default async function Stats({ searchParams }) {
   // public: stats cover published games only (enforced in the queries below)
   const d = db();
+
+  // optional single-game view (?game=<id>, linked from the watch page)
+  const sp = await searchParams;
+  const reqId = /^\d+$/.test(sp?.game ?? "") ? +sp.game : null;
+  const gameRow = reqId ? d.prepare(
+    "SELECT id, name FROM games WHERE id = ? AND published = 1").get(reqId) : null;
+  const game = gameRow ? { id: gameRow.id, name: gameRow.name } : null;
+  const gf = game ? " AND g.id = ?" : "";
+  const args = game ? [game.id] : [];
 
   // published games, game-phase rallies, with per-game identity resolution
   const rallies = d.prepare(`
     SELECT r.id, r.game_id, r.outcome_type, r.outcome_cluster
-    FROM rallies r JOIN games g ON g.id = r.game_id AND g.published = 1
-    WHERE r.phase = 'game'`).all().map(r => ({ ...r }));
+    FROM rallies r JOIN games g ON g.id = r.game_id AND g.published = 1${gf}
+    WHERE r.phase = 'game'`).all(...args).map(r => ({ ...r }));
   const plays = d.prepare(`
     SELECT p.id, p.rally_id, p.t, p.play_type, p.cluster_id, p.grade
     FROM plays p
     JOIN rallies r ON r.id = p.rally_id AND r.phase = 'game'
-    JOIN games g ON g.id = r.game_id AND g.published = 1
+    JOIN games g ON g.id = r.game_id AND g.published = 1${gf}
     WHERE p.deleted = 0
-    ORDER BY p.t`).all().map(p => ({ ...p }));
+    ORDER BY p.t`).all(...args).map(p => ({ ...p }));
   const idents = d.prepare(`
     SELECT i.game_id, i.cluster_id, i.team, i.player_id,
            COALESCE(i.name, 'P' || i.cluster_id) AS name
     FROM identities i
-    JOIN games g ON g.id = i.game_id AND g.published = 1
-    WHERE i.dismissed = 0 AND i.merged_into IS NULL`).all().map(i => ({ ...i }));
+    JOIN games g ON g.id = i.game_id AND g.published = 1${gf}
+    WHERE i.dismissed = 0 AND i.merged_into IS NULL`).all(...args).map(i => ({ ...i }));
 
   const rallyById = new Map(rallies.map(r => [r.id, r]));
   const byRally = new Map();
@@ -94,7 +103,7 @@ export default async function Stats() {
     .filter(p => p.serve + p.receive + p.dig + p.set + p.attack + p.block +
                  p.kill + p.ace + p.stuff > 0);
 
-  return <Boards rows={rows}
+  return <Boards rows={rows} game={game}
     nGames={new Set(rallies.map(r => r.game_id)).size}
     nScored={rallies.filter(r => r.outcome_type).length} />;
 }
