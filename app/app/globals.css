@@ -145,12 +145,13 @@ nav a { margin-right: 14px; }
   align-items: start; text-align: center; margin: 10px 0 2px; }
 .gc-team { font-size: 13px; color: #79808f; }
 .gc-pts { font-size: 28px; font-weight: 600; line-height: 1.15; }
-.gc-dash { align-self: center; font-size: 16px; }
+.gc-dash { align-self: start; margin-top: 27px; font-size: 16px; }
 .win .gc-team, .win .gc-pts { color: #3e7a4e; }
 .gc-roster { margin-top: 4px; line-height: 1.5; font-size: 12px; }
 .gc-others { margin-top: 6px; text-align: center; font-size: 12px; }
 .gc-actions { display: flex; gap: 8px; margin-top: 12px; }
-.gc-actions > * { flex: 1; text-align: center; }
+.gc-actions > * { flex: 1; display: flex; align-items: center; justify-content: center; }
+.gc-actions .abtn { font-size: 13px; }
 /* outcome pills on clip cards */
 .pill { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 11px;
   background: #e9edf3; color: #5c6270; white-space: nowrap; }
@@ -176,6 +177,7 @@ nav a { margin-right: 14px; }
   /* 16px stops iOS Safari auto-zoom on focus; larger padding = comfier taps */
   button, select, input[type=text] { font-size: 16px; }
   button, select { padding: 8px 12px; }
+  .gc-actions .abtn { font-size: 16px; padding: 8px 12px; }
   .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
     margin: 0 -12px 12px; padding: 0 12px 4px; }
   .tabs button { flex: none; }
