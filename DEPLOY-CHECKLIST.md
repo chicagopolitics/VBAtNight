@@ -1,4 +1,4 @@
-# Balltime — pilot deployment checklist
+# VBAtNight — pilot deployment checklist
 
 _Drafted 2026-07-22. Target: public viewing (watch/stats/highlights), admin behind login._
 
@@ -47,7 +47,7 @@ _Deferred (fine for pilot): unpublished game media is URL-guessable under `publi
 
 - [ ] **New games**: pipeline still runs on your machine. Get bundles to the server via the existing **Drive import** (avoids pushing 2.5GB through an HTTP upload — Next.js body limits make direct upload of large zips flaky) or `rsync` the bundle and import locally on the server.
 - [ ] **Backups**: nightly cron — `sqlite3 balltime.db ".backup ..."` + copy off-box (even to your PC). Media doesn't need backup: originals + pipeline outputs already live on your machine.
-- [ ] **Redeploys**: `git pull && npm ci && npm run build && systemctl restart balltime`.
+- [ ] **Redeploys**: `git pull && npm ci && npm run build && systemctl restart vbatnight`.
 
 ## Phase 5 — Pilot readiness
 

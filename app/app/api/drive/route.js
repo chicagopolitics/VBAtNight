@@ -34,7 +34,7 @@ export async function POST(req) {
     fs.rmSync(tmp, { recursive: true, force: true });
     // NB: bundles are intentionally LEFT in Drive — the gen-2 ball notebook
     // re-detects each game's video from its bundle, so it needs them to
-    // stay in Drive/balltime/bundles. Clear old bundles manually when done.
+    // stay in Drive/VBAtNight/bundles. Clear old bundles manually when done.
     return Response.json({ ok: true, game_id: gid });
   } catch (e) {
     console.error("drive import failed:", e);

@@ -96,7 +96,7 @@ export default function ImportPage() {
       )}
       <p className="muted">
         Select one or more <code>game_bundle_….zip</code> files (from
-        Drive/balltime/bundles). Game names come from the file names — you can
+        Drive/VBAtNight/bundles). Game names come from the file names — you can
         rename bundles before importing if you like.
       </p>
       <form onSubmit={submit}>

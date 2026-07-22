@@ -1,4 +1,4 @@
-# Balltime web app
+# VBAtNight web app
 
 Next.js + SQLite review UI for the volleyball pipeline.
 

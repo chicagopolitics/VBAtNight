@@ -88,7 +88,7 @@ OAuth and a service account are configured, the app uses OAuth.
   `balltime/bundles` is covered) and streams the chosen one straight to disk.
 - Imported bundles are intentionally LEFT in Drive: the gen-2 ball-training
   notebook re-detects each game from its bundle, so they must stay in
-  `Drive/balltime/bundles`. Clear old ones by hand when done retraining.
+  `Drive/VBAtNight/bundles`. Clear old ones by hand when done retraining.
 - Corrections export writes `corrections_<gamename>.json` into the folder,
   upserting by name (re-exporting replaces, no duplicates).
 - If listing/exporting fails with an auth error: Drive API not enabled, wrong

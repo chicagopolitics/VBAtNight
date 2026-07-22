@@ -55,9 +55,9 @@ export async function sendMagicLink(email, url) {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from: process.env.MAIL_FROM || "Balltime <onboarding@resend.dev>",
+      from: process.env.MAIL_FROM || "VBAtNight <onboarding@resend.dev>",
       to: [email],
-      subject: "Your Balltime sign-in link",
+      subject: "Your VBAtNight sign-in link",
       text: `Click to sign in: ${url}\n\nThis link expires in 15 minutes.`,
     }),
   });

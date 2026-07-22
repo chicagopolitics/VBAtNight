@@ -87,7 +87,7 @@ function serviceAccountTokenReq() {
 }
 
 // zip bundles in the shared folder (and one level of subfolders, so
-// Drive/balltime/bundles works whichever folder was shared)
+// Drive/VBAtNight/bundles works whichever folder was shared)
 export async function listBundles() {
   const token = await accessToken();
   const root = process.env.DRIVE_FOLDER_ID;

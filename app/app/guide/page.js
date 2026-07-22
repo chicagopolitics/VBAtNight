@@ -25,7 +25,7 @@ export default async function Guide() {
     <div style={{ maxWidth: 760 }}>
       <h1>How-to guide</h1>
       <p className="muted">
-        The two workflows, end to end. Everything Colab-side lives in Drive/balltime;
+        The two workflows, end to end. Everything Colab-side lives in Drive/VBAtNight;
         everything review-side lives in this app.
       </p>
 
@@ -38,10 +38,10 @@ export default async function Guide() {
         If the tripod moved between games: <a href="/setup">Camera setup</a> →
         select the night&apos;s video files → click the court geometry for each →
         download <span style={S.code}>courts_config.json</span> → upload it to
-        Drive/balltime (replace the old one).
+        Drive/VBAtNight (replace the old one).
       </Step>
       <Step n={3} title="Upload to Drive">
-        Copy the trimmed videos into Drive/balltime. The folder must also hold a
+        Copy the trimmed videos into Drive/VBAtNight. The folder must also hold a
         current <span style={S.code}>vbpipe.zip</span> (re-upload only after pipeline
         code changes — rebuild locally with <span style={S.code}>pipeline/make_bundle.sh</span>)
         and <span style={S.code}>ball_model.pt</span> (persists; trained once, improved via workflow 2).
@@ -49,7 +49,7 @@ export default async function Guide() {
       <Step n={4} title="Run the processing notebook">
         Open <span style={S.code}>process_game.ipynb</span> (v8+) in Colab.
         Runtime → T4 GPU → Run all. It processes every video without a bundle yet
-        (~30–40 min each), writes bundles to Drive/balltime/bundles, and resumes
+        (~30–40 min each), writes bundles to Drive/VBAtNight/bundles, and resumes
         if Colab disconnects — just Run all again. If you hit GPU limits, wait a
         few hours or use Pay-As-You-Go.
       </Step>
@@ -111,7 +111,7 @@ export default async function Guide() {
         rallies missed. Compare across rounds to see progress.
       </Step>
       <Step n={4} title="Upload corrections to Drive">
-        Copy the corrections_*.json files into Drive/balltime (plus a fresh
+        Copy the corrections_*.json files into Drive/VBAtNight (plus a fresh
         vbpipe.zip if the pipeline changed).
       </Step>
       <Step n={5} title="Run the training notebook">
@@ -124,7 +124,7 @@ export default async function Guide() {
       <Step n={6} title="Promote if v2 wins">
         In Cell 6 set <span style={S.code}>PROMOTE = True</span> and re-run that cell
         (it backs up v1). Then delete the bundles you want reprocessed from
-        Drive/balltime/bundles, Run all in process_game.ipynb, and re-import here.
+        Drive/VBAtNight/bundles, Run all in process_game.ipynb, and re-import here.
       </Step>
       <Step n={7} title="Repeat as data accumulates">
         Each reviewed game adds corrections; re-run the training notebook when a few

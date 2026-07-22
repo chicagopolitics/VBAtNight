@@ -78,7 +78,7 @@ export default function Setup() {
         Select the night's videos (read locally, nothing uploads). For each: pause on
         a clear frame, then follow the prompts. <b>Same as previous</b> reuses the last
         video's geometry when the tripod hasn't moved. Save the downloaded{" "}
-        <code>courts_config.json</code> into Drive/balltime with the videos.
+        <code>courts_config.json</code> into Drive/VBAtNight with the videos.
       </p>
       <div className="row" style={{ marginBottom: 10 }}>
         <input type="file" accept="video/*,image/*" multiple onChange={onFiles} />
@@ -162,7 +162,7 @@ export default function Setup() {
         <div className="card">
           <p>Calibrated {Object.keys(results).length} recording{Object.keys(results).length === 1 ? "" : "s"}.</p>
           <button className="primary" onClick={download}>Download courts_config.json</button>
-          <p className="muted">Put it in Drive/balltime next to the videos, then run the notebook.</p>
+          <p className="muted">Put it in Drive/VBAtNight next to the videos, then run the notebook.</p>
         </div>
       )}
     </div>

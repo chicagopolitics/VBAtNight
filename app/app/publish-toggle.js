@@ -47,7 +47,7 @@ export function ExportButton({ id, driveReady = false }) {
             <button style={{ textAlign: "left" }} onClick={() => run(null)}>
               To project folder</button>
             <button style={{ textAlign: "left" }} disabled={!driveReady}
-              title={driveReady ? "Upload straight to your Drive/balltime folder"
+              title={driveReady ? "Upload straight to your Drive/VBAtNight folder"
                 : "Needs user OAuth — run npm run drive-auth (see DRIVE-SETUP.md)"}
               onClick={() => run("drive")}>
               To Google Drive{driveReady ? "" : " (needs OAuth)"}</button>

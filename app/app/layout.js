@@ -1,7 +1,7 @@
 import "./globals.css";
 import { getSessionUser, isOrganizer } from "@/lib/auth";
 
-export const metadata = { title: "Balltime" };
+export const metadata = { title: "VBAtNight" };
 export const dynamic = "force-dynamic";
 
 export default async function RootLayout({ children }) {
@@ -11,7 +11,7 @@ export default async function RootLayout({ children }) {
     <html lang="en">
       <body>
         <header className="topbar row" style={{ justifyContent: "space-between" }}>
-          <a href="/">🏐 Balltime</a>
+          <a href="/">🏐 VBAtNight</a>
           <nav className="row">
             {user && <a href="/watch">Watch</a>}
             {user && <a href="/stats">Stats</a>}
