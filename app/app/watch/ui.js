@@ -33,6 +33,13 @@ const GROUPS = [
   ["Quality", ["assist", "rec_pos", "dig_kept", "blocked", "set_error", "dig_error", "rec_error"]],
 ];
 
+// outcome pill label + tone for clip cards
+const OUT = {
+  kill: ["Kill", "good"], block: ["Stuff block", "good"], ace: ["Ace", "info"],
+  attack_error: ["Attack error", "bad"], service_error: ["Serve error", "bad"],
+  other_error: ["Error", "bad"],
+};
+
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const fmtDate = d => {
@@ -112,8 +119,24 @@ export default function Highlights({ games }) {
           ))}
         </select>
         <span className="muted">{total} rall{total === 1 ? "y" : "ies"}</span>
-        {filtering && (
-          <button onClick={() => { setPlayer("all"); setStat("all"); }}>clear</button>
+        {(filtering || game !== "all") && (
+          <div className="row" style={{ width: "100%", gap: 6 }}>
+            {game !== "all" && (
+              <button className="fchip" onClick={() => setGame("all")}>
+                {games.find(x => String(x.id) === game)?.name ?? "game"} ✕</button>
+            )}
+            {player !== "all" && (
+              <button className="fchip" onClick={() => setPlayer("all")}>{player} ✕</button>
+            )}
+            {stat !== "all" && (
+              <button className="fchip" onClick={() => setStat("all")}>{STATS[stat].label} ✕</button>
+            )}
+            {(game !== "all") + (player !== "all") + (stat !== "all") > 1 && (
+              <button className="fchip"
+                onClick={() => { setGame("all"); setPlayer("all"); setStat("all"); }}>
+                clear all</button>
+            )}
+          </div>
         )}
       </div>
       {games.length === 0 && <p className="muted">Nothing published yet — check back soon.</p>}
@@ -121,42 +144,58 @@ export default function Highlights({ games }) {
         <p className="muted">No rallies match those filters.</p>}
       {shown.map(g => {
         const isOpen = autoExpand || open.has(g.id);
-        const sA = g.score && `Team A ${g.score.A}`;
-        const sB = g.score && `${g.score.B} Team B`;
+        const n = g.rallies.length;
+        const aWins = g.score && g.score.A > g.score.B;
+        const bWins = g.score && g.score.B > g.score.A;
         return (
         <div key={g.id}>
           <div className="card gamecard" onClick={() => toggle(g.id)}
             role="button" aria-expanded={isOpen}>
-            <div className="row" style={{ justifyContent: "space-between" }}>
-              <b>{g.name}</b>
-              <span className="row" style={{ gap: 8 }}>
-                <a className="abtn" href={`/stats?game=${g.id}`}
-                  onClick={e => e.stopPropagation()}>stats</a>
-                <span className="muted">
-                  {[fmtDate(g.date), `${g.rallies.length} rall${g.rallies.length === 1 ? "y" : "ies"}`]
-                    .filter(Boolean).join(" · ")} {isOpen ? "▾" : "▸"}
-                </span>
-              </span>
+            <div className="gc-top muted">
+              <span>{[fmtDate(g.date), `${n} rall${n === 1 ? "y" : "ies"}`]
+                .filter(Boolean).join(" · ")}</span>
+              <span>{g.name} <span className={"chev" + (isOpen ? " open" : "")}>▸</span></span>
             </div>
-            {g.score && (
-              <div style={{ marginTop: 4, fontSize: 14 }}>
-                {g.score.A > g.score.B ? <b>{sA}</b> : sA}
-                {" – "}
-                {g.score.B > g.score.A ? <b>{sB}</b> : sB}
-                {g.score.approx && <span className="muted"> (approx.)</span>}
+            {g.score ? (
+              <div className="gc-score">
+                <div className={aWins ? "win" : undefined}>
+                  <div className="gc-team">Team A{aWins ? " ★" : ""}</div>
+                  <div className="gc-pts">{g.score.A}</div>
+                  {g.teamA?.length > 0 &&
+                    <div className="gc-roster muted">{g.teamA.join(", ")}</div>}
+                </div>
+                <div className="gc-dash muted">–</div>
+                <div className={bWins ? "win" : undefined}>
+                  <div className="gc-team">Team B{bWins ? " ★" : ""}</div>
+                  <div className="gc-pts">{g.score.B}</div>
+                  {g.teamB?.length > 0 &&
+                    <div className="gc-roster muted">{g.teamB.join(", ")}</div>}
+                </div>
+              </div>
+            ) : (
+              <div style={{ marginTop: 6 }}>
+                {g.teamA?.length > 0 &&
+                  <div className="muted">Team A: {g.teamA.join(", ")}</div>}
+                {g.teamB?.length > 0 &&
+                  <div className="muted">Team B: {g.teamB.join(", ")}</div>}
               </div>
             )}
-            {g.teamA?.length > 0 &&
-              <div className="muted" style={{ marginTop: 4 }}>Team A: {g.teamA.join(", ")}</div>}
-            {g.teamB?.length > 0 &&
-              <div className="muted">Team B: {g.teamB.join(", ")}</div>}
             {g.others?.length > 0 &&
-              <div className="muted">
+              <div className="muted gc-others">
                 {g.teamA?.length || g.teamB?.length ? "Also" : "Players"}: {g.others.join(", ")}
               </div>}
+            {g.score?.approx &&
+              <div className="muted gc-others">score approximate — not every rally could be counted</div>}
+            <div className="gc-actions">
+              <button onClick={e => { e.stopPropagation(); toggle(g.id); }}>
+                {isOpen ? "Hide clips" : `▶ Watch ${n} clip${n === 1 ? "" : "s"}`}
+              </button>
+              <a className="abtn" href={`/stats?game=${g.id}`}
+                onClick={e => e.stopPropagation()}>Game stats</a>
+            </div>
           </div>
           {isOpen && <div className="grid-clips">
-            {g.rallies.map(r => {
+            {g.rallies.map((r, idx) => {
               // #t fragment plays only this rally's window, whether the media
               // is a per-rally clip (old bundles) or the full-game video (v8)
               const base = r.clip_file ||
@@ -169,25 +208,29 @@ export default function Highlights({ games }) {
                 : r.matched.length
                   ? Math.max(r.start_s - 2, r.matched[0].t - 3) : r.start_s - 2;
               const frag = `#t=${Math.max(0, from - cs).toFixed(1)},${(r.end_s - cs + 2).toFixed(1)}`;
+              // first clips warm up with metadata; the rest wait until played
+              // so opening a long game doesn't hammer a phone connection
+              const [label, tone] = OUT[r.outcome_type] ??
+                (r.outcome_type ? [r.outcome_type.replace("_", " "), ""] : [null, ""]);
               return (
                 <div className="card" key={r.id}>
-                  <video src={base + frag} controls playsInline preload="metadata" />
-                  <div className="row" style={{ justifyContent: "space-between" }}>
-                    <span>
-                      Rally {r.num}
-                      {r.matched.length > 0 && (
-                        <span className="muted">
-                          {" · "}{r.matched.map(m =>
-                            `${m.name || "?"} ${m.type}`).join(", ")}
+                  <video src={base + frag} controls playsInline
+                    preload={idx < 6 ? "metadata" : "none"} />
+                  <div className="row" style={{ justifyContent: "space-between", marginTop: 6 }}>
+                    {label
+                      ? <span className={`pill ${tone}`}>
+                          {label}{r.outcome_name ? ` · ${r.outcome_name}` : ""}
                         </span>
-                      )}
-                    </span>
+                      : <span className="pill">Rally {r.num}</span>}
                     <span className="muted">
-                      {Math.round(r.end_s - r.start_s)}s
-                      {r.outcome_type ? ` · ${r.outcome_type.replace("_", " ")}` : ""}
-                      {r.outcome_name ? ` by ${r.outcome_name}` : ""}
+                      {label ? `Rally ${r.num} · ` : ""}{Math.round(r.end_s - r.start_s)}s
                     </span>
                   </div>
+                  {r.matched.length > 0 && (
+                    <div className="muted" style={{ marginTop: 4, fontSize: 12 }}>
+                      {r.matched.map(m => `${m.name || "?"} ${m.type}`).join(", ")}
+                    </div>
+                  )}
                 </div>
               );
             })}

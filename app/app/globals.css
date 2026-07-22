@@ -131,9 +131,34 @@ nav a { margin-right: 14px; }
 .statlink { color: inherit; border-bottom: 1px dotted #a9b6c9; padding: 2px 1px; }
 .statlink:hover { color: #4a72a8; border-bottom-color: #4a72a8; }
 /* watch: sticky filter bar + collapsible game cards */
-.filters { position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 10px rgba(60,65,80,.06); }
+.filters { position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 10px rgba(60,65,80,.06);
+  background: rgba(255,255,255,.86); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.fchip { background: #eaf1fa; border-color: #b9cbe4; color: #4a72a8;
+  border-radius: 14px; padding: 4px 11px; font-size: 12px; }
+.fchip:hover { background: #dfe9f7; }
 .gamecard { cursor: pointer; user-select: none; transition: border-color .1s; }
 .gamecard:hover { border-color: #a9b6c9; }
+.gc-top { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; }
+.chev { display: inline-block; transition: transform .15s ease; }
+.chev.open { transform: rotate(90deg); }
+.gc-score { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px;
+  align-items: start; text-align: center; margin: 10px 0 2px; }
+.gc-team { font-size: 13px; color: #79808f; }
+.gc-pts { font-size: 28px; font-weight: 600; line-height: 1.15; }
+.gc-dash { align-self: center; font-size: 16px; }
+.win .gc-team, .win .gc-pts { color: #3e7a4e; }
+.gc-roster { margin-top: 4px; line-height: 1.5; font-size: 12px; }
+.gc-others { margin-top: 6px; text-align: center; font-size: 12px; }
+.gc-actions { display: flex; gap: 8px; margin-top: 12px; }
+.gc-actions > * { flex: 1; text-align: center; }
+/* outcome pills on clip cards */
+.pill { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 11px;
+  background: #e9edf3; color: #5c6270; white-space: nowrap; }
+.pill.good { background: #dcefe1; color: #3e7a4e; }
+.pill.info { background: #dce8f5; color: #4a72a8; }
+.pill.bad { background: #f7dfe3; color: #b0556a; }
+.grid-clips { animation: fadeUp .18s ease-out; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 /* anchor styled like a button (valid markup for links-as-actions) */
 .abtn { display: inline-block; background: #fff; color: #3a3f4a; border: 1px solid #ccd4df;
   border-radius: 6px; padding: 4px 10px; font-size: 13px; }
