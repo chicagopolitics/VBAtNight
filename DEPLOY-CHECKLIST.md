@@ -26,15 +26,13 @@ _Deferred (fine for pilot): unpublished game media is URL-guessable under `publi
 - [x] vbatnight.com registered; A records (@ and www) → 198.199.80.93.
 - [x] Caddy reverse proxy with automatic HTTPS — verified working.
 
-## Phase 3 — App deployment 🟡 ONE ITEM LEFT
+## Phase 3 — App deployment ✅ DONE
 
 - [x] Repo on GitHub (private, chicagopolitics/VBAtNight) + read-only deploy key on server.
 - [x] Cloned to /opt/vbatnight, built, running via systemd (`vbatnight.service`, auto-restart).
 - [x] `ORGANIZER_EMAILS` set; `APP_URL=https://vbatnight.com` set (fixes magic-link host behind proxy).
 - [x] DB + 5.1GB media uploaded; site, video, and login verified end to end.
-- [ ] **Resend email setup** ← NEXT: verify vbatnight.com domain in Resend, set `RESEND_API_KEY` +
-      `MAIL_FROM` in `/opt/vbatnight/app/.env.local`, restart. Until then magic links only appear in
-      `journalctl -u vbatnight`.
+- [x] **Resend email setup**: domain verified, magic-link emails arriving from login@vbatnight.com.
 
 ## Phase 4 — Ongoing workflow 🟡 MOSTLY DONE
 
