@@ -1,64 +1,63 @@
 # VBAtNight — pilot deployment checklist
 
-_Drafted 2026-07-22. Target: public viewing (watch/stats/highlights), admin behind login._
+_Updated 2026-07-22. Live at https://vbatnight.com (DigitalOcean NYC3, 198.199.80.93)._
 
-## Phase 0 — Code changes before anything ships
+## Phase 0 — Code changes before anything ships ✅ DONE
 
-- [ ] **Open public pages**: remove the `redirect("/login")` in `app/watch/page.js` and `app/stats/page.js`. Pages must render cleanly with `user = null`.
-- [ ] **Guard the unprotected admin pages**: `app/games/[id]/review`, `app/games/[id]/identities`, `app/import`, `app/setup` currently have **no auth check**. Add `isOrganizer` redirect to each.
-- [ ] **Guard `/api/plays`**: PATCH/POST are unauthenticated writes. Add the same `isOrganizer` → 403 block the other API routes use.
-- [ ] **Flip `isOrganizer` default**: currently "everyone is organizer" when `ORGANIZER_EMAILS` is unset. Change to deny-all in production (`NODE_ENV === "production"`), keep the permissive default for local dev.
-- [ ] **Nav**: confirm layout hides admin links (`/players`, `/import`, review links) for logged-out visitors.
-- [ ] Smoke test locally: incognito can browse watch/stats, gets bounced from review/import, API writes return 403; organizer login still works end-to-end.
+- [x] **Open public pages**: /watch and /stats render without login (published games only).
+- [x] **Guard admin pages**: /import and /setup now behind organizer check (review/identities already were).
+- [x] **Guard `/api/plays`**: PATCH/POST now require organizer (was unauthenticated).
+- [x] **Flip `isOrganizer` default**: fails closed in production when `ORGANIZER_EMAILS` unset; permissive in dev.
+- [x] **Nav**: Watch/Stats public, admin links organizer-only.
+- [x] Smoke tested (anon, logged-in non-organizer, organizer) on a production build with real DB copy.
 
-_Deferred (fine for pilot): unpublished game media is URL-guessable under `public/media/`. Fix later with a streaming route handler if it matters._
+_Deferred (fine for pilot): unpublished game media is URL-guessable under `public/media/`._
 
-## Phase 1 — Server
+## Phase 1 — Server ✅ DONE
 
-- [ ] Provision a VPS. Suggested: **Hetzner CPX21** (~€8/mo, 3 vCPU / 4GB RAM / 160GB disk) or DigitalOcean equivalent (~$12–14/mo, 80GB).
-  - Disk math: ~2.5GB per game. 160GB ≈ 55–60 games of headroom.
-- [ ] Ubuntu 24.04 LTS, create a non-root deploy user, SSH key auth only.
-- [ ] Firewall: allow 22, 80, 443 only (`ufw`).
-- [ ] Install Node 22+ (app requires >=22.12).
+- [x] DigitalOcean droplet: NYC3, $24/mo Regular (2 vCPU / 4GB / 80GB / 4TB transfer), backups on.
+  - (Switched from Hetzner — their 2026 US price hike killed the value; ~$37/mo for less.)
+- [x] Ubuntu 24.04 LTS, SSH key auth.
+- [x] Firewall: 22/80/443 only (ufw, via setup script).
+- [x] Node 22 installed.
 
-## Phase 2 — Domain + HTTPS
+## Phase 2 — Domain + HTTPS ✅ DONE
 
-- [ ] Register a domain (~$10–15/yr), point an A record at the VPS IP.
-- [ ] Install **Caddy** as reverse proxy → automatic HTTPS, zero cert maintenance. Two-line Caddyfile:
-  ```
-  yourdomain.com {
-      reverse_proxy localhost:3000
-  }
-  ```
+- [x] vbatnight.com registered; A records (@ and www) → 198.199.80.93.
+- [x] Caddy reverse proxy with automatic HTTPS — verified working.
 
-## Phase 3 — App deployment
+## Phase 3 — App deployment 🟡 ONE ITEM LEFT
 
-- [ ] Get code onto the server (git repo recommended; otherwise rsync, excluding `node_modules`, `data/`, `public/media/`).
-- [ ] `npm ci && npm run build`.
-- [ ] Run via **systemd** service (auto-restart on crash/reboot) with env vars:
-  - `NODE_ENV=production`
-  - `ORGANIZER_EMAILS=christianson.general@gmail.com`
-  - `RESEND_API_KEY=...`
-  - `MAIL_FROM=...` (note: Resend's free `onboarding@resend.dev` sender can only email *your own* Resend account address — fine while you're the only login, but verify your domain in Resend before other organizers need magic links)
-- [ ] Copy data up: `data/balltime.db` + `public/media/` (~5.1GB — one-time rsync).
-- [ ] Verify site loads over HTTPS, video seeks work, login works.
+- [x] Repo on GitHub (private, chicagopolitics/VBAtNight) + read-only deploy key on server.
+- [x] Cloned to /opt/vbatnight, built, running via systemd (`vbatnight.service`, auto-restart).
+- [x] `ORGANIZER_EMAILS` set; `APP_URL=https://vbatnight.com` set (fixes magic-link host behind proxy).
+- [x] DB + 5.1GB media uploaded; site, video, and login verified end to end.
+- [ ] **Resend email setup** ← NEXT: verify vbatnight.com domain in Resend, set `RESEND_API_KEY` +
+      `MAIL_FROM` in `/opt/vbatnight/app/.env.local`, restart. Until then magic links only appear in
+      `journalctl -u vbatnight`.
 
-## Phase 4 — Ongoing workflow
+## Phase 4 — Ongoing workflow 🟡 MOSTLY DONE
 
-- [ ] **New games**: pipeline still runs on your machine. Get bundles to the server via the existing **Drive import** (avoids pushing 2.5GB through an HTTP upload — Next.js body limits make direct upload of large zips flaky) or `rsync` the bundle and import locally on the server.
-- [ ] **Backups**: nightly cron — `sqlite3 balltime.db ".backup ..."` + copy off-box (even to your PC). Media doesn't need backup: originals + pipeline outputs already live on your machine.
-- [ ] **Redeploys**: `git pull && npm ci && npm run build && systemctl restart vbatnight`.
+- [x] Nightly DB backup: 3am cron → /opt/backups, 14-day retention (media not backed up — originals live on your PC).
+- [x] Redeploy process: `ssh root@198.199.80.93` then `cd /opt/vbatnight && git pull && cd app && npm ci && npm run build && systemctl restart vbatnight`.
+- [ ] **Server-side Drive import** (optional): copy service-account JSON to /opt/vbatnight/keys/drive-sa.json,
+      set `GOOGLE_SA_KEY` + `DRIVE_FOLDER_ID` in .env.local. Without it, new games arrive via scp instead.
+- [ ] Do one full new-game cycle on the live server: pipeline → Drive → import → name → review → publish.
 
-## Phase 5 — Pilot readiness
+## Phase 5 — Pilot readiness 🔲 TODO
 
-- [ ] Share the URL with 2–3 friendly users first; watch for video buffering (VPS bandwidth) before wider invites.
-- [ ] Decide the trigger for "lock viewing behind auth" (e.g., bandwidth cost or content sensitivity) so it's a plan, not a scramble.
+- [ ] Play several clips on a phone over cellular (real pilot-user conditions; the untested risk is video buffering).
+- [ ] Confirm no Safe Browsing warnings on a fresh normal visit (new-domain flag; seen once during magic-link
+      workaround only). If it ever appears for normal visits: Google Search Console → request review.
+- [ ] Soft launch: share URL with 2–3 friendly users; watch bandwidth/buffering before wider invites.
+- [ ] Decide the trigger for "lock viewing behind auth" (bandwidth cost or content sensitivity) so it's a plan, not a scramble.
 
-## Cost summary
+## Cost summary (actual)
 
 | Item | Cost |
 |---|---|
-| VPS (Hetzner CPX21) | ~€8/mo |
-| Domain | ~$12/yr |
+| DigitalOcean droplet | $24/mo |
+| Droplet backups | $4.80/mo |
+| Domain (vbatnight.com) | ~$10/yr |
 | Resend | free tier (100 emails/day) |
-| **Total** | **~$10/mo** |
+| **Total** | **~$30/mo** |
