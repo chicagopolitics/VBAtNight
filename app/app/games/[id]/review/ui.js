@@ -171,7 +171,7 @@ export default function Review({ rallies, idents, plays, video }) {
         <button onClick={() => go(-1)} disabled={selIdx <= 0}>◀ prev</button>
         <span className="muted">
           {rally && rally.phase !== "skipped" && <>
-            <b style={{ color: "#e8eaed" }}>Rally {selIdx + 1} of {visible.length}</b>
+            <b style={{ color: "#2f333b" }}>Rally {selIdx + 1} of {visible.length}</b>
             {" · "}{fmt(rally.start_s)}
             {" · "}{rallyPlays.length} touch{rallyPlays.length === 1 ? "" : "es"}
           </>}

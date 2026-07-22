@@ -3,11 +3,11 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 const S = {
-  h2: { marginTop: 28, borderBottom: "1px solid #262b36", paddingBottom: 6 },
+  h2: { marginTop: 28, borderBottom: "1px solid #e3e0d7", paddingBottom: 6 },
   step: { margin: "10px 0" },
-  kbd: { background: "#232936", border: "1px solid #384050", borderRadius: 4,
+  kbd: { background: "#eef1f6", border: "1px solid #ccd4df", borderRadius: 4,
          padding: "1px 6px", fontSize: 12 },
-  code: { background: "#232936", borderRadius: 4, padding: "1px 6px", fontSize: 13 },
+  code: { background: "#eef1f6", borderRadius: 4, padding: "1px 6px", fontSize: 13 },
 };
 
 function Step({ n, title, children }) {
