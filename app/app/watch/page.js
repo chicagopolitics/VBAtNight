@@ -1,12 +1,9 @@
 import { db } from "@/lib/db";
-import { getSessionUser } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import Highlights from "./ui";
 export const dynamic = "force-dynamic";
 
 export default async function Watch() {
-  const user = await getSessionUser();
-  if (!user) redirect("/login");
+  // public: anyone can watch published games
   const d = db();
   const games = d.prepare("SELECT * FROM games WHERE published = 1 ORDER BY id DESC")
     .all().map(g => ({ ...g }));

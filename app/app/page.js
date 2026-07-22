@@ -7,8 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const user = await getSessionUser();
-  if (!user) redirect("/login");
-  if (!isOrganizer(user)) redirect("/watch");
+  if (!isOrganizer(user)) redirect("/watch"); // public visitors land on Watch
   const games = db().prepare("SELECT * FROM games ORDER BY id DESC").all().map(g => ({ ...g }));
   const driveReady = driveCanUpload();
   return (

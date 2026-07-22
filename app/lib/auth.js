@@ -17,7 +17,10 @@ export async function getSessionUser() {
 export function isOrganizer(user) {
   if (!user) return false;
   const env = process.env.ORGANIZER_EMAILS;
-  if (!env) return true;         // dev default: everyone; set in production!
+  if (!env) {
+    // unset: everyone is organizer in dev, NO ONE in production (fail closed)
+    return process.env.NODE_ENV !== "production";
+  }
   return env.split(",").map(s => s.trim().toLowerCase()).includes(user.email.toLowerCase());
 }
 

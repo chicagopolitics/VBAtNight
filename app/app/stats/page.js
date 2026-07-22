@@ -1,13 +1,10 @@
 import { db } from "@/lib/db";
-import { getSessionUser } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import { deriveGrades, teamMap } from "@/lib/grades";
 import Boards from "./ui";
 export const dynamic = "force-dynamic";
 
 export default async function Stats() {
-  const user = await getSessionUser();
-  if (!user) redirect("/login");
+  // public: stats cover published games only (enforced in the queries below)
   const d = db();
 
   // published games, game-phase rallies, with per-game identity resolution

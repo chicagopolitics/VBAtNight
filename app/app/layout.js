@@ -13,8 +13,8 @@ export default async function RootLayout({ children }) {
         <header className="topbar row" style={{ justifyContent: "space-between" }}>
           <a href="/">🏐 VBAtNight</a>
           <nav className="row">
-            {user && <a href="/watch">Watch</a>}
-            {user && <a href="/stats">Stats</a>}
+            <a href="/watch">Watch</a>
+            <a href="/stats">Stats</a>
             {org && user && <a href="/">Manage</a>}
             {org && user && <a href="/players">Players</a>}
             {org && user && <a href="/setup">Camera setup</a>}
