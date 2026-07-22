@@ -1,0 +1,26 @@
+{
+  "name": "balltime-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "import": "node scripts/import-game.js",
+    "export": "node scripts/export-corrections.js",
+    "drive-auth": "node scripts/drive-auth.js",
+    "backfill-players": "node scripts/backfill-players.mjs"
+  },
+  "dependencies": {
+    "adm-zip": "^0.6.0",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^11.7.0"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}

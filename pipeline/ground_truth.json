@@ -1,0 +1,15 @@
+{
+  "notes": "Human-labeled touch sequences for accuracy evaluation. Rally indices match game.json.",
+  "rallies": {
+    "18": {
+      "video_time": "9m01s",
+      "sequence": ["serve", "receive", "set", "attack", "receive", "set", "attack", "receive", "set", "attack"],
+      "details": "bump set at touch 3; back-row attack at touch 4; final attack out of bounds (error)",
+      "outcome": "attack error, out of bounds"
+    },
+    "8": {
+      "video_time": "4m48s",
+      "known_errors_v3": "serve (far side) not detected; serve-receive not detected; first detected contact was actually the set, mislabeled as serve"
+    }
+  }
+}

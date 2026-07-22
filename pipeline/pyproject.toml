@@ -1,0 +1,16 @@
+[project]
+name = "vbpipe"
+version = "0.1.0"
+description = "Volleyball game video -> rallies, player identities, stats-ready JSON"
+requires-python = ">=3.10"
+dependencies = ["numpy", "opencv-python-headless", "scikit-learn"]
+
+[project.optional-dependencies]
+gpu = ["ultralytics", "torch", "torchvision"]
+
+[project.scripts]
+vbpipe = "vbpipe.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"

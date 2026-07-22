@@ -1,0 +1,26 @@
+# deps / build
+node_modules/
+.next/
+
+# secrets
+.env
+.env.*
+
+# runtime data — live DB and served media stay out of git
+app/data/
+app/public/media/
+
+# large artifacts
+*.mp4
+*.zip
+pipeline/rally_clips/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
