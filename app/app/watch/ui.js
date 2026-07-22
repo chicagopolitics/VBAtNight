@@ -120,11 +120,8 @@ export default function Highlights({ games }) {
         <p className="muted">No rallies match those filters.</p>}
       {shown.map(g => {
         const isOpen = autoExpand || open.has(g.id);
-        const rosters = [
-          g.teamA?.length ? `Team A: ${g.teamA.join(", ")}` : null,
-          g.teamB?.length ? `Team B: ${g.teamB.join(", ")}` : null,
-          g.others?.length ? `${g.teamA?.length || g.teamB?.length ? "Also" : "Players"}: ${g.others.join(", ")}` : null,
-        ].filter(Boolean).join(" · ");
+        const sA = g.score && `Team A ${g.score.A}`;
+        const sB = g.score && `${g.score.B} Team B`;
         return (
         <div key={g.id}>
           <div className="card gamecard" onClick={() => toggle(g.id)}
@@ -136,7 +133,22 @@ export default function Highlights({ games }) {
                   .filter(Boolean).join(" · ")} {isOpen ? "▾" : "▸"}
               </span>
             </div>
-            {rosters && <div className="muted" style={{ marginTop: 4 }}>{rosters}</div>}
+            {g.score && (
+              <div style={{ marginTop: 4, fontSize: 14 }}>
+                {g.score.A > g.score.B ? <b>{sA}</b> : sA}
+                {" – "}
+                {g.score.B > g.score.A ? <b>{sB}</b> : sB}
+                {g.score.approx && <span className="muted"> (approx.)</span>}
+              </div>
+            )}
+            {g.teamA?.length > 0 &&
+              <div className="muted" style={{ marginTop: 4 }}>Team A: {g.teamA.join(", ")}</div>}
+            {g.teamB?.length > 0 &&
+              <div className="muted">Team B: {g.teamB.join(", ")}</div>}
+            {g.others?.length > 0 &&
+              <div className="muted">
+                {g.teamA?.length || g.teamB?.length ? "Also" : "Players"}: {g.others.join(", ")}
+              </div>}
           </div>
           {isOpen && <div className="grid-clips">
             {g.rallies.map(r => {
