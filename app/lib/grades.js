@@ -28,8 +28,11 @@ export const GRADE_OPTIONS = {
   attack: ["kill", "in_play", "blocked", "error"],
   block: ["stuff", "in_play", "error"],
   set: ["assist", "in_play", "error"],
-  dig: ["success", "in_play", "error"],
-  receive: ["positive", "in_play", "error"],
+  // "poor" = kept the ball playable but out of system (setter had to chase;
+  // the 1-2 band of the classic 0-3 passing scale). Only ever set manually —
+  // the auto-derivation can't see pass quality, only what happened next.
+  dig: ["success", "in_play", "poor", "error"],
+  receive: ["positive", "in_play", "poor", "error"],
 };
 
 // grades that count as "excellent" per type (for chip coloring)

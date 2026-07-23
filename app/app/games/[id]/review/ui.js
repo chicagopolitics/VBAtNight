@@ -69,6 +69,19 @@ export default function Review({ rallies, idents, plays, video }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, deleted: 1 }) });
   }
+  // delete every touch in this rally after touch p — the usual junk is a
+  // suffix of spurious contacts detected after the point actually ended
+  async function removeAfter(p) {
+    const after = rallyPlays.filter(x => x.t > p.t);
+    if (!after.length) return;
+    if (!confirm(`Delete ${after.length} touch${after.length > 1 ? "es" : ""} after this one?`)) return;
+    const ids = after.map(x => x.id);
+    setAllPlays(ps => ps.filter(x => !ids.includes(x.id)));
+    for (const id of ids)
+      await fetch("/api/plays", { method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, deleted: 1 }) });
+  }
   // game time where this rally's media begins: 0 for the full-game video
   // (video time == game time), else the clip's start (2s lead-in default)
   const clipStart = r => r.clip_file ? (r.clip_start_s ?? r.start_s - 2) : 0;
@@ -372,8 +385,13 @@ export default function Review({ rallies, idents, plays, video }) {
                         g === "error" && p.play_type === "serve" && isLast ? "service_error" :
                         g === "error" && p.play_type === "attack" && isLast ? "attack_error" :
                         null;
-                      if (ot) saveRally(rally.id, { outcome_type: ot,
-                        outcome_cluster: p.cluster_id ?? rally.outcome_cluster ?? null });
+                      if (ot) {
+                        saveRally(rally.id, { outcome_type: ot,
+                          outcome_cluster: p.cluster_id ?? rally.outcome_cluster ?? null });
+                        // the rally ended on this touch — anything after it is
+                        // junk the detector picked up post-point; offer to clear
+                        removeAfter(p);
+                      }
                     }}>
                     <option value="">auto: {grades.get(p.id) || "?"}</option>
                     {(GRADE_OPTIONS[p.play_type] || []).map(g => (
@@ -382,6 +400,10 @@ export default function Review({ rallies, idents, plays, video }) {
                   </select>
                   <span className="t">{chipT.toFixed(1)}s</span>
                   <button className="danger" onClick={() => remove(p.id)}>delete</button>
+                  {rallyPlays.some(x => x.t > p.t) && (
+                    <button className="danger" title="Delete every touch after this one in the rally"
+                      onClick={() => removeAfter(p)}>🗑 after</button>
+                  )}
                   <button onClick={() => setEditing(null)}>done</button>
                 </div>
               );
@@ -397,7 +419,7 @@ export default function Review({ rallies, idents, plays, video }) {
                   {(() => {   // quality badge: only notable grades, to keep chips quiet
                     const g = grades.get(p.id);
                     if (!g || g === "in_play") return null;
-                    return <span className={"grade" + (GOOD.has(g) ? " good" : BAD.has(g) ? " bad" : "")}
+                    return <span className={"grade" + (GOOD.has(g) ? " good" : BAD.has(g) ? " bad" : g === "poor" ? " poor" : "")}
                       title={p.grade ? "grade set by you" : "grade derived from touch order + rally outcome"}>
                       {g.replace("_", " ")}{p.grade ? " ✎" : ""}</span>;
                   })()}

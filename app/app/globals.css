@@ -29,6 +29,7 @@ button.danger { background: #f2dbde; border-color: #dba8b0; color: #96475a; }
   background: #e9edf3; color: #5c6270; }
 .chip .grade.good { background: #dcefe1; color: #3e7a4e; }
 .chip .grade.bad { background: #f7dfe3; color: #b0556a; }
+.chip .grade.poor { background: #f7efd9; color: #96762a; }
 .teamtoggle { display: inline-flex; }
 .teambtn { padding: 4px 9px; border-radius: 0; }
 .teambtn:first-child { border-radius: 6px 0 0 6px; }
