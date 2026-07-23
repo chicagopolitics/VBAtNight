@@ -133,6 +133,9 @@ export default function Review({ rallies, idents, plays, video }) {
       if ((e.key === "a" || e.key === "A") && rally && rally.phase !== "skipped") {
         e.preventDefault(); addPlay();   // hotkey: add touch at playhead
       }
+      if ((e.key === "d" || e.key === "D") && editing) {
+        e.preventDefault(); remove(editing);   // hotkey: delete the open touch
+      }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
@@ -352,6 +355,9 @@ export default function Review({ rallies, idents, plays, video }) {
                 <div key={p.id} className={"chip-edit" + (live ? " live" : "")}
                   onKeyDown={e => {   // Enter/Esc closes the editor, freeing the A hotkey
                     if (e.key === "Enter" || e.key === "Escape") { e.target.blur(); setEditing(null); }
+                    // D deletes the touch even while focus is in a dropdown
+                    // (costs select type-ahead for "d" — deleting wins)
+                    if (e.key === "d" || e.key === "D") { e.preventDefault(); remove(p.id); }
                   }}>
                   <select autoFocus value={p.play_type || ""}
                     onChange={e => save(p.id, { play_type: e.target.value })}>
@@ -399,7 +405,8 @@ export default function Review({ rallies, idents, plays, video }) {
                     ))}
                   </select>
                   <span className="t">{chipT.toFixed(1)}s</span>
-                  <button className="danger" onClick={() => remove(p.id)}>delete</button>
+                  <button className="danger" title="hotkey: D"
+                    onClick={() => remove(p.id)}>delete</button>
                   {rallyPlays.some(x => x.t > p.t) && (
                     <button className="danger" title="Delete every touch after this one in the rally"
                       onClick={() => removeAfter(p)}>🗑 after</button>
