@@ -15,7 +15,6 @@
 //   DRIVE_FOLDER_ID                the folder id (from its Drive URL)
 import crypto from "crypto";
 import fs from "fs";
-import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -155,13 +154,30 @@ export async function uploadFile(name, content, mimeType = "application/json") {
   return { id: j.id, name: j.name || name, updated: !!existing };
 }
 
-// stream a Drive file to a local path
+// stream a Drive file to a local path.
+// Uses node:https directly instead of fetch: with multi-GB bundles the
+// fetch-based version buffered the whole body in process memory (~3.6GB
+// anon RSS -> OOM-killed on a 4GB droplet). Native streams give end-to-end
+// backpressure: the socket only reads as fast as the disk drains.
 export async function downloadFile(fileId, destPath) {
   const token = await accessToken();
-  const res = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`,
-    { headers: { authorization: `Bearer ${token}` } });
-  if (!res.ok || !res.body)
-    throw new Error("Drive download failed: HTTP " + res.status);
-  await pipeline(Readable.fromWeb(res.body), fs.createWriteStream(destPath));
+  const { get } = await import("https");
+  let url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`;
+  for (let hop = 0; hop < 4; hop++) {
+    const res = await new Promise((resolve, reject) =>
+      get(url, { headers: { authorization: `Bearer ${token}` } }, resolve)
+        .on("error", reject));
+    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+      res.resume();                       // drain + follow redirect
+      url = res.headers.location;
+      continue;
+    }
+    if (res.statusCode !== 200) {
+      res.resume();
+      throw new Error("Drive download failed: HTTP " + res.statusCode);
+    }
+    await pipeline(res, fs.createWriteStream(destPath));
+    return;
+  }
+  throw new Error("Drive download failed: too many redirects");
 }
