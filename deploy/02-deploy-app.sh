@@ -67,12 +67,21 @@ systemctl enable --now vbatnight
 echo "=== [6/7] Caddy ==="
 cat > /etc/caddy/Caddyfile <<EOF
 $DOMAIN {
+    # /media served by Caddy, not Next: next start only serves public/ files
+    # that existed at BUILD time, so game media imported later would 404.
+    # Caddy also gives proper Range support for multi-GB rally videos.
+    handle /media/* {
+        root * $APP_DIR/app/public
+        file_server
+    }
     reverse_proxy localhost:3000
 }
 www.$DOMAIN {
     redir https://$DOMAIN{uri} permanent
 }
 EOF
+# media must be world-readable for the caddy user (it's public content)
+chmod -R a+rX "$APP_DIR/app/public/media" 2>/dev/null || true
 systemctl reload caddy
 
 echo "=== [7/7] Nightly DB backup (3am, keeps 14 days) ==="

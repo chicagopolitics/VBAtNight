@@ -334,7 +334,9 @@ export default function Review({ rallies, idents, plays, video }) {
                 (full ? 0 : Math.max(0, rally.start_s - clipStart(rally) - 2));
               if (editing === p.id) return (
                 // the chip itself becomes the editor — no detached menu
-                <div key={p.id} className="chip-edit"
+                // (keeps the playhead-sync pulse so you can see the touch land
+                // while its editor is open)
+                <div key={p.id} className={"chip-edit" + (live ? " live" : "")}
                   onKeyDown={e => {   // Enter/Esc closes the editor, freeing the A hotkey
                     if (e.key === "Enter" || e.key === "Escape") { e.target.blur(); setEditing(null); }
                   }}>

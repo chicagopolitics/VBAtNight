@@ -16,7 +16,9 @@ ufw --force enable
 
 echo "=== [3/5] Node.js 22 ==="
 curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-apt-get install -yq nodejs build-essential python3 sqlite3
+# libarchive-tools = bsdtar, needed to extract >2GiB game bundles (GNU tar
+# can't read zips; adm-zip caps at 2GiB)
+apt-get install -yq nodejs build-essential python3 sqlite3 libarchive-tools
 
 echo "=== [4/5] Caddy (web server, automatic HTTPS) ==="
 apt-get install -yq debian-keyring debian-archive-keyring apt-transport-https

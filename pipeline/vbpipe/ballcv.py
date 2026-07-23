@@ -3,18 +3,18 @@ exclusion, prediction-gated linking, physics (parabola) verification.
 Validated on M1 footage — replaces YOLO 'sports ball' which sees ~3% of frames."""
 import subprocess, numpy as np, json
 
-W, H, FPS = 1280, 720, 20.0
+W, H, FPS = 1280, 720, 20.0   # FPS = default sampling rate (historical tuning)
 
-def _frames_gray(video, start, dur):
+def _frames_gray(video, start, dur, fps=FPS):
     import cv2
     cmd = ["ffmpeg","-v","error","-ss",str(start),"-t",str(dur),"-i",video,
-           "-vf",f"fps={FPS},scale={W}:{H}","-f","rawvideo","-pix_fmt","gray","-"]
+           "-vf",f"fps={fps},scale={W}:{H}","-f","rawvideo","-pix_fmt","gray","-"]
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, bufsize=W*H*2)
     i = 0
     while True:
         buf = p.stdout.read(W*H)
         if len(buf) < W*H: break
-        yield start + i/FPS, np.frombuffer(buf, np.uint8).reshape(H, W)
+        yield start + i/fps, np.frombuffer(buf, np.uint8).reshape(H, W)
         i += 1
     p.wait()
 
@@ -33,15 +33,24 @@ def _in_boxes(b, t, x, y):
             if x0<=x<=x1 and y0<=y<=y1: return True
     return False
 
-def detect_rally(video, rally, tracklets, rally_idx):
+def detect_rally(video, rally, tracklets, rally_idx, fps=FPS):
+    """fps: sampling rate. Default 20 reproduces historical behavior exactly.
+    At higher fps the frame-differencing baseline is kept at ~50ms via a
+    stride (a slow-moving ball overlaps itself between 16ms frames, which
+    would erase it from consecutive-frame diffs), while candidates are still
+    emitted at the full rate."""
     import cv2
+    from collections import deque
+    stride = max(1, round(fps / FPS))     # diff across ~50ms regardless of fps
+    hist = deque(maxlen=2*stride + 1)     # [oldest .. newest]
     t0, t1 = rally["start"], rally["end"]
     buckets = _player_buckets(tracklets, rally_idx, t0, t1)
-    prev2 = prev1 = None
     dets = []
-    for t, f in _frames_gray(video, t0, t1-t0):
-        if prev2 is not None:
-            tt = t - 1/FPS
+    for t, f in _frames_gray(video, t0, t1-t0, fps):
+        hist.append(f)
+        if len(hist) == 2*stride + 1:
+            prev2, prev1 = hist[0], hist[stride]
+            tt = t - stride/fps
             d1 = cv2.absdiff(f, prev1); d2 = cv2.absdiff(prev1, prev2)
             m = cv2.threshold(cv2.min(d1,d2), 24, 255, cv2.THRESH_BINARY)[1]
             m = cv2.morphologyEx(m, cv2.MORPH_OPEN, np.ones((2,2),np.uint8))
@@ -64,8 +73,7 @@ def detect_rally(video, rally, tracklets, rally_idx):
                 if mask[int(min(cy,H-1)), int(min(cx,W-1))]: continue
                 cands.append((cx, cy))
             dets.append((round(tt,3), cands))
-        prev2, prev1 = prev1, f
-    return _select(_link(dets))
+    return _select(_link(dets), fps)
 
 def _link(dets):
     tracks = []
@@ -106,7 +114,7 @@ def _split_check(tr, depth=0):
     a, b = tr[:max(worst,1)], tr[max(worst,1):]
     return _split_check(a, depth+1) + _split_check(b, depth+1)
 
-def _select(tracks):
+def _select(tracks, fps=FPS):
     """Physics filter + merge into single time-sorted point list."""
     kept = []
     for tr in tracks:
@@ -117,10 +125,12 @@ def _select(tracks):
         if max(x.max()-x.min(), y.max()-y.min()) < 50: continue
         kept.extend(_split_check(tr))
     pts = sorted((p for tr in kept for p in tr), key=lambda p: p[0])
-    # dedupe near-simultaneous duplicates (parallel tracks)
+    # dedupe near-simultaneous duplicates (parallel tracks). Window must stay
+    # below the frame interval or real consecutive points get eaten at high
+    # fps; 0.8/fps = the historical 0.04s at 20fps.
     out = []
     for p in pts:
-        if out and p[0]-out[-1][0] < 0.04 and np.hypot(p[1]-out[-1][1], p[2]-out[-1][2]) < 40:
+        if out and p[0]-out[-1][0] < 0.8/fps and np.hypot(p[1]-out[-1][1], p[2]-out[-1][2]) < 40:
             continue
         out.append([round(p[0],3), float(p[1]), float(p[2]), 1.0])
     return out

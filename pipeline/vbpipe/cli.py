@@ -3,9 +3,28 @@
   vbpipe full  VIDEO -o OUT   # GPU: + track, embed, cluster
   vbpipe plays VIDEO -o OUT   # GPU: + ball, contacts, play types (needs full's game.json)
 """
-import argparse, json, os, sys
+import argparse, json, os, subprocess, sys
 from .config import Config
 from . import rally as R
+
+def _resolve_ball_fps(arg, video):
+    """'auto' -> source fps capped at 60 (so 60fps footage is fully used and
+    high-speed clips don't explode runtime); a number -> that number."""
+    if arg != "auto":
+        return float(arg)
+    try:
+        out = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "v:0",
+             "-show_entries", "stream=r_frame_rate", "-of", "csv=p=0", video],
+            capture_output=True, text=True).stdout.strip()
+        num, den = out.split("/")
+        src = float(num) / float(den)
+    except Exception:
+        print("[ball] WARNING: could not probe source fps, using legacy 20")
+        return 20.0
+    fps = min(src, 60.0)
+    print(f"[ball] source {src:.2f} fps -> sampling at {fps:g} fps")
+    return fps
 
 def main():
     ap = argparse.ArgumentParser(prog="vbpipe")
@@ -25,6 +44,11 @@ def main():
                     help="detect the ball at legacy 720p/imgsz1088 (old models)")
     ap.add_argument("--ball-conf", type=float, default=0.25,
                     help="ball detection confidence (0.25 tuned for the hi-res model)")
+    ap.add_argument("--ball-fps", default="auto",
+                    help="ball-stage sampling fps: 'auto' = source fps capped at 60 "
+                         "(the density lever — 60fps footage triples the detection "
+                         "budget vs the legacy 20); or a number, e.g. 20 for the "
+                         "exact historical behavior")
     ap.add_argument("--court", default=None,
                     help="court_config.json from the app's Camera setup page")
     a = ap.parse_args()
@@ -77,21 +101,23 @@ def main():
     print(f"[phase] {ng} game rallies, {len(game['rallies'])-ng} warmup/skipped")
     from .plays import find_contacts, attribute, classify
     from .annotate import render_rally
+    ball_fps = _resolve_ball_fps(a.ball_fps, a.video)
     if a.ball_model:
         from .balltrain import detect_all
         from ultralytics import YOLO
         print(f"[ball] trained detector: {a.ball_model} "
-              f"({'1080p/imgsz1920' if a.ball_hires else '720p/imgsz1088'}, conf={a.ball_conf})")
+              f"({'1080p/imgsz1920' if a.ball_hires else '720p/imgsz1088'}, "
+              f"conf={a.ball_conf}, fps={ball_fps:g})")
         ball = detect_all(YOLO(a.ball_model), a.video, game["rallies"],
-                          hi_res=a.ball_hires, conf=a.ball_conf)
+                          fps=ball_fps, hi_res=a.ball_hires, conf=a.ball_conf)
     else:
         from .ballcv import detect_rally
-        print("[ball] motion-based ball detection (CPU)...")
+        print(f"[ball] motion-based ball detection (CPU, fps={ball_fps:g})...")
         ball = []
         for ri, r in enumerate(game["rallies"]):
             if r.get("phase") == "warmup":
                 ball.append([]); continue
-            pts = detect_rally(a.video, r, game["tracklets"], ri)
+            pts = detect_rally(a.video, r, game["tracklets"], ri, fps=ball_fps)
             print(f"  rally {ri}: {len(pts)} ball pts")
             ball.append(pts)
     print("[plays] contacts + attribution + typing...")

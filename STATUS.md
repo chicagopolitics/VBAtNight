@@ -1,6 +1,100 @@
 # Balltime replacement — project status
 
-_Updated 2026-07-22 (session 5)_
+_Updated 2026-07-22 (session 6)_
+
+## Done in session 6 (PLAN-75 §0 + §1: joint metric, serve-anchored typing)
+- **PLAN-75.md** (repo root): roadmap to "ML parses ≥75% of touches, Ken
+  fixes the rest" + stats fixes. §0/§1 done; §2–4 queued. Capture decision:
+  Ken switches all future recordings to **1080p60** (footage was 30fps —
+  detection density is the bottleneck; 60fps doubles it). ballcv thresholds
+  need an fps-awareness pass BEFORE processing 60fps footage (not done yet).
+- **eval_corrections.py: JOINT PARSE headline metric** — % of ground-truth
+  touches captured AND family-typed (dig≈receive) AND attributed to the
+  right player, denominator includes detector-missed rallies. Accepts
+  multiple corr/game pairs → per-game + OVERALL. Baseline on game2's
+  pre-gen-3 output: **2%** (funnel 49% captured × 39% typed × 12% player).
+  This is the number to move; contact F1 alone flattered progress.
+- **plays.py classify(): serve anchor** — contacts[0] labeled serve only if
+  the next contact is on the OTHER side (serves must cross). 37→39% exact
+  type accuracy on game2 corrections; receive→serve confusions 12→2.
+  Resync anchors (resync_at / max_touch_gap / serve_gate params) implemented
+  but DEFAULT OFF: at contacts P51% every combination scored WORSE (spurious
+  contacts poison the counters; real attacks 25→7). Typing is
+  detection-limited — matches the session-3 diagnosis (true serve detected
+  in only 16/34 rallies; rally-start offset can't identify missed serves,
+  spurious contacts sit right where the serve should be).
+- **pipeline/typer_sweep.py** (new): one command re-tests all anchor combos
+  against corrections. Run it after every ball-model generation; flip
+  anchors on when they start winning. Verdict line says if defaults lose.
+- vbpipe.zip rebuilt (plays.py + eval_corrections.py) — **RE-UPLOAD to
+  Drive/balltime**. cli.py unchanged (classify defaults compatible).
+  Synthetic sanity tests pass (normal/missed-serve/block/resync/empty).
+- NOTE: A/B ran on the game2 bundle from 07-21 (P51/R57, pre-gen-3). When
+  the gen-3 reprocessed game.json exists, re-run:
+  `python -m vbpipe.eval_corrections corrections_game2.json game.json`
+  and `python typer_sweep.py corrections_game2.json game.json`.
+
+## Done in session 6 (server Drive import fixes — vbatnight.com droplet)
+- Drive OAuth on the server: refresh token was dead (invalid_grant) —
+  consent screen in "Testing" status expires refresh tokens after 7 DAYS.
+  Fix: publish the consent screen to production, re-mint via `npm run
+  drive-auth` + SSH tunnel (`ssh -L <port>:127.0.0.1:<port>` because the
+  loopback listener runs server-side). Token now long-lived.
+- Import OOM: fetch-based `downloadFile` buffered the whole multi-GB bundle
+  in process memory (anon-rss 3.6GB -> kernel OOM-killed next-server on the
+  4GB droplet; browser saw empty 502 -> "Unexpected end of JSON input").
+  lib/drive.js downloadFile rewritten on node:https + stream pipeline
+  (true backpressure, manual redirect handling). Deploy = push to GitHub,
+  `git pull` + `npm run build` + `systemctl restart vbatnight` on the box.
+- Ops notes: OOM-killed imports skip the route's cleanup — clear stale
+  `/tmp/btimport-*` dirs after crashes. If /tmp is tmpfs, set
+  `Environment=TMPDIR=/opt/vbatnight/tmp` in vbatnight.service (bundles
+  don't belong in RAM). Consider a swapfile on the droplet.
+
+## Done in session 6 (fps-aware ball stage — the 60fps unlock)
+- **Discovery: the whole ball stage resampled to 20 fps** regardless of
+  source (`detect_all(fps=20.0)` default, ballcv `FPS=20`, all via ffmpeg
+  `fps=` filter). The historical "median 3.7 det/s" bottleneck had a
+  20-samples/s ceiling built in; 60fps recordings would have gained ZERO.
+- cli: `--ball-fps auto` (default) = source fps capped at 60 (ffprobe), or a
+  number (`--ball-fps 20` = exact legacy behavior). Passed to both ball
+  paths. Old 30fps videos now auto-sample at 30 (a free density bump on
+  reprocess).
+- ballcv.detect_rally(fps=): frame-differencing keeps a ~50ms baseline via a
+  stride (at 16ms spacing a slow ball overlaps itself and vanishes from
+  consecutive diffs); candidates still emitted at full fps. _select dedupe
+  window 0.04s → 0.8/fps (at 60fps the old constant ATE real consecutive
+  points). _link/physics filters were already time-based.
+- plays.find_contacts: velocity window now spans ≥2 points AND ≥0.1s
+  (time-floored). At 33ms baselines pixel jitter amplifies into velocity
+  noise — synthetic 60fps test: old ±2-index fired 5 false contacts on
+  1.5px jitter, new fires exactly the true one.
+- **Verified**: fps=20 bit-identical to pre-edit code on real footage
+  (example video rallies 9+18) AND on all 46 game2 ball arrays (342
+  contacts). At fps=30 on the SAME 30fps example video: density 1.5→6.9 and
+  0.8→5.4 det/s (supra-linear: more frames → more arcs survive the ≥5-pt/
+  0.25s physics filters); rally 18 contacts 2→6 of 10 true touches.
+- vbpipe.zip rebuilt (plays/ballcv/cli) — **RE-UPLOAD to Drive/balltime**.
+  ball_gen2 mining unaffected (defaults preserved). Trained-model path at
+  60fps still needs a GPU sanity run (Colab) — expect ~3x ball-stage time
+  vs 20fps.
+- **cca-one.mp4 verified**: 1920x1080 HEVC, true 60 fps, 17.4 min, in the
+  project folder. courts_config.json (v2, per_video key "cca-one" — matches
+  the stem the notebook looks up) validated by overlaying its geometry on an
+  extracted frame: net_base x aligns with the far-corner midpoint to <1%,
+  post base sits on the near sideline, court_corners at frame edges where
+  the court is cropped (left baseline off-frame, as expected). Pipeline
+  consumes playing_area/net_base/net_top only (attack_lines/court_corners
+  are app-side). Ready for Colab once video + rebuilt vbpipe.zip are in
+  Drive/balltime; the run should print "[ball] source 60.00 fps ->
+  sampling at 60".
+- **2 new games incoming (Ken)**: side-angle (recommended position!),
+  1080p60, all-new players, court edges cropped — LEFT-side serves
+  off-frame, right-side in frame. Before processing: new-camera calibration
+  (court_poly + net line re-click) and expect left-serving rallies to need
+  their serve added in review; the serve gate won't force-label the first
+  seen touch. Eval prediction to check: right-serving rallies should parse
+  measurably better than left-serving ones.
 
 ## Done in session 5 (durable player identity across games)
 - **Problem**: identities were per-game and stats deduped by NAME string, so two
