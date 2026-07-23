@@ -125,6 +125,11 @@ export default function Review({ rallies, idents, plays, video }) {
     if (j >= 0 && j < visible.length) { setSel(visible[j].id); setEditing(null); }
   }
   useEffect(() => { setFull(false); }, [sel]);   // new rally -> back to window scrubber
+  // focus the editor container when it opens (once — not on every re-render,
+  // so the dropdowns keep focus while being used)
+  useEffect(() => {
+    if (editing != null) document.querySelector(".chip-edit")?.focus();
+  }, [editing]);
   useEffect(() => {
     const h = e => {
       if (["INPUT", "SELECT", "TEXTAREA", "VIDEO"].includes(e.target.tagName)) return;
@@ -353,13 +358,16 @@ export default function Review({ rallies, idents, plays, video }) {
                 // (keeps the playhead-sync pulse so you can see the touch land
                 // while its editor is open)
                 <div key={p.id} className={"chip-edit" + (live ? " live" : "")}
+                  tabIndex={-1}   // focusable container: D-to-delete works right
+                                  // after opening, without stealing keys from the
+                                  // dropdowns (type-ahead inside selects is safe)
                   onKeyDown={e => {   // Enter/Esc closes the editor, freeing the A hotkey
                     if (e.key === "Enter" || e.key === "Escape") { e.target.blur(); setEditing(null); }
-                    // D deletes the touch even while focus is in a dropdown
-                    // (costs select type-ahead for "d" — deleting wins)
-                    if (e.key === "d" || e.key === "D") { e.preventDefault(); remove(p.id); }
+                    if ((e.key === "d" || e.key === "D") && e.target.tagName !== "SELECT") {
+                      e.preventDefault(); remove(p.id);
+                    }
                   }}>
-                  <select autoFocus value={p.play_type || ""}
+                  <select value={p.play_type || ""}
                     onChange={e => save(p.id, { play_type: e.target.value })}>
                     <option value="" disabled>type…</option>
                     {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
