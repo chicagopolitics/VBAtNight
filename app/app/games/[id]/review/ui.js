@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { deriveGrades, teamMap, GRADE_OPTIONS, GOOD, BAD } from "@/lib/grades";
 
 const TYPES = ["serve", "receive", "dig", "set", "attack", "block"];
@@ -424,7 +424,8 @@ export default function Review({ rallies, idents, plays, video }) {
                   (full ? 0 : Math.max(0, rally.start_s - clipStart(rally) - 2));
                 const g = grades.get(p.id);
                 return (
-                  <div key={p.id}
+                  <Fragment key={p.id}>
+                  <div
                     className={"touch" + (foc ? " foc" : "") + (live ? " live" : "") +
                       (p.corrected ? " corrected" : "") +
                       (!p.corrected && p.cluster_id == null ? " noattr" : "")}
@@ -466,38 +467,39 @@ export default function Review({ rallies, idents, plays, video }) {
                       </span>
                     )}
                   </div>
+                  {foc && picker && (
+                    <div className="picker">
+                      <input ref={pinput} placeholder="type a name…" autoComplete="off"
+                        value={picker.filter}
+                        onChange={e => setPicker(pp => ({ ...pp, filter: e.target.value, sel: 0 }))}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") {
+                            const pick = pickList[picker.sel];
+                            if (pick && focusedId != null) save(focusedId, { cluster_id: pick.cluster_id });
+                            setPicker(null); e.preventDefault();
+                          } else if (e.key === "Escape") { setPicker(null); e.preventDefault(); }
+                          else if (e.key === "ArrowDown") { setPicker(pp => ({ ...pp, sel: Math.min(pp.sel + 1, pickList.length - 1) })); e.preventDefault(); }
+                          else if (e.key === "ArrowUp") { setPicker(pp => ({ ...pp, sel: Math.max(pp.sel - 1, 0) })); e.preventDefault(); }
+                        }} />
+                      <div className="picklist">
+                        <div className={"pick" + (picker.sel === -1 ? " sel" : "")}
+                          onClick={() => { if (focusedId != null) save(focusedId, { cluster_id: null }); setPicker(null); }}>
+                          unknown player
+                        </div>
+                        {pickList.map((i, k) => (
+                          <div key={i.cluster_id} className={"pick" + (k === picker.sel ? " sel" : "")}
+                            onClick={() => { if (focusedId != null) save(focusedId, { cluster_id: i.cluster_id }); setPicker(null); }}>
+                            {i.name || `P${i.cluster_id}`}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  </Fragment>
                 );
               })}
               {rallyPlays.length === 0 && <p className="muted">No touches — press A to add one from the video.</p>}
             </div>
-
-            {picker && (
-              <div className="picker">
-                <input ref={pinput} placeholder="type a name…" autoComplete="off"
-                  value={picker.filter}
-                  onChange={e => setPicker(p => ({ ...p, filter: e.target.value, sel: 0 }))}
-                  onKeyDown={e => {
-                    if (e.key === "Enter") {
-                      const pick = pickList[picker.sel];
-                      if (pick && focusedId != null) save(focusedId, { cluster_id: pick.cluster_id });
-                      setPicker(null); e.preventDefault();
-                    } else if (e.key === "Escape") { setPicker(null); e.preventDefault(); }
-                    else if (e.key === "ArrowDown") { setPicker(p => ({ ...p, sel: Math.min(p.sel + 1, pickList.length - 1) })); e.preventDefault(); }
-                    else if (e.key === "ArrowUp") { setPicker(p => ({ ...p, sel: Math.max(p.sel - 1, 0) })); e.preventDefault(); }
-                  }} />
-                <div className="picklist">
-                  <div className={"pick" + (picker.sel === -1 ? " sel" : "")}
-                    onClick={() => { if (focusedId != null) save(focusedId, { cluster_id: null }); setPicker(null); }}>
-                    unknown player
-                  </div>
-                  {pickList.map((i, k) => (
-                    <div key={i.cluster_id} className={"pick" + (k === picker.sel ? " sel" : "")}
-                      onClick={() => { if (focusedId != null) save(focusedId, { cluster_id: i.cluster_id }); setPicker(null); }}>
-                      {i.name || `P${i.cluster_id}`}
-                    </div>
-                  ))}
-                </div>
-              </div>
             )}
           </div>
         </div>
