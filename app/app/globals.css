@@ -44,9 +44,35 @@ button.danger { background: #f2dbde; border-color: #dba8b0; color: #96475a; }
   padding: 5px 10px; background: #eaf1fa; border: 1px solid #6b8fc2; border-radius: 16px; }
 .chip-edit .t { color: #79808f; font-size: 11px; }
 .muted { color: #79808f; font-size: 13px; }
-video { width: 100%; max-width: 720px; border-radius: 8px; background: #000; }
-.playrow { display: grid; grid-template-columns: 1fr 340px; gap: 16px; }
+video { width: 100%; max-width: 900px; border-radius: 8px; background: #000; }
+.playrow { display: grid; grid-template-columns: 1fr 280px; gap: 16px; }
 @media (max-width: 900px) { .playrow { grid-template-columns: 1fr; } }
+
+/* keyboard-first review: touch rows, focus, player picker */
+.keyhint { font-size: 12px; margin: 0 0 10px; }
+.keyhint b { color: #4a5566; font-weight: 600; }
+.touchlist { display: flex; flex-direction: column; gap: 5px; }
+.touch { display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+  border: 1px solid #ccd4df; border-radius: 999px; background: #f4f5f8;
+  font-size: 13px; cursor: pointer; }
+.touch:hover { border-color: #aeb9cf; }
+.touch.corrected { border-color: #8fbf9a; }
+.touch.noattr { border-color: #dba8b0; border-style: dashed; }
+.touch.live { background: #fdf3dc; }
+.touch.foc { border: 2px solid #6b8fc2; background: #eaf1fa; padding: 5px 9px; }
+.touch .ty { font-weight: 500; text-transform: capitalize; }
+.touch .pl { color: #5f6675; }
+.touch .t { color: #79808f; font-size: 11px; margin-left: auto; }
+.touch .focctl { display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; }
+.touch .focctl select { font-size: 12px; padding: 1px 4px; }
+.picker { margin-top: 8px; padding: 8px; border: 1px solid #6b8fc2;
+  border-radius: 8px; background: #eaf1fa; }
+.picker input { width: 100%; margin-bottom: 6px; }
+.picklist { display: flex; flex-direction: column; gap: 2px; }
+.pick { padding: 4px 8px; border-radius: 5px; font-size: 13px; cursor: pointer;
+  border: 1px solid transparent; }
+.pick:hover { background: #dbe6f5; }
+.pick.sel { background: #fff; border-color: #6b8fc2; }
 .grid-clips { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; }
 .grid-clips video { width: 100%; }
 table { border-collapse: collapse; width: 100%; font-size: 14px; }
