@@ -500,7 +500,6 @@ export default function Review({ rallies, idents, plays, video }) {
               })}
               {rallyPlays.length === 0 && <p className="muted">No touches — press A to add one from the video.</p>}
             </div>
-            )}
           </div>
         </div>
       )}
