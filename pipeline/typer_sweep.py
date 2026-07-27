@@ -36,7 +36,7 @@ def main():
     for sg, ra, gp in itertools.product([True, False], [None, 3, 4], [None, 2.2, 3.5]):
         ex, fm, j, gt = run(pairs, sg, ra, gp)
         rows.append((ex, fm, j, gt, sg, ra, gp))
-    rows.sort(reverse=True)
+    rows.sort(key=lambda r: r[:3], reverse=True)   # never compare config cols (None vs num)
     print(f"{'exact':>6} {'family':>7} {'joint':>9}   serve_gate resync_at gap")
     for ex, fm, j, gt, sg, ra, gp in rows:
         print(f"{ex:6.0%} {fm:7.0%} {j:4d}/{gt:<4d}   "

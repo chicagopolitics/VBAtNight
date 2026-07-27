@@ -1,0 +1,5338 @@
+{
+ "game_id": 18,
+ "name": "cca two",
+ "exported_at": "2026-07-24T18:06:56.400Z",
+ "review_stats": {
+  "corrected_or_removed": 465,
+  "outcomes_set": 39,
+  "named_identities": 14
+ },
+ "identities": [
+  {
+   "id": 523,
+   "cluster_id": 1,
+   "name": "Black Sweater",
+   "dismissed": 0,
+   "merged_into": null
+  },
+  {
+   "id": 524,
+   "cluster_id": 9,
+   "name": null,
+   "dismissed": 1,
+   "merged_into": null
+  },
+  {
+   "id": 525,
+   "cluster_id": 17,
+   "name": "Junyan",
+   "dismissed": 0,
+   "merged_into": null
+  },
+  {
+   "id": 526,
+   "cluster_id": 13,
+   "name": "red shirt black shorts",
+   "dismissed": 0,
+   "merged_into": null
+  },
+  {
+   "id": 527,
+   "cluster_id": 5,
+   "name": "White Hat Black Shorts",
+   "dismissed": 0,
+   "merged_into": null
+  },
+  {
+   "id": 528,
+   "cluster_id": 0,
+   "name": "Sasha",
+   "dismissed": 0,
+   "merged_into": null
+  },
+  {
+   "id": 529,
+   "cluster_id": 22,
+   "name": "red shirt black shorts",
+   "dismissed": 0,
+   "merged_into": 526
+  },
+  {
+   "id": 530,
+   "cluster_id": 4,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 532
+  },
+  {
+   "id": 531,
+   "cluster_id": 6,
+   "name": "white hat white shorts",
+   "dismissed": 0,
+   "merged_into": null
+  },
+  {
+   "id": 532,
+   "cluster_id": 20,
+   "name": "long shirt",
+   "dismissed": 0,
+   "merged_into": null
+  },
+  {
+   "id": 533,
+   "cluster_id": 12,
+   "name": "Paige",
+   "dismissed": 0,
+   "merged_into": null
+  },
+  {
+   "id": 534,
+   "cluster_id": 2,
+   "name": "Brock",
+   "dismissed": 0,
+   "merged_into": null
+  },
+  {
+   "id": 535,
+   "cluster_id": 8,
+   "name": "blue shirt black shorts",
+   "dismissed": 0,
+   "merged_into": null
+  },
+  {
+   "id": 536,
+   "cluster_id": 3,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 539
+  },
+  {
+   "id": 537,
+   "cluster_id": 18,
+   "name": "Ken",
+   "dismissed": 0,
+   "merged_into": null
+  },
+  {
+   "id": 538,
+   "cluster_id": 10,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 533
+  },
+  {
+   "id": 539,
+   "cluster_id": 24,
+   "name": "Haley",
+   "dismissed": 0,
+   "merged_into": null
+  },
+  {
+   "id": 540,
+   "cluster_id": 14,
+   "name": null,
+   "dismissed": 1,
+   "merged_into": null
+  },
+  {
+   "id": 541,
+   "cluster_id": 7,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 528
+  },
+  {
+   "id": 542,
+   "cluster_id": 19,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 531
+  },
+  {
+   "id": 543,
+   "cluster_id": 26,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 533
+  },
+  {
+   "id": 544,
+   "cluster_id": 39,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 537
+  },
+  {
+   "id": 545,
+   "cluster_id": 16,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 533
+  },
+  {
+   "id": 546,
+   "cluster_id": 32,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 527
+  },
+  {
+   "id": 547,
+   "cluster_id": 41,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 533
+  },
+  {
+   "id": 548,
+   "cluster_id": 25,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 537
+  },
+  {
+   "id": 549,
+   "cluster_id": 33,
+   "name": null,
+   "dismissed": 1,
+   "merged_into": null
+  },
+  {
+   "id": 550,
+   "cluster_id": 40,
+   "name": null,
+   "dismissed": 1,
+   "merged_into": null
+  },
+  {
+   "id": 551,
+   "cluster_id": 15,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 528
+  },
+  {
+   "id": 552,
+   "cluster_id": 23,
+   "name": null,
+   "dismissed": 1,
+   "merged_into": null
+  },
+  {
+   "id": 553,
+   "cluster_id": 11,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 537
+  },
+  {
+   "id": 554,
+   "cluster_id": 29,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 525
+  },
+  {
+   "id": 555,
+   "cluster_id": 30,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 534
+  },
+  {
+   "id": 556,
+   "cluster_id": 34,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 533
+  },
+  {
+   "id": 557,
+   "cluster_id": 21,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 533
+  },
+  {
+   "id": 558,
+   "cluster_id": 27,
+   "name": null,
+   "dismissed": 1,
+   "merged_into": null
+  },
+  {
+   "id": 559,
+   "cluster_id": 28,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 535
+  },
+  {
+   "id": 560,
+   "cluster_id": 37,
+   "name": null,
+   "dismissed": 1,
+   "merged_into": null
+  },
+  {
+   "id": 561,
+   "cluster_id": 38,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 531
+  },
+  {
+   "id": 562,
+   "cluster_id": 31,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 528
+  },
+  {
+   "id": 563,
+   "cluster_id": 35,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 532
+  },
+  {
+   "id": 564,
+   "cluster_id": 36,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 533
+  },
+  {
+   "id": 565,
+   "cluster_id": 42,
+   "name": "White Hat Black Shorts",
+   "dismissed": 0,
+   "merged_into": 527
+  },
+  {
+   "id": 566,
+   "cluster_id": 43,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 535
+  },
+  {
+   "id": 567,
+   "cluster_id": 44,
+   "name": null,
+   "dismissed": 0,
+   "merged_into": 535
+  },
+  {
+   "id": 568,
+   "cluster_id": 45,
+   "name": null,
+   "dismissed": 1,
+   "merged_into": null
+  },
+  {
+   "id": 569,
+   "cluster_id": 46,
+   "name": null,
+   "dismissed": 1,
+   "merged_into": null
+  },
+  {
+   "id": 570,
+   "cluster_id": 47,
+   "name": null,
+   "dismissed": 1,
+   "merged_into": null
+  }
+ ],
+ "rallies": [
+  {
+   "idx": -1,
+   "start": 249.6,
+   "end": 255.7,
+   "phase": "game",
+   "outcome": {
+    "type": "kill",
+    "cluster": 5
+   },
+   "plays": [
+    {
+     "t": 249.6,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 250.8,
+     "x": null,
+     "y": null,
+     "play_type": "receive",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 252.4,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 253.1,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 5,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": []
+  },
+  {
+   "idx": -1,
+   "start": 265.2,
+   "end": 271.3,
+   "phase": "game",
+   "outcome": {
+    "type": "kill",
+    "cluster": 18
+   },
+   "plays": [
+    {
+     "t": 265.1,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 266.4,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 268.1,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 269,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": []
+  },
+  {
+   "idx": -1,
+   "start": 290.4,
+   "end": 294.3,
+   "phase": "game",
+   "outcome": {
+    "type": "ace",
+    "cluster": 0
+   },
+   "plays": [
+    {
+     "t": 290.4,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": []
+  },
+  {
+   "idx": -1,
+   "start": 310.8,
+   "end": 312.7,
+   "phase": "game",
+   "outcome": {
+    "type": "ace",
+    "cluster": 0
+   },
+   "plays": [
+    {
+     "t": 310.8,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": []
+  },
+  {
+   "idx": -1,
+   "start": 407.2,
+   "end": 415.4,
+   "phase": "game",
+   "outcome": {
+    "type": "kill",
+    "cluster": 2
+   },
+   "plays": [
+    {
+     "t": 407.2,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 20,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 408.3,
+     "x": null,
+     "y": null,
+     "play_type": "receive",
+     "cluster_id": 17,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 409.8,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 411.3,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 405.2,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": -1,
+   "start": 579.6,
+   "end": 582.3,
+   "phase": "game",
+   "outcome": {
+    "type": "service_error",
+    "cluster": 18
+   },
+   "plays": [
+    {
+     "t": 577.6,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": []
+  },
+  {
+   "idx": -1,
+   "start": 629.5,
+   "end": 632.3,
+   "phase": "game",
+   "outcome": {
+    "type": "ace",
+    "cluster": 2
+   },
+   "plays": [
+    {
+     "t": 629.4,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": []
+  },
+  {
+   "idx": -1,
+   "start": 924,
+   "end": 928.7,
+   "phase": "game",
+   "outcome": {
+    "type": "attack_error",
+    "cluster": 18
+   },
+   "plays": [
+    {
+     "t": 924,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 925.5,
+     "x": null,
+     "y": null,
+     "play_type": "receive",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 927,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 928.1,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": []
+  },
+  {
+   "idx": 0,
+   "start": 2,
+   "end": 19,
+   "phase": "game",
+   "outcome": {
+    "type": "kill",
+    "cluster": 0
+   },
+   "plays": [
+    {
+     "t": 1.8,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 13,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 2.88,
+     "x": 17.56049092610677,
+     "y": 314.02482096354163,
+     "play_type": "receive",
+     "cluster_id": 18,
+     "tracklet_id": 4789,
+     "corrected": 1
+    },
+    {
+     "t": 4.4,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 5.9,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 6.8,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 8.9,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 10.3,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 11.25,
+     "x": 17.245633443196613,
+     "y": 313.9453125,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4787,
+     "corrected": 0
+    },
+    {
+     "t": 12.3,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 5,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 14.5,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 16.1,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 17.5,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 2.5,
+     "x": 17.577560424804688,
+     "y": 314.36783854166663,
+     "play_type": "receive",
+     "cluster_id": 2,
+     "tracklet_id": 4789,
+     "corrected": 1
+    },
+    {
+     "t": 3.47,
+     "x": 17.504213968912758,
+     "y": 314.1351318359375,
+     "play_type": "attack",
+     "cluster_id": 2,
+     "tracklet_id": 4789,
+     "corrected": 1
+    },
+    {
+     "t": 4.03,
+     "x": 17.370643615722656,
+     "y": 313.89994303385413,
+     "play_type": "attack",
+     "cluster_id": 2,
+     "tracklet_id": 4789,
+     "corrected": 1
+    },
+    {
+     "t": 4.88,
+     "x": 17.44685618082682,
+     "y": 313.7861328125,
+     "play_type": "attack",
+     "cluster_id": 2,
+     "tracklet_id": 4789,
+     "corrected": 1
+    },
+    {
+     "t": 7.5,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 5,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 8.15,
+     "x": 17.452386220296223,
+     "y": 314.06728108723956,
+     "play_type": "attack",
+     "cluster_id": 18,
+     "tracklet_id": 4799,
+     "corrected": 1
+    },
+    {
+     "t": 10.62,
+     "x": 17.40513483683268,
+     "y": 314.2993977864583,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4787,
+     "corrected": 1
+    },
+    {
+     "t": 13.55,
+     "x": 17.331700642903645,
+     "y": 313.83095296223956,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4787,
+     "corrected": 1
+    },
+    {
+     "t": 14.1,
+     "x": 17.56396230061849,
+     "y": 314.49100748697913,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4787,
+     "corrected": 1
+    },
+    {
+     "t": 14.65,
+     "x": 17.611717224121094,
+     "y": 314.0402425130208,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4787,
+     "corrected": 1
+    },
+    {
+     "t": 15.88,
+     "x": 17.057576497395832,
+     "y": 313.77130126953125,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4787,
+     "corrected": 1
+    },
+    {
+     "t": 16.55,
+     "x": 17.23788579305013,
+     "y": 314.08306884765625,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4787,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 1,
+   "start": 24,
+   "end": 31,
+   "phase": "skipped",
+   "outcome": null,
+   "plays": [
+    {
+     "t": 26.15,
+     "x": 17.32406234741211,
+     "y": 314.17301432291663,
+     "play_type": "receive",
+     "cluster_id": 2,
+     "tracklet_id": 4822,
+     "corrected": 0
+    },
+    {
+     "t": 26.6,
+     "x": 17.406428019205727,
+     "y": 314.2213948567708,
+     "play_type": "set",
+     "cluster_id": 2,
+     "tracklet_id": 4822,
+     "corrected": 0
+    },
+    {
+     "t": 27.17,
+     "x": 17.524590810139973,
+     "y": 314.4224446614583,
+     "play_type": "attack",
+     "cluster_id": 2,
+     "tracklet_id": 4822,
+     "corrected": 0
+    },
+    {
+     "t": 27.57,
+     "x": 17.483871459960938,
+     "y": 314.146240234375,
+     "play_type": "attack",
+     "cluster_id": 2,
+     "tracklet_id": 4822,
+     "corrected": 0
+    },
+    {
+     "t": 28.4,
+     "x": 17.257530212402344,
+     "y": 313.98819986979163,
+     "play_type": "attack",
+     "cluster_id": 2,
+     "tracklet_id": 4822,
+     "corrected": 0
+    }
+   ],
+   "removed_plays": []
+  },
+  {
+   "idx": 2,
+   "start": 39,
+   "end": 47,
+   "phase": "game",
+   "outcome": {
+    "type": "kill",
+    "cluster": 17
+   },
+   "plays": [
+    {
+     "t": 38.4,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": null,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 39.25,
+     "x": 17.341429392496742,
+     "y": 314.2855224609375,
+     "play_type": "receive",
+     "cluster_id": 5,
+     "tracklet_id": 4833,
+     "corrected": 1
+    },
+    {
+     "t": 40.7,
+     "x": 17.514561971028645,
+     "y": 313.9250081380208,
+     "play_type": "set",
+     "cluster_id": 6,
+     "tracklet_id": 4833,
+     "corrected": 1
+    },
+    {
+     "t": 42.2,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 43,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 44.5,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 46,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 39.6,
+     "x": 17.504301706949867,
+     "y": 314.3695882161458,
+     "play_type": "set",
+     "cluster_id": null,
+     "tracklet_id": 4833,
+     "corrected": 1
+    },
+    {
+     "t": 39.95,
+     "x": 887.4861653645833,
+     "y": 175.18434651692706,
+     "play_type": "receive",
+     "cluster_id": 13,
+     "tracklet_id": 4836,
+     "corrected": 1
+    },
+    {
+     "t": 40.33,
+     "x": 17.543109893798828,
+     "y": 314.11063639322913,
+     "play_type": "receive",
+     "cluster_id": null,
+     "tracklet_id": 4833,
+     "corrected": 1
+    },
+    {
+     "t": 42.52,
+     "x": 17.181237538655598,
+     "y": 314.25830078125,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4833,
+     "corrected": 1
+    },
+    {
+     "t": 43.37,
+     "x": 17.366109212239582,
+     "y": 313.9378255208333,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4838,
+     "corrected": 1
+    },
+    {
+     "t": 44.7,
+     "x": 17.399836222330727,
+     "y": 314.0988566080729,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4838,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 3,
+   "start": 55,
+   "end": 59,
+   "phase": "skipped",
+   "outcome": null,
+   "plays": [],
+   "removed_plays": []
+  },
+  {
+   "idx": 4,
+   "start": 65,
+   "end": 87,
+   "phase": "game",
+   "outcome": {
+    "type": "kill",
+    "cluster": 24
+   },
+   "plays": [
+    {
+     "t": 63.3,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": null,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 64.5,
+     "x": null,
+     "y": null,
+     "play_type": "receive",
+     "cluster_id": 13,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 66.05,
+     "x": 17.519981384277344,
+     "y": 314.249755859375,
+     "play_type": "set",
+     "cluster_id": 8,
+     "tracklet_id": 4857,
+     "corrected": 1
+    },
+    {
+     "t": 67.6,
+     "x": 17.304275512695312,
+     "y": 314.63149007161456,
+     "play_type": "attack",
+     "cluster_id": 6,
+     "tracklet_id": 4857,
+     "corrected": 1
+    },
+    {
+     "t": 68.5,
+     "x": 17.34274927775065,
+     "y": 314.3857421875,
+     "play_type": "dig",
+     "cluster_id": 12,
+     "tracklet_id": 4860,
+     "corrected": 1
+    },
+    {
+     "t": 70.32,
+     "x": 17.15197499593099,
+     "y": 314.0783284505208,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": 4860,
+     "corrected": 1
+    },
+    {
+     "t": 71.7,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 72.3,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 13,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 75.72,
+     "x": 17.36045201619466,
+     "y": 314.29874674479163,
+     "play_type": "attack",
+     "cluster_id": 13,
+     "tracklet_id": 4860,
+     "corrected": 1
+    },
+    {
+     "t": 77.8,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 12,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 79.2,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 80.4,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 81.1,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 5,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 83.1,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 84.6,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 65.48,
+     "x": 17.5670903523763,
+     "y": 314.2862548828125,
+     "play_type": "receive",
+     "cluster_id": null,
+     "tracklet_id": 4857,
+     "corrected": 1
+    },
+    {
+     "t": 68.12,
+     "x": 17.478174845377602,
+     "y": 314.6441650390625,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4860,
+     "corrected": 1
+    },
+    {
+     "t": 69.88,
+     "x": 17.19659932454427,
+     "y": 314.41532389322913,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4860,
+     "corrected": 1
+    },
+    {
+     "t": 74.2,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 5,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 76.08,
+     "x": 17.21244939168294,
+     "y": 314.419189453125,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4860,
+     "corrected": 1
+    },
+    {
+     "t": 76.83,
+     "x": 17.37268575032552,
+     "y": 314.07572428385413,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4860,
+     "corrected": 1
+    },
+    {
+     "t": 77.22,
+     "x": 17.310702006022133,
+     "y": 314.07110595703125,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4860,
+     "corrected": 1
+    },
+    {
+     "t": 77.58,
+     "x": 17.35186767578125,
+     "y": 314.37384033203125,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4860,
+     "corrected": 1
+    },
+    {
+     "t": 81.1,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 5,
+   "start": 103,
+   "end": 119.9,
+   "phase": "game",
+   "outcome": {
+    "type": "attack_error",
+    "cluster": 24
+   },
+   "plays": [
+    {
+     "t": 102,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": null,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 103.3,
+     "x": 16.994674682617188,
+     "y": 313.6879679361979,
+     "play_type": "receive",
+     "cluster_id": 13,
+     "tracklet_id": 4868,
+     "corrected": 1
+    },
+    {
+     "t": 104.8,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 105.9,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 8,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 106.65,
+     "x": 17.39775721232096,
+     "y": 313.8519287109375,
+     "play_type": "dig",
+     "cluster_id": 18,
+     "tracklet_id": 4868,
+     "corrected": 1
+    },
+    {
+     "t": 108.4,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 109.8,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 110,
+     "x": null,
+     "y": null,
+     "play_type": "block",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 110.3,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 12,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 112.1,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 113.6,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 114.5,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 115.7,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 117.2,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 103.1,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 106.3,
+     "x": 17.28600819905599,
+     "y": 313.75502522786456,
+     "play_type": "set",
+     "cluster_id": null,
+     "tracklet_id": 4868,
+     "corrected": 1
+    },
+    {
+     "t": 107.28,
+     "x": 17.18969472249349,
+     "y": 313.83622233072913,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4871,
+     "corrected": 1
+    },
+    {
+     "t": 108.52,
+     "x": 17.126391092936196,
+     "y": 313.76776123046875,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4871,
+     "corrected": 1
+    },
+    {
+     "t": 113.5,
+     "x": null,
+     "y": null,
+     "play_type": "block",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 114.45,
+     "x": 17.24944178263346,
+     "y": 313.50712076822913,
+     "play_type": "attack",
+     "cluster_id": 12,
+     "tracklet_id": 4866,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 6,
+   "start": 133,
+   "end": 152,
+   "phase": "game",
+   "outcome": {
+    "type": "kill",
+    "cluster": 0
+   },
+   "plays": [
+    {
+     "t": 133.18,
+     "x": 16.624835968017578,
+     "y": 313.8175048828125,
+     "play_type": "serve",
+     "cluster_id": 8,
+     "tracklet_id": 4878,
+     "corrected": 1
+    },
+    {
+     "t": 134.38,
+     "x": 16.862935384114582,
+     "y": 313.6149495442708,
+     "play_type": "receive",
+     "cluster_id": 18,
+     "tracklet_id": 4877,
+     "corrected": 1
+    },
+    {
+     "t": 136.1,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 136.38,
+     "x": 16.722977956136067,
+     "y": 313.67555745442706,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4877,
+     "corrected": 0
+    },
+    {
+     "t": 137.6,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 138.4,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 8,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 139.7,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 141.13,
+     "x": 16.616312662760414,
+     "y": 313.54833984375,
+     "play_type": "attack",
+     "cluster_id": 6,
+     "tracklet_id": 4877,
+     "corrected": 1
+    },
+    {
+     "t": 142.35,
+     "x": 16.388083140055336,
+     "y": 313.6823323567708,
+     "play_type": "dig",
+     "cluster_id": 12,
+     "tracklet_id": 4877,
+     "corrected": 1
+    },
+    {
+     "t": 143.8,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 145.1,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 145.98,
+     "x": 908.4899088541666,
+     "y": 217.81746419270831,
+     "play_type": "receive",
+     "cluster_id": 13,
+     "tracklet_id": 4881,
+     "corrected": 0
+    },
+    {
+     "t": 147.3,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 147.8,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 12,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 149.3,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 150.8,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 133.55,
+     "x": 16.650811513264973,
+     "y": 313.64945475260413,
+     "play_type": "set",
+     "cluster_id": null,
+     "tracklet_id": 4878,
+     "corrected": 1
+    },
+    {
+     "t": 134.02,
+     "x": 16.805338541666664,
+     "y": 313.5390218098958,
+     "play_type": "attack",
+     "cluster_id": 2,
+     "tracklet_id": 4878,
+     "corrected": 1
+    },
+    {
+     "t": 141.48,
+     "x": 16.583999633789062,
+     "y": 313.6534016927083,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4877,
+     "corrected": 1
+    },
+    {
+     "t": 141.85,
+     "x": 16.68753941853841,
+     "y": 313.61637369791663,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4877,
+     "corrected": 1
+    },
+    {
+     "t": 142.95,
+     "x": 16.508238474527992,
+     "y": 313.827392578125,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4877,
+     "corrected": 1
+    },
+    {
+     "t": 148.6,
+     "x": 16.775779724121094,
+     "y": 313.78456624348956,
+     "play_type": "receive",
+     "cluster_id": null,
+     "tracklet_id": 4877,
+     "corrected": 1
+    },
+    {
+     "t": 149.58,
+     "x": 16.543999989827473,
+     "y": 313.60111490885413,
+     "play_type": "set",
+     "cluster_id": null,
+     "tracklet_id": 4877,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 7,
+   "start": 170,
+   "end": 179,
+   "phase": "game",
+   "outcome": {
+    "type": "service_error",
+    "cluster": 24
+   },
+   "plays": [
+    {
+     "t": 171.4,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": null,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 178.53,
+     "x": 16.695254007975258,
+     "y": 314.0849609375,
+     "play_type": "serve",
+     "cluster_id": null,
+     "tracklet_id": 4894,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 8,
+   "start": 194,
+   "end": 208.7,
+   "phase": "game",
+   "outcome": {
+    "type": "attack_error",
+    "cluster": 5
+   },
+   "plays": [
+    {
+     "t": 194.7,
+     "x": 16.367174784342446,
+     "y": 313.7711181640625,
+     "play_type": "serve",
+     "cluster_id": 6,
+     "tracklet_id": 4902,
+     "corrected": 1
+    },
+    {
+     "t": 196.6,
+     "x": null,
+     "y": null,
+     "play_type": "receive",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 198.1,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 198.25,
+     "x": 16.303400675455727,
+     "y": 313.730712890625,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4902,
+     "corrected": 0
+    },
+    {
+     "t": 198.87,
+     "x": 16.47455851236979,
+     "y": 313.9112141927083,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4902,
+     "corrected": 0
+    },
+    {
+     "t": 199.6,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 12,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 200.43,
+     "x": 16.624544779459633,
+     "y": 313.6502685546875,
+     "play_type": "dig",
+     "cluster_id": 13,
+     "tracklet_id": 4902,
+     "corrected": 1
+    },
+    {
+     "t": 201.97,
+     "x": 16.47893524169922,
+     "y": 313.7167561848958,
+     "play_type": "set",
+     "cluster_id": 20,
+     "tracklet_id": 4902,
+     "corrected": 1
+    },
+    {
+     "t": 203.4,
+     "x": 16.408529917399086,
+     "y": 313.58837890625,
+     "play_type": "attack",
+     "cluster_id": 5,
+     "tracklet_id": 4902,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 194.13,
+     "x": 16.47885258992513,
+     "y": 313.64615885416663,
+     "play_type": "receive",
+     "cluster_id": 17,
+     "tracklet_id": 4902,
+     "corrected": 1
+    },
+    {
+     "t": 195.08,
+     "x": 16.62061309814453,
+     "y": 314.09844970703125,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4902,
+     "corrected": 1
+    },
+    {
+     "t": 195.65,
+     "x": 16.479736328125,
+     "y": 313.89383951822913,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4902,
+     "corrected": 1
+    },
+    {
+     "t": 196.1,
+     "x": 16.65833791097005,
+     "y": 313.35369873046875,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4902,
+     "corrected": 1
+    },
+    {
+     "t": 196.82,
+     "x": 16.44537099202474,
+     "y": 313.6495361328125,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4902,
+     "corrected": 1
+    },
+    {
+     "t": 200.82,
+     "x": 16.487935384114582,
+     "y": 313.7311604817708,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4902,
+     "corrected": 1
+    },
+    {
+     "t": 201.2,
+     "x": 16.08168284098307,
+     "y": 313.582763671875,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4902,
+     "corrected": 1
+    },
+    {
+     "t": 201.57,
+     "x": 16.724082946777344,
+     "y": 313.2917277018229,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4902,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 9,
+   "start": 219,
+   "end": 225.6,
+   "phase": "game",
+   "outcome": {
+    "type": "attack_error",
+    "cluster": 5
+   },
+   "plays": [
+    {
+     "t": 219.3,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": null,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 220.33,
+     "x": 17.20893351236979,
+     "y": 313.89967854817706,
+     "play_type": "receive",
+     "cluster_id": 6,
+     "tracklet_id": 4915,
+     "corrected": 1
+    },
+    {
+     "t": 221.8,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 223.18,
+     "x": 17.194100697835285,
+     "y": 314.8663330078125,
+     "play_type": "attack",
+     "cluster_id": 5,
+     "tracklet_id": 4915,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 220.68,
+     "x": 17.417312622070312,
+     "y": 314.2838948567708,
+     "play_type": "set",
+     "cluster_id": null,
+     "tracklet_id": 4915,
+     "corrected": 1
+    },
+    {
+     "t": 221.1,
+     "x": 17.381722768147785,
+     "y": 314.2752278645833,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4915,
+     "corrected": 1
+    },
+    {
+     "t": 221.58,
+     "x": 17.262189229329426,
+     "y": 313.9516194661458,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4915,
+     "corrected": 1
+    },
+    {
+     "t": 222.28,
+     "x": 17.36054229736328,
+     "y": 314.25467936197913,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4915,
+     "corrected": 1
+    },
+    {
+     "t": 225.78,
+     "x": 830.1998697916666,
+     "y": 125.93136596679688,
+     "play_type": "receive",
+     "cluster_id": 6,
+     "tracklet_id": 4917,
+     "corrected": 1
+    },
+    {
+     "t": 228.27,
+     "x": 17.444539388020832,
+     "y": 314.26904296875,
+     "play_type": "receive",
+     "cluster_id": null,
+     "tracklet_id": 4916,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 10,
+   "start": 236,
+   "end": 238.9,
+   "phase": "game",
+   "outcome": {
+    "type": "service_error",
+    "cluster": 24
+   },
+   "plays": [
+    {
+     "t": 235.5,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": null,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 236.25,
+     "x": 17.379536946614582,
+     "y": 314.0705159505208,
+     "play_type": "receive",
+     "cluster_id": 24,
+     "tracklet_id": 4928,
+     "corrected": 1
+    },
+    {
+     "t": 236.93,
+     "x": 17.357720692952473,
+     "y": 314.03641764322913,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": 4928,
+     "corrected": 1
+    },
+    {
+     "t": 239.18,
+     "x": 17.26976648966471,
+     "y": 314.31193033854163,
+     "play_type": "attack",
+     "cluster_id": 24,
+     "tracklet_id": 4928,
+     "corrected": 1
+    },
+    {
+     "t": 249.83,
+     "x": 17.68683878580729,
+     "y": 314.47123209635413,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4934,
+     "corrected": 1
+    },
+    {
+     "t": 250.22,
+     "x": 17.799886067708332,
+     "y": 315.10026041666663,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4934,
+     "corrected": 1
+    },
+    {
+     "t": 250.62,
+     "x": 17.89734903971354,
+     "y": 314.67960611979163,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4934,
+     "corrected": 1
+    },
+    {
+     "t": 252.02,
+     "x": 17.724665323893227,
+     "y": 314.84767659505206,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": 4934,
+     "corrected": 1
+    },
+    {
+     "t": 265.75,
+     "x": 17.723668416341145,
+     "y": 315.7649943033854,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4934,
+     "corrected": 1
+    },
+    {
+     "t": 266.1,
+     "x": 17.727709452311196,
+     "y": 315.74525960286456,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4934,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 11,
+   "start": 326,
+   "end": 335,
+   "phase": "game",
+   "outcome": {
+    "type": "block",
+    "cluster": 18
+   },
+   "plays": [
+    {
+     "t": 330.4,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 331.2,
+     "x": 19.180461883544922,
+     "y": 314.9656575520833,
+     "play_type": "receive",
+     "cluster_id": 1,
+     "tracklet_id": 4942,
+     "corrected": 1
+    },
+    {
+     "t": 332.4,
+     "x": 19.73856989542643,
+     "y": 314.58854166666663,
+     "play_type": "set",
+     "cluster_id": 13,
+     "tracklet_id": 4942,
+     "corrected": 1
+    },
+    {
+     "t": 333.68,
+     "x": 19.553761800130207,
+     "y": 314.77372233072913,
+     "play_type": "attack",
+     "cluster_id": 5,
+     "tracklet_id": 4942,
+     "corrected": 1
+    },
+    {
+     "t": 333.9,
+     "x": null,
+     "y": null,
+     "play_type": "block",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 326.28,
+     "x": 831.3888346354166,
+     "y": 126.18239339192708,
+     "play_type": "serve",
+     "cluster_id": 5,
+     "tracklet_id": 4939,
+     "corrected": 1
+    },
+    {
+     "t": 326.65,
+     "x": 18.32620366414388,
+     "y": 315.13527425130206,
+     "play_type": "receive",
+     "cluster_id": null,
+     "tracklet_id": 4942,
+     "corrected": 1
+    },
+    {
+     "t": 327.15,
+     "x": 18.365804036458332,
+     "y": 315.2013753255208,
+     "play_type": "set",
+     "cluster_id": null,
+     "tracklet_id": 4942,
+     "corrected": 1
+    },
+    {
+     "t": 327.55,
+     "x": 18.553966522216797,
+     "y": 315.3371378580729,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4942,
+     "corrected": 1
+    },
+    {
+     "t": 328.33,
+     "x": 18.64675521850586,
+     "y": 315.3462931315104,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4942,
+     "corrected": 1
+    },
+    {
+     "t": 329.52,
+     "x": 19.21894327799479,
+     "y": 315.04667154947913,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4942,
+     "corrected": 1
+    },
+    {
+     "t": 330.53,
+     "x": 19.101442972819008,
+     "y": 315.9022013346354,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4942,
+     "corrected": 1
+    },
+    {
+     "t": 331.98,
+     "x": 19.57471720377604,
+     "y": 315.08231608072913,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4942,
+     "corrected": 1
+    },
+    {
+     "t": 334.08,
+     "x": 19.97087860107422,
+     "y": 314.92763264973956,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 4942,
+     "corrected": 1
+    },
+    {
+     "t": 335.65,
+     "x": 20.559549967447914,
+     "y": 314.66790771484375,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4941,
+     "corrected": 1
+    },
+    {
+     "t": 337.3,
+     "x": 19.01666259765625,
+     "y": 315.23063151041663,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 4941,
+     "corrected": 1
+    },
+    {
+     "t": 338.22,
+     "x": 831.164794921875,
+     "y": 126.08729044596353,
+     "play_type": "dig",
+     "cluster_id": 5,
+     "tracklet_id": 4939,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 12,
+   "start": 350,
+   "end": 358.5,
+   "phase": "game",
+   "outcome": {
+    "type": "attack_error",
+    "cluster": 6
+   },
+   "plays": [
+    {
+     "t": 352.3,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 353,
+     "x": null,
+     "y": null,
+     "play_type": "receive",
+     "cluster_id": 8,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 353.55,
+     "x": 19.16940434773763,
+     "y": 315.62353515625,
+     "play_type": "receive",
+     "cluster_id": 24,
+     "tracklet_id": 4949,
+     "corrected": 0
+    },
+    {
+     "t": 355.4,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 5,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 356.63,
+     "x": 18.87571080525716,
+     "y": 315.59816487630206,
+     "play_type": "attack",
+     "cluster_id": 6,
+     "tracklet_id": 4949,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 361.52,
+     "x": 18.994735717773438,
+     "y": 315.5978597005208,
+     "play_type": "attack",
+     "cluster_id": 24,
+     "tracklet_id": 4949,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 13,
+   "start": 370,
+   "end": 378.6,
+   "phase": "game",
+   "outcome": {
+    "type": "service_error",
+    "cluster": 0
+   },
+   "plays": [
+    {
+     "t": 375.5,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 372,
+     "x": 18.632465362548828,
+     "y": 315.22684733072913,
+     "play_type": "receive",
+     "cluster_id": 24,
+     "tracklet_id": 4962,
+     "corrected": 1
+    },
+    {
+     "t": 376.03,
+     "x": 18.814915974934895,
+     "y": 315.65287272135413,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": 4962,
+     "corrected": 1
+    },
+    {
+     "t": 376.92,
+     "x": 18.8006960550944,
+     "y": 315.6424560546875,
+     "play_type": "attack",
+     "cluster_id": 24,
+     "tracklet_id": 4962,
+     "corrected": 1
+    },
+    {
+     "t": 382.3,
+     "x": 830.2957356770833,
+     "y": 126.08873494466145,
+     "play_type": "receive",
+     "cluster_id": 5,
+     "tracklet_id": 4964,
+     "corrected": 1
+    },
+    {
+     "t": 383.78,
+     "x": 830.44677734375,
+     "y": 125.89959716796875,
+     "play_type": "set",
+     "cluster_id": 13,
+     "tracklet_id": 4965,
+     "corrected": 1
+    },
+    {
+     "t": 384.37,
+     "x": 830.479248046875,
+     "y": 125.94321695963541,
+     "play_type": "attack",
+     "cluster_id": 13,
+     "tracklet_id": 4965,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 14,
+   "start": 391,
+   "end": 398.7,
+   "phase": "game",
+   "outcome": {
+    "type": "attack_error",
+    "cluster": 2
+   },
+   "plays": [
+    {
+     "t": 392.8,
+     "x": 18.316757202148438,
+     "y": 315.73675537109375,
+     "play_type": "serve",
+     "cluster_id": 20,
+     "tracklet_id": 4979,
+     "corrected": 1
+    },
+    {
+     "t": 394.05,
+     "x": 18.5167236328125,
+     "y": 315.61222330729163,
+     "play_type": "dig",
+     "cluster_id": 2,
+     "tracklet_id": 4979,
+     "corrected": 1
+    },
+    {
+     "t": 396.1,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 397.4,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 393.65,
+     "x": 18.432544708251953,
+     "y": 315.767333984375,
+     "play_type": "set",
+     "cluster_id": 0,
+     "tracklet_id": 4979,
+     "corrected": 1
+    },
+    {
+     "t": 394.52,
+     "x": 18.526354471842446,
+     "y": 315.5050048828125,
+     "play_type": "attack",
+     "cluster_id": 12,
+     "tracklet_id": 4973,
+     "corrected": 1
+    },
+    {
+     "t": 396.03,
+     "x": 18.292190551757812,
+     "y": 315.580322265625,
+     "play_type": "attack",
+     "cluster_id": 12,
+     "tracklet_id": 4973,
+     "corrected": 1
+    },
+    {
+     "t": 405.78,
+     "x": 830.3779296875,
+     "y": 125.70265706380208,
+     "play_type": "receive",
+     "cluster_id": 13,
+     "tracklet_id": 4976,
+     "corrected": 1
+    },
+    {
+     "t": 406.32,
+     "x": 830.3666178385416,
+     "y": 125.65110270182291,
+     "play_type": "set",
+     "cluster_id": 13,
+     "tracklet_id": 4976,
+     "corrected": 1
+    },
+    {
+     "t": 407,
+     "x": 18.476786295572914,
+     "y": 315.27225748697913,
+     "play_type": "receive",
+     "cluster_id": 12,
+     "tracklet_id": 4973,
+     "corrected": 1
+    },
+    {
+     "t": 407.4,
+     "x": 18.571617126464844,
+     "y": 315.34635416666663,
+     "play_type": "set",
+     "cluster_id": 12,
+     "tracklet_id": 4973,
+     "corrected": 1
+    },
+    {
+     "t": 408.05,
+     "x": 18.263702392578125,
+     "y": 315.4913330078125,
+     "play_type": "attack",
+     "cluster_id": 12,
+     "tracklet_id": 4973,
+     "corrected": 1
+    },
+    {
+     "t": 408.58,
+     "x": 18.163798014322914,
+     "y": 315.40358479817706,
+     "play_type": "attack",
+     "cluster_id": 12,
+     "tracklet_id": 4973,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 15,
+   "start": 417,
+   "end": 423,
+   "phase": "skipped",
+   "outcome": null,
+   "plays": [
+    {
+     "t": 422.73,
+     "x": 18.30274709065755,
+     "y": 315.6676025390625,
+     "play_type": "serve",
+     "cluster_id": 12,
+     "tracklet_id": 4985,
+     "corrected": 0
+    }
+   ],
+   "removed_plays": []
+  },
+  {
+   "idx": 16,
+   "start": 431,
+   "end": 445,
+   "phase": "game",
+   "outcome": {
+    "type": "kill",
+    "cluster": 18
+   },
+   "plays": [
+    {
+     "t": 431.25,
+     "x": 18.553185780843098,
+     "y": 315.3176066080729,
+     "play_type": "serve",
+     "cluster_id": null,
+     "tracklet_id": 5007,
+     "corrected": 1
+    },
+    {
+     "t": 432.72,
+     "x": 18.34167226155599,
+     "y": 315.4697062174479,
+     "play_type": "receive",
+     "cluster_id": 1,
+     "tracklet_id": 5007,
+     "corrected": 1
+    },
+    {
+     "t": 433.43,
+     "x": 18.550726572672524,
+     "y": 315.4599405924479,
+     "play_type": "set",
+     "cluster_id": 13,
+     "tracklet_id": 5007,
+     "corrected": 1
+    },
+    {
+     "t": 434.82,
+     "x": 18.46550623575846,
+     "y": 315.3019612630208,
+     "play_type": "attack",
+     "cluster_id": 5,
+     "tracklet_id": 5007,
+     "corrected": 1
+    },
+    {
+     "t": 435.6,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 437,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 438.4,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 13,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 440.1,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 8,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 441.6,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 5,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 443.1,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 444.3,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 445.2,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 431.8,
+     "x": 18.398302714029946,
+     "y": 315.3739013671875,
+     "play_type": "set",
+     "cluster_id": 18,
+     "tracklet_id": 5007,
+     "corrected": 1
+    },
+    {
+     "t": 435.2,
+     "x": 18.391347249348957,
+     "y": 315.38319905598956,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5001,
+     "corrected": 1
+    },
+    {
+     "t": 436.35,
+     "x": 18.262924194335938,
+     "y": 315.53324381510413,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5000,
+     "corrected": 1
+    },
+    {
+     "t": 442.5,
+     "x": 17.954757690429688,
+     "y": 315.03924560546875,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5000,
+     "corrected": 1
+    },
+    {
+     "t": 442.9,
+     "x": 17.81676355997721,
+     "y": 315.30253092447913,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5000,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 17,
+   "start": 462,
+   "end": 473.3,
+   "phase": "game",
+   "outcome": {
+    "type": "other_error",
+    "cluster": 13
+   },
+   "plays": [
+    {
+     "t": 461.8,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": null,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 462.9,
+     "x": null,
+     "y": null,
+     "play_type": "receive",
+     "cluster_id": 20,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 464.1,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 8,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 465.4,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 13,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 466.5,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 12,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 468,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 469.4,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 470.3,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 20,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 471.5,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 13,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 467.4,
+     "x": 18.137985229492188,
+     "y": 314.8837890625,
+     "play_type": "serve",
+     "cluster_id": 17,
+     "tracklet_id": 5010,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 18,
+   "start": 485,
+   "end": 507.4,
+   "phase": "game",
+   "outcome": {
+    "type": "kill",
+    "cluster": 17
+   },
+   "plays": [
+    {
+     "t": 486.1,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 12,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 486.62,
+     "x": 18.08601633707682,
+     "y": 315.04752604166663,
+     "play_type": "set",
+     "cluster_id": 0,
+     "tracklet_id": 5027,
+     "corrected": 0
+    },
+    {
+     "t": 487.4,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 487.57,
+     "x": 18.220404307047524,
+     "y": 315.0917561848958,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5026,
+     "corrected": 0
+    },
+    {
+     "t": 488.7,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 13,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 490,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 5,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 491.2,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 492.4,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 492.5,
+     "x": 18.098587036132812,
+     "y": 315.07867431640625,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5022,
+     "corrected": 0
+    },
+    {
+     "t": 494,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 495.5,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 13,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 496.5,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 497.7,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 498.9,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 13,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 500.4,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 5,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 501.6,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 13,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 502.4,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 504,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 505.6,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 485.6,
+     "x": 18.083526611328125,
+     "y": 315.216796875,
+     "play_type": "receive",
+     "cluster_id": 0,
+     "tracklet_id": 5027,
+     "corrected": 1
+    },
+    {
+     "t": 490.43,
+     "x": 18.162539164225258,
+     "y": 315.0701700846354,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5026,
+     "corrected": 1
+    },
+    {
+     "t": 491.63,
+     "x": 18.41138458251953,
+     "y": 315.04860432942706,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5022,
+     "corrected": 1
+    },
+    {
+     "t": 503.6,
+     "x": 18.128738403320312,
+     "y": 315.1133626302083,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5022,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 19,
+   "start": 528,
+   "end": 535.9,
+   "phase": "game",
+   "outcome": {
+    "type": "attack_error",
+    "cluster": 2
+   },
+   "plays": [
+    {
+     "t": 526.6,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 12,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 527.6,
+     "x": null,
+     "y": null,
+     "play_type": "receive",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 529,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 13,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 530.3,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 5,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 531.17,
+     "x": 17.972782135009766,
+     "y": 315.1084798177083,
+     "play_type": "dig",
+     "cluster_id": 0,
+     "tracklet_id": 5039,
+     "corrected": 1
+    },
+    {
+     "t": 532.9,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 534.6,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 531.4,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 20,
+   "start": 555,
+   "end": 565.8,
+   "phase": "game",
+   "outcome": {
+    "type": "kill",
+    "cluster": 2
+   },
+   "plays": [
+    {
+     "t": 558.03,
+     "x": 17.765157063802082,
+     "y": 315.06591796875,
+     "play_type": "serve",
+     "cluster_id": 18,
+     "tracklet_id": 5044,
+     "corrected": 0
+    },
+    {
+     "t": 559.1,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 12,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 560.5,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 562,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 562.6,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 5,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 580.6,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 21,
+   "start": 592.6,
+   "end": 596.7,
+   "phase": "game",
+   "outcome": {
+    "type": "ace",
+    "cluster": 13
+   },
+   "plays": [
+    {
+     "t": 593.5,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 13,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 594.6,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 12,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 22,
+   "start": 603,
+   "end": 612.8,
+   "phase": "game",
+   "outcome": {
+    "type": "kill",
+    "cluster": 2
+   },
+   "plays": [
+    {
+     "t": 607,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 13,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 608,
+     "x": null,
+     "y": null,
+     "play_type": "receive",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 608.6,
+     "x": 17.823977152506508,
+     "y": 315.17643229166663,
+     "play_type": "receive",
+     "cluster_id": 2,
+     "tracklet_id": 5068,
+     "corrected": 0
+    },
+    {
+     "t": 609.4,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 611,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 609.85,
+     "x": 17.80359395345052,
+     "y": 315.05997721354163,
+     "play_type": "set",
+     "cluster_id": 2,
+     "tracklet_id": 5068,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 23,
+   "start": 649,
+   "end": 656,
+   "phase": "game",
+   "outcome": {
+    "type": "attack_error",
+    "cluster": 6
+   },
+   "plays": [
+    {
+     "t": 650,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 650.95,
+     "x": 18.333401997884113,
+     "y": 314.60001627604163,
+     "play_type": "receive",
+     "cluster_id": 5,
+     "tracklet_id": 5076,
+     "corrected": 1
+    },
+    {
+     "t": 653.1,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 651.43,
+     "x": 18.719497680664062,
+     "y": 314.609619140625,
+     "play_type": "set",
+     "cluster_id": null,
+     "tracklet_id": 5076,
+     "corrected": 1
+    },
+    {
+     "t": 652.33,
+     "x": 18.36255645751953,
+     "y": 314.94022623697913,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5076,
+     "corrected": 1
+    },
+    {
+     "t": 653.45,
+     "x": 18.23754119873047,
+     "y": 314.67667643229163,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5076,
+     "corrected": 1
+    },
+    {
+     "t": 655.78,
+     "x": 18.27576192220052,
+     "y": 314.8701171875,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5076,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 24,
+   "start": 666,
+   "end": 676.6,
+   "phase": "game",
+   "outcome": {
+    "type": "kill",
+    "cluster": 24
+   },
+   "plays": [
+    {
+     "t": 667,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 668.1,
+     "x": null,
+     "y": null,
+     "play_type": "receive",
+     "cluster_id": 5,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 669.6,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 671.1,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 671.63,
+     "x": 18.476008097330727,
+     "y": 314.6365966796875,
+     "play_type": "receive",
+     "cluster_id": 18,
+     "tracklet_id": 5095,
+     "corrected": 1
+    },
+    {
+     "t": 673.12,
+     "x": 18.210835774739582,
+     "y": 314.71608479817706,
+     "play_type": "attack",
+     "cluster_id": 24,
+     "tracklet_id": 5095,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 672.75,
+     "x": 18.343852996826172,
+     "y": 314.6482950846354,
+     "play_type": "set",
+     "cluster_id": 17,
+     "tracklet_id": 5095,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 25,
+   "start": 688,
+   "end": 719.5,
+   "phase": "game",
+   "outcome": {
+    "type": "attack_error",
+    "cluster": 0
+   },
+   "plays": [
+    {
+     "t": 689,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 689.68,
+     "x": 18.438341776529946,
+     "y": 314.42360432942706,
+     "play_type": "receive",
+     "cluster_id": 5,
+     "tracklet_id": 5096,
+     "corrected": 1
+    },
+    {
+     "t": 691,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 691.17,
+     "x": 18.414894104003906,
+     "y": 314.337646484375,
+     "play_type": "set",
+     "cluster_id": null,
+     "tracklet_id": 5096,
+     "corrected": 0
+    },
+    {
+     "t": 691.6,
+     "x": 18.474613189697266,
+     "y": 314.3326009114583,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5096,
+     "corrected": 0
+    },
+    {
+     "t": 691.9,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 8,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 693.1,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 12,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 693.37,
+     "x": 18.48829396565755,
+     "y": 314.40751139322913,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5099,
+     "corrected": 0
+    },
+    {
+     "t": 694.6,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 696.1,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 696.3,
+     "x": null,
+     "y": null,
+     "play_type": "block",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 696.9,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 698,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 699.3,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 699.8,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 700.6,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 702.2,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 702.8,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 704.4,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 705.4,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 706.4,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 708.2,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 709.5,
+     "x": 18.345111846923828,
+     "y": 315.6083577473958,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": 5099,
+     "corrected": 1
+    },
+    {
+     "t": 710.3,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 5,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 712.4,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 12,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 713.62,
+     "x": 18.344334920247395,
+     "y": 315.3017578125,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": 5099,
+     "corrected": 1
+    },
+    {
+     "t": 715.2,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 692.08,
+     "x": 18.430352528889973,
+     "y": 314.2940673828125,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5096,
+     "corrected": 1
+    },
+    {
+     "t": 692.57,
+     "x": 18.46021270751953,
+     "y": 314.4918009440104,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5096,
+     "corrected": 1
+    },
+    {
+     "t": 707,
+     "x": 18.371241251627602,
+     "y": 315.28175862630206,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5099,
+     "corrected": 1
+    },
+    {
+     "t": 707.45,
+     "x": 18.406277974446613,
+     "y": 315.291015625,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5099,
+     "corrected": 1
+    },
+    {
+     "t": 708.07,
+     "x": 19.01539866129557,
+     "y": 315.4642333984375,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5099,
+     "corrected": 1
+    },
+    {
+     "t": 709.6,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 712.1,
+     "x": 18.62402852376302,
+     "y": 315.26298014322913,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5099,
+     "corrected": 1
+    },
+    {
+     "t": 713.2,
+     "x": 18.478383382161457,
+     "y": 314.9217529296875,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5099,
+     "corrected": 1
+    },
+    {
+     "t": 716.5,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 20,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 718.1,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 26,
+   "start": 736,
+   "end": 747,
+   "phase": "game",
+   "outcome": {
+    "type": "other_error",
+    "cluster": 24
+   },
+   "plays": [
+    {
+     "t": 738.2,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 739.1,
+     "x": null,
+     "y": null,
+     "play_type": "receive",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 740.9,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 742,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 742.68,
+     "x": 18.658612569173176,
+     "y": 315.2826944986979,
+     "play_type": "dig",
+     "cluster_id": 18,
+     "tracklet_id": 5109,
+     "corrected": 1
+    },
+    {
+     "t": 744.4,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 736.5,
+     "x": 18.350588480631508,
+     "y": 315.21392822265625,
+     "play_type": "receive",
+     "cluster_id": 18,
+     "tracklet_id": 5109,
+     "corrected": 1
+    },
+    {
+     "t": 737.55,
+     "x": 18.262322743733723,
+     "y": 315.26271565755206,
+     "play_type": "set",
+     "cluster_id": 18,
+     "tracklet_id": 5109,
+     "corrected": 1
+    },
+    {
+     "t": 738.53,
+     "x": 18.440050760904946,
+     "y": 315.05961100260413,
+     "play_type": "attack",
+     "cluster_id": 18,
+     "tracklet_id": 5109,
+     "corrected": 1
+    },
+    {
+     "t": 738.92,
+     "x": 18.394681294759113,
+     "y": 315.079345703125,
+     "play_type": "attack",
+     "cluster_id": 18,
+     "tracklet_id": 5109,
+     "corrected": 1
+    },
+    {
+     "t": 739.83,
+     "x": 18.372304280598957,
+     "y": 315.41375732421875,
+     "play_type": "attack",
+     "cluster_id": 18,
+     "tracklet_id": 5109,
+     "corrected": 1
+    },
+    {
+     "t": 740.18,
+     "x": 18.376602172851562,
+     "y": 315.37064615885413,
+     "play_type": "attack",
+     "cluster_id": 18,
+     "tracklet_id": 5109,
+     "corrected": 1
+    },
+    {
+     "t": 740.75,
+     "x": 830.55322265625,
+     "y": 125.91933186848958,
+     "play_type": "set",
+     "cluster_id": 6,
+     "tracklet_id": 5112,
+     "corrected": 1
+    },
+    {
+     "t": 741.15,
+     "x": 830.6065266927083,
+     "y": 125.8577880859375,
+     "play_type": "set",
+     "cluster_id": 6,
+     "tracklet_id": 5112,
+     "corrected": 1
+    },
+    {
+     "t": 741.52,
+     "x": 18.50877507527669,
+     "y": 315.06156412760413,
+     "play_type": "dig",
+     "cluster_id": 18,
+     "tracklet_id": 5109,
+     "corrected": 1
+    },
+    {
+     "t": 742.22,
+     "x": 18.465977986653645,
+     "y": 315.1662190755208,
+     "play_type": "set",
+     "cluster_id": 18,
+     "tracklet_id": 5109,
+     "corrected": 1
+    },
+    {
+     "t": 743.65,
+     "x": 18.551981608072914,
+     "y": 315.4664306640625,
+     "play_type": "attack",
+     "cluster_id": 18,
+     "tracklet_id": 5109,
+     "corrected": 1
+    },
+    {
+     "t": 744.38,
+     "x": 18.55452219645182,
+     "y": 315.4744466145833,
+     "play_type": "attack",
+     "cluster_id": 18,
+     "tracklet_id": 5109,
+     "corrected": 1
+    },
+    {
+     "t": 745.27,
+     "x": 18.52805201212565,
+     "y": 315.29345703125,
+     "play_type": "attack",
+     "cluster_id": 18,
+     "tracklet_id": 5109,
+     "corrected": 1
+    },
+    {
+     "t": 749.2,
+     "x": 830.616455078125,
+     "y": 125.78268432617188,
+     "play_type": "receive",
+     "cluster_id": 1,
+     "tracklet_id": 5110,
+     "corrected": 1
+    },
+    {
+     "t": 749.58,
+     "x": 830.490966796875,
+     "y": 125.84171549479166,
+     "play_type": "set",
+     "cluster_id": 1,
+     "tracklet_id": 5110,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 27,
+   "start": 757,
+   "end": 768.2,
+   "phase": "game",
+   "outcome": {
+    "type": "kill",
+    "cluster": 0
+   },
+   "plays": [
+    {
+     "t": 760.97,
+     "x": 18.614916483561196,
+     "y": 314.8993733723958,
+     "play_type": "serve",
+     "cluster_id": 8,
+     "tracklet_id": 5119,
+     "corrected": 1
+    },
+    {
+     "t": 762.37,
+     "x": 18.289889017740883,
+     "y": 315.46232096354163,
+     "play_type": "receive",
+     "cluster_id": 18,
+     "tracklet_id": 5119,
+     "corrected": 1
+    },
+    {
+     "t": 763.6,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 765,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 755.1,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 758.52,
+     "x": 18.361228942871094,
+     "y": 315.17669677734375,
+     "play_type": "receive",
+     "cluster_id": null,
+     "tracklet_id": 5119,
+     "corrected": 1
+    },
+    {
+     "t": 760.57,
+     "x": 18.39757537841797,
+     "y": 315.2476603190104,
+     "play_type": "set",
+     "cluster_id": null,
+     "tracklet_id": 5119,
+     "corrected": 1
+    },
+    {
+     "t": 761.43,
+     "x": 18.357959747314453,
+     "y": 314.9814249674479,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5119,
+     "corrected": 1
+    },
+    {
+     "t": 761.82,
+     "x": 18.55413055419922,
+     "y": 315.14703369140625,
+     "play_type": "attack",
+     "cluster_id": 2,
+     "tracklet_id": 5119,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 28,
+   "start": 772,
+   "end": 776,
+   "phase": "skipped",
+   "outcome": null,
+   "plays": [
+    {
+     "t": 772.62,
+     "x": 18.352450052897133,
+     "y": 314.9182942708333,
+     "play_type": "receive",
+     "cluster_id": null,
+     "tracklet_id": 5135,
+     "corrected": 0
+    },
+    {
+     "t": 773,
+     "x": 18.423661549886067,
+     "y": 314.73063151041663,
+     "play_type": "set",
+     "cluster_id": null,
+     "tracklet_id": 5135,
+     "corrected": 0
+    },
+    {
+     "t": 773.98,
+     "x": 18.271756490071613,
+     "y": 315.08780924479163,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5135,
+     "corrected": 0
+    }
+   ],
+   "removed_plays": []
+  },
+  {
+   "idx": 29,
+   "start": 787,
+   "end": 807.2,
+   "phase": "game",
+   "outcome": {
+    "type": "block",
+    "cluster": 6
+   },
+   "plays": [
+    {
+     "t": 790.58,
+     "x": 830.5146484375,
+     "y": 125.81827799479166,
+     "play_type": "serve",
+     "cluster_id": 17,
+     "tracklet_id": 5151,
+     "corrected": 1
+    },
+    {
+     "t": 790.97,
+     "x": 18.455284118652344,
+     "y": 314.9644368489583,
+     "play_type": "receive",
+     "cluster_id": 13,
+     "tracklet_id": 5150,
+     "corrected": 1
+    },
+    {
+     "t": 792.5,
+     "x": 18.476768493652344,
+     "y": 314.9090576171875,
+     "play_type": "set",
+     "cluster_id": 6,
+     "tracklet_id": 5150,
+     "corrected": 1
+    },
+    {
+     "t": 794.3,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 794.3,
+     "x": null,
+     "y": null,
+     "play_type": "block",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 795.4,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 797.3,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 798.6,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 799.2,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 5,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 800.9,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 801,
+     "x": null,
+     "y": null,
+     "play_type": "block",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 801.9,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 803.5,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 805.1,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 12,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 805.3,
+     "x": null,
+     "y": null,
+     "play_type": "block",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 791.57,
+     "x": 18.413368225097656,
+     "y": 314.68817138671875,
+     "play_type": "set",
+     "cluster_id": null,
+     "tracklet_id": 5150,
+     "corrected": 1
+    },
+    {
+     "t": 793.1,
+     "x": 18.34691619873047,
+     "y": 314.9942220052083,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5150,
+     "corrected": 1
+    },
+    {
+     "t": 795.97,
+     "x": 18.38151677449544,
+     "y": 314.57167561848956,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5150,
+     "corrected": 1
+    },
+    {
+     "t": 799.33,
+     "x": 18.274984995524086,
+     "y": 315.2529296875,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5153,
+     "corrected": 1
+    },
+    {
+     "t": 800.07,
+     "x": 18.247146606445312,
+     "y": 315.06402587890625,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5153,
+     "corrected": 1
+    },
+    {
+     "t": 800.48,
+     "x": 18.424763997395832,
+     "y": 314.9272054036458,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5153,
+     "corrected": 1
+    },
+    {
+     "t": 808.78,
+     "x": 18.351666768391926,
+     "y": 315.126220703125,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5153,
+     "corrected": 1
+    },
+    {
+     "t": 811.18,
+     "x": 18.35522206624349,
+     "y": 314.56730143229163,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": 5153,
+     "corrected": 1
+    },
+    {
+     "t": 811.58,
+     "x": 18.32373046875,
+     "y": 314.81121826171875,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": 5153,
+     "corrected": 1
+    },
+    {
+     "t": 812,
+     "x": 18.4017333984375,
+     "y": 314.8927001953125,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": 5153,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 30,
+   "start": 825,
+   "end": 842,
+   "phase": "game",
+   "outcome": {
+    "type": "other_error",
+    "cluster": 8
+   },
+   "plays": [
+    {
+     "t": 829.23,
+     "x": 18.677149454752602,
+     "y": 314.7786865234375,
+     "play_type": "serve",
+     "cluster_id": 6,
+     "tracklet_id": 5156,
+     "corrected": 1
+    },
+    {
+     "t": 830.57,
+     "x": 18.58904774983724,
+     "y": 314.63063557942706,
+     "play_type": "receive",
+     "cluster_id": 18,
+     "tracklet_id": 5156,
+     "corrected": 1
+    },
+    {
+     "t": 831.92,
+     "x": 18.646962483723957,
+     "y": 314.837158203125,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": 5156,
+     "corrected": 1
+    },
+    {
+     "t": 833.7,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 834.2,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 834.53,
+     "x": 18.497474670410156,
+     "y": 314.95599365234375,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5156,
+     "corrected": 0
+    },
+    {
+     "t": 835.1,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 8,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 828.42,
+     "x": 18.454461415608723,
+     "y": 314.4892171223958,
+     "play_type": "receive",
+     "cluster_id": 17,
+     "tracklet_id": 5156,
+     "corrected": 1
+    },
+    {
+     "t": 828.78,
+     "x": 18.592177073160805,
+     "y": 315.04679361979163,
+     "play_type": "set",
+     "cluster_id": 17,
+     "tracklet_id": 5156,
+     "corrected": 1
+    },
+    {
+     "t": 830.17,
+     "x": 18.52245330810547,
+     "y": 314.79311116536456,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5156,
+     "corrected": 1
+    },
+    {
+     "t": 835.2,
+     "x": 18.399566650390625,
+     "y": 314.91874186197913,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5156,
+     "corrected": 1
+    },
+    {
+     "t": 836.6,
+     "x": 18.11565907796224,
+     "y": 315.0646565755208,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5156,
+     "corrected": 1
+    },
+    {
+     "t": 837.03,
+     "x": 18.442315419514973,
+     "y": 315.03580729166663,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5156,
+     "corrected": 1
+    },
+    {
+     "t": 837.43,
+     "x": 830.3302408854166,
+     "y": 125.481689453125,
+     "play_type": "dig",
+     "cluster_id": 1,
+     "tracklet_id": 5159,
+     "corrected": 1
+    },
+    {
+     "t": 839.8,
+     "x": 18.41237131754557,
+     "y": 314.87223307291663,
+     "play_type": "receive",
+     "cluster_id": 17,
+     "tracklet_id": 5156,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 31,
+   "start": 849,
+   "end": 860,
+   "phase": "game",
+   "outcome": {
+    "type": "attack_error",
+    "cluster": 5
+   },
+   "plays": [
+    {
+     "t": 851.9,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 852.77,
+     "x": 18.44130198160807,
+     "y": 314.672119140625,
+     "play_type": "receive",
+     "cluster_id": 8,
+     "tracklet_id": 5167,
+     "corrected": 1
+    },
+    {
+     "t": 854.6,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 856.1,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 5,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 849.22,
+     "x": 18.336151123046875,
+     "y": 315.28959147135413,
+     "play_type": "receive",
+     "cluster_id": 17,
+     "tracklet_id": 5167,
+     "corrected": 1
+    },
+    {
+     "t": 853.2,
+     "x": 18.373395284016926,
+     "y": 314.83119710286456,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5167,
+     "corrected": 1
+    },
+    {
+     "t": 854.18,
+     "x": 18.447550455729164,
+     "y": 314.6365966796875,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5167,
+     "corrected": 1
+    },
+    {
+     "t": 855.42,
+     "x": 18.481329600016274,
+     "y": 314.6617431640625,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5167,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 32,
+   "start": 867,
+   "end": 875.7,
+   "phase": "game",
+   "outcome": {
+    "type": "block",
+    "cluster": 18
+   },
+   "plays": [
+    {
+     "t": 870.1,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 870.87,
+     "x": 18.321019490559895,
+     "y": 314.7352294921875,
+     "play_type": "receive",
+     "cluster_id": 6,
+     "tracklet_id": 5179,
+     "corrected": 1
+    },
+    {
+     "t": 872.08,
+     "x": 18.495152791341145,
+     "y": 314.9921468098958,
+     "play_type": "set",
+     "cluster_id": 20,
+     "tracklet_id": 5179,
+     "corrected": 1
+    },
+    {
+     "t": 872.65,
+     "x": 18.290016174316406,
+     "y": 315.09086100260413,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5179,
+     "corrected": 0
+    },
+    {
+     "t": 873.7,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 5,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 873.9,
+     "x": null,
+     "y": null,
+     "play_type": "block",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 867.52,
+     "x": 18.322285970052082,
+     "y": 314.6905110677083,
+     "play_type": "receive",
+     "cluster_id": 17,
+     "tracklet_id": 5179,
+     "corrected": 1
+    },
+    {
+     "t": 871.25,
+     "x": 18.493302663167317,
+     "y": 315.1727294921875,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5179,
+     "corrected": 1
+    },
+    {
+     "t": 871.67,
+     "x": 18.440152486165363,
+     "y": 315.04799397786456,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5179,
+     "corrected": 1
+    },
+    {
+     "t": 873.9,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 875.65,
+     "x": 830.77294921875,
+     "y": 125.63365681966145,
+     "play_type": "receive",
+     "cluster_id": 20,
+     "tracklet_id": 5180,
+     "corrected": 1
+    },
+    {
+     "t": 876.25,
+     "x": 830.5348307291666,
+     "y": 125.68386840820312,
+     "play_type": "set",
+     "cluster_id": 20,
+     "tracklet_id": 5180,
+     "corrected": 1
+    },
+    {
+     "t": 877.97,
+     "x": 830.5635579427083,
+     "y": 125.881591796875,
+     "play_type": "attack",
+     "cluster_id": 20,
+     "tracklet_id": 5180,
+     "corrected": 1
+    },
+    {
+     "t": 878.48,
+     "x": 830.8505859375,
+     "y": 125.72557576497395,
+     "play_type": "attack",
+     "cluster_id": 20,
+     "tracklet_id": 5180,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 33,
+   "start": 890.1,
+   "end": 909.5,
+   "phase": "game",
+   "outcome": {
+    "type": "attack_error",
+    "cluster": 12
+   },
+   "plays": [
+    {
+     "t": 890.8,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 891.8,
+     "x": null,
+     "y": null,
+     "play_type": "receive",
+     "cluster_id": 13,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 893.1,
+     "x": 18.470962524414062,
+     "y": 314.9961751302083,
+     "play_type": "set",
+     "cluster_id": 20,
+     "tracklet_id": 5194,
+     "corrected": 1
+    },
+    {
+     "t": 894.73,
+     "x": 18.78069305419922,
+     "y": 315.39908854166663,
+     "play_type": "attack",
+     "cluster_id": 1,
+     "tracklet_id": 5194,
+     "corrected": 1
+    },
+    {
+     "t": 895.7,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 17,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 897.7,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 12,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 899.3,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 900.1,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 6,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 901.8,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 8,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 903.43,
+     "x": 830.791015625,
+     "y": 126.02102661132812,
+     "play_type": "attack",
+     "cluster_id": 13,
+     "tracklet_id": 5190,
+     "corrected": 1
+    },
+    {
+     "t": 904.7,
+     "x": null,
+     "y": null,
+     "play_type": "dig",
+     "cluster_id": 17,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 905.92,
+     "x": 18.759435017903645,
+     "y": 315.06473795572913,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": 5191,
+     "corrected": 1
+    },
+    {
+     "t": 907.7,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 12,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 887.32,
+     "x": 18.477839152018227,
+     "y": 315.37343343098956,
+     "play_type": "serve",
+     "cluster_id": 17,
+     "tracklet_id": 5194,
+     "corrected": 1
+    },
+    {
+     "t": 888.15,
+     "x": 830.495361328125,
+     "y": 125.73538208007812,
+     "play_type": "receive",
+     "cluster_id": 1,
+     "tracklet_id": 5200,
+     "corrected": 1
+    },
+    {
+     "t": 888.75,
+     "x": 18.71777089436849,
+     "y": 315.34442138671875,
+     "play_type": "receive",
+     "cluster_id": 17,
+     "tracklet_id": 5194,
+     "corrected": 1
+    },
+    {
+     "t": 889.4,
+     "x": 18.85698699951172,
+     "y": 315.199462890625,
+     "play_type": "set",
+     "cluster_id": 17,
+     "tracklet_id": 5194,
+     "corrected": 1
+    },
+    {
+     "t": 890.35,
+     "x": 830.6560872395833,
+     "y": 125.79573567708333,
+     "play_type": "receive",
+     "cluster_id": 1,
+     "tracklet_id": 5200,
+     "corrected": 1
+    },
+    {
+     "t": 890.98,
+     "x": 18.78169504801432,
+     "y": 315.00284830729163,
+     "play_type": "receive",
+     "cluster_id": 17,
+     "tracklet_id": 5194,
+     "corrected": 1
+    },
+    {
+     "t": 892.28,
+     "x": 19.14855066935221,
+     "y": 314.9695638020833,
+     "play_type": "set",
+     "cluster_id": null,
+     "tracklet_id": 5194,
+     "corrected": 1
+    },
+    {
+     "t": 892.67,
+     "x": 18.44934590657552,
+     "y": 315.21110026041663,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5194,
+     "corrected": 1
+    },
+    {
+     "t": 893.9,
+     "x": 19.1954714457194,
+     "y": 314.8983968098958,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5194,
+     "corrected": 1
+    },
+    {
+     "t": 896.32,
+     "x": 18.645528157552082,
+     "y": 315.5634358723958,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5191,
+     "corrected": 1
+    },
+    {
+     "t": 897.3,
+     "x": 18.827926635742188,
+     "y": 315.0924886067708,
+     "play_type": "attack",
+     "cluster_id": 0,
+     "tracklet_id": 5191,
+     "corrected": 1
+    },
+    {
+     "t": 898.2,
+     "x": 19.151875813802082,
+     "y": 315.61867268880206,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5191,
+     "corrected": 1
+    },
+    {
+     "t": 900.55,
+     "x": 830.53173828125,
+     "y": 125.751220703125,
+     "play_type": "receive",
+     "cluster_id": 6,
+     "tracklet_id": 5190,
+     "corrected": 1
+    },
+    {
+     "t": 901.7,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 8,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 903.2,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 13,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 904.88,
+     "x": 830.677978515625,
+     "y": 125.89296468098958,
+     "play_type": "attack",
+     "cluster_id": 5,
+     "tracklet_id": 5193,
+     "corrected": 1
+    },
+    {
+     "t": 906,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 911.4,
+     "x": 830.490234375,
+     "y": 125.84501139322916,
+     "play_type": "receive",
+     "cluster_id": 20,
+     "tracklet_id": 5199,
+     "corrected": 1
+    },
+    {
+     "t": 916.9,
+     "x": 830.6949869791666,
+     "y": 125.91517130533853,
+     "play_type": "set",
+     "cluster_id": 5,
+     "tracklet_id": 5193,
+     "corrected": 1
+    },
+    {
+     "t": 917.6,
+     "x": 830.6878255208333,
+     "y": 125.98712158203125,
+     "play_type": "attack",
+     "cluster_id": 5,
+     "tracklet_id": 5193,
+     "corrected": 1
+    },
+    {
+     "t": 918.28,
+     "x": 830.5973307291666,
+     "y": 125.71150716145833,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5193,
+     "corrected": 1
+    }
+   ]
+  },
+  {
+   "idx": 34,
+   "start": 941.6,
+   "end": 951.5,
+   "phase": "game",
+   "outcome": {
+    "type": "kill",
+    "cluster": 18
+   },
+   "plays": [
+    {
+     "t": 941.3,
+     "x": null,
+     "y": null,
+     "play_type": "serve",
+     "cluster_id": 1,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 942.6,
+     "x": null,
+     "y": null,
+     "play_type": "receive",
+     "cluster_id": 2,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 944.1,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 945.7,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 24,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 946.2,
+     "x": 18.992204030354817,
+     "y": 315.68593343098956,
+     "play_type": "dig",
+     "cluster_id": 6,
+     "tracklet_id": 5202,
+     "corrected": 1
+    },
+    {
+     "t": 948,
+     "x": null,
+     "y": null,
+     "play_type": "set",
+     "cluster_id": 13,
+     "tracklet_id": null,
+     "corrected": 1
+    },
+    {
+     "t": 948.73,
+     "x": 18.568346659342446,
+     "y": 315.09134928385413,
+     "play_type": "attack",
+     "cluster_id": 8,
+     "tracklet_id": 5202,
+     "corrected": 1
+    },
+    {
+     "t": 949.7,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": 18,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ],
+   "removed_plays": [
+    {
+     "t": 936.18,
+     "x": 830.6482747395833,
+     "y": 125.84419759114583,
+     "play_type": "receive",
+     "cluster_id": 5,
+     "tracklet_id": 5210,
+     "corrected": 1
+    },
+    {
+     "t": 936.68,
+     "x": 830.7884928385416,
+     "y": 125.80487060546875,
+     "play_type": "set",
+     "cluster_id": null,
+     "tracklet_id": 5205,
+     "corrected": 1
+    },
+    {
+     "t": 937.45,
+     "x": 830.7301432291666,
+     "y": 125.78228759765625,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5205,
+     "corrected": 1
+    },
+    {
+     "t": 938.92,
+     "x": 830.5979817708333,
+     "y": 125.78562418619791,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5205,
+     "corrected": 1
+    },
+    {
+     "t": 939.37,
+     "x": 830.6012369791666,
+     "y": 125.74776204427083,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5205,
+     "corrected": 1
+    },
+    {
+     "t": 940.47,
+     "x": 18.688044230143227,
+     "y": 315.2471516927083,
+     "play_type": "dig",
+     "cluster_id": 17,
+     "tracklet_id": 5202,
+     "corrected": 1
+    },
+    {
+     "t": 940.9,
+     "x": 18.769320170084633,
+     "y": 315.0928955078125,
+     "play_type": "set",
+     "cluster_id": 17,
+     "tracklet_id": 5202,
+     "corrected": 1
+    },
+    {
+     "t": 941.7,
+     "x": 830.5489908854166,
+     "y": 125.90059407552083,
+     "play_type": "receive",
+     "cluster_id": null,
+     "tracklet_id": 5205,
+     "corrected": 1
+    },
+    {
+     "t": 942.07,
+     "x": 18.57776641845703,
+     "y": 315.1693929036458,
+     "play_type": "receive",
+     "cluster_id": 17,
+     "tracklet_id": 5202,
+     "corrected": 1
+    },
+    {
+     "t": 942.45,
+     "x": 18.78826904296875,
+     "y": 315.13956705729163,
+     "play_type": "set",
+     "cluster_id": 17,
+     "tracklet_id": 5202,
+     "corrected": 1
+    },
+    {
+     "t": 943.37,
+     "x": 830.5935872395833,
+     "y": 125.80881754557291,
+     "play_type": "receive",
+     "cluster_id": 6,
+     "tracklet_id": 5206,
+     "corrected": 1
+    },
+    {
+     "t": 943.83,
+     "x": 18.838101704915363,
+     "y": 315.2762451171875,
+     "play_type": "receive",
+     "cluster_id": 17,
+     "tracklet_id": 5202,
+     "corrected": 1
+    },
+    {
+     "t": 944.63,
+     "x": 18.684600830078125,
+     "y": 315.11865234375,
+     "play_type": "set",
+     "cluster_id": 17,
+     "tracklet_id": 5202,
+     "corrected": 1
+    },
+    {
+     "t": 945.22,
+     "x": 18.723556518554688,
+     "y": 315.3716634114583,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5202,
+     "corrected": 1
+    },
+    {
+     "t": 946.65,
+     "x": 18.723953247070312,
+     "y": 314.9681396484375,
+     "play_type": "attack",
+     "cluster_id": 17,
+     "tracklet_id": 5202,
+     "corrected": 1
+    },
+    {
+     "t": 947.3,
+     "x": 18.61914571126302,
+     "y": 315.43544514973956,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": 5202,
+     "corrected": 1
+    },
+    {
+     "t": 948.7,
+     "x": null,
+     "y": null,
+     "play_type": "attack",
+     "cluster_id": null,
+     "tracklet_id": null,
+     "corrected": 1
+    }
+   ]
+  }
+ ]
+}

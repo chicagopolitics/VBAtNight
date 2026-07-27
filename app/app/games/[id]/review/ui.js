@@ -349,7 +349,10 @@ export default function Review({ rallies, idents, plays, video }) {
             </div>
             {rallyPlays.map(p => {
               const abs = clipStart(rally) + now;
-              const live = now >= 0 && abs >= p.t - 0.1 && abs < p.t + 1.0;
+              // highlight while the playhead is within the strike window
+              // (±0.3s — matches the annotation best practice: a chip should
+              // light up exactly when its touch is on screen)
+              const live = now >= 0 && Math.abs(abs - p.t) <= 0.3;
               // match the scrubber: window-relative in rally mode, absolute in full mode
               const chipT = p.t - clipStart(rally) -
                 (full ? 0 : Math.max(0, rally.start_s - clipStart(rally) - 2));

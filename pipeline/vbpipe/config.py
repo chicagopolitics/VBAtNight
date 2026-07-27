@@ -36,10 +36,24 @@ class Config:
     min_rally_s: float = 4.0
     max_gap_s: float = 4.0
     # detection / tracking
-    det_model: str = "yolo11n.pt"
-    det_conf: float = 0.35
-    det_fps: float = 10.0
+    # Phase-A coverage pass (2026-07-24): the true toucher was tracked at only
+    # ~55% of touches with nano@conf0.35@10fps, which capped attribution ~25%
+    # regardless of downstream tuning. Bigger model sees far-court players,
+    # lower conf keeps faint/occluded ones, higher fps gives ByteTrack denser
+    # frames = fewer ID switches = less cluster fragmentation. Costs ~4-6x
+    # track-stage time on a T4. Revert any of these if a reprocess shows no
+    # coverage gain (measure: concurrent tracked players, target ~11-12/12).
+    det_model: str = "yolo11m.pt"      # was yolo11n; m is the T4 sweet spot
+    det_conf: float = 0.20             # was 0.35
+    det_fps: float = 15.0              # was 10
+    det_imgsz: int = 1280              # inference size for person tracking;
+                                       # ultralytics' 640 default halves 720p
     min_box_h_px: int = 45             # at 720p
+    court_margin_px: int = 90          # feet may be this far OUTSIDE playing_area
+                                       # (serve zones / back-row range; at 720p)
+    crop_hires: bool = True            # save player crops from native 1080p for
+                                       # the re-ID embed stage (identity probe);
+                                       # detection still runs on the 720p view
     # embedding / clustering
     reid_model: str = "osnet_x1_0"
     min_tracklet_len: int = 3

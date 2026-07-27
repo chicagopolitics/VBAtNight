@@ -1,6 +1,327 @@
 # Balltime replacement — project status
 
-_Updated 2026-07-22 (session 6)_
+_Updated 2026-07-23 (session 6)_
+
+## Session 6: PRECISION reframe (Ken's #1 review pain) — wristless filter
+- Ken's key insight: attribution & type errors are 1-click fixes; the real
+  pain is TOUCH-COUNT INFLATION (a rally with 20 detected / 12 real forces a
+  wipe-and-redo). So optimize PRECISION, not attribution — and precision is
+  movable (unlike the identity wall).
+- reject_wristless_contacts (replaces the cca-one-specific apex filter):
+  drop any contact with no wrist within wrist_max px (default 180) — a real
+  touch needs a hand at the ball. Camera-agnostic (anatomy, not frame y).
+  Results @180 on both games:
+  * cca-one: inflation 1.26x -> 0.98x, badly-inflated rallies 15/40 -> 8/40,
+    P 55->66%, R 70->64%.
+  * cca-two: inflation 1.20x -> 1.03x, 7/31 -> 4/31, P 63->69%, R 76->71%.
+  Tunable via --wrist-max (lower = less inflation, less recall). vbpipe.zip
+  rebuilt. NOTE: Ken's hires run used a pre-apex zip so NO wristless/apex
+  filter applied — next reprocess with the current zip delivers this.
+- Strategy crystallized: (1) ship the precision fix (done), (2) accept
+  review-assisted attribution (Ken: "review-assisted is fine"), (3) pivot to
+  §4 stats features. The identity wall matters less now: inflation is fixed
+  and attribution errors are 1-click in review.
+
+## Session 6: hi-res crops probe RESULT — appearance ID is a dead end
+- Both games reprocessed with crop_hires. Embedding AUC 0.57 -> **0.61**
+  (cca-one), 0.59 (cca-two) — a real but tiny bump. Attribution UNCHANGED:
+  cca-one body 36%/wrist 39% (identical to 720p control), cca-two 30%/29%.
+- Conclusion: 2.2x the pixels bought +0.04 AUC; need ~0.85 for clustering to
+  work. The players are genuinely too similar (build/wear/lighting) —
+  APPEARANCE-based re-ID won't separate them at any resolution. Hi-res crops
+  not worth the extra runtime; can flip crop_hires False.
+- Silver lining: **cca-two seen clean for the first time** — captured 76%,
+  typed 64%, static impostors gone. Its ball/typing are healthy; only
+  attribution lags (30%, even worse than cca-one — more similar roster).
+- DECISION POINT: appearance is out. Remaining identity levers:
+  (a) SPATIAL-TEMPORAL identity (use court position + team side + within-
+      rally track continuity, NOT appearance) — now the most promising
+      automated route since it sidesteps the look-alike problem.
+  (b) reid fine-tune — uncertain ceiling when base appearance AUC is 0.61.
+  (c) accept review-assisted (merge/split already yields correct stats) and
+      pivot to §4 stats features.
+
+## Session 6: hi-res crops probe (identity lever #1) — BUILT
+- track.py crop_hires (config, default True): decode native 1080p, downscale
+  to 720p for DETECTION (boxes stay in 1280x720 ref), but save player crops
+  from the 1080p frame. Far player crop 69x63 -> 103x94 (2.2x pixels);
+  side-by-side shows modestly sharper jerseys/faces. The re-ID model resizes
+  crops to 256x128, so more native pixels = more real detail to embed.
+- Isolation: attribution on this run vs the prior pose run (720p crops, 39%,
+  same everything else) = the hi-res-crops effect, clean. captured/typed/
+  contact are crop-independent so they just reflect current pipeline state.
+- Runtime: tracking now decodes 1080p + per-frame resize (slower). vbpipe.zip
+  rebuilt. If it doesn't lift attribution, flip crop_hires False (cheap
+  revert) and consider spatial-temporal identity or reid fine-tune next.
+
+## Session 6: apex-phantom rejection (pose-based) SHIPPED
+- Ken still saw top-of-arc phantom touches — pose recorded wrists but didn't
+  yet USE them to reject. Now it does: pose_attrib.reject_apex_phantoms drops
+  a contact if the ball is HIGH (y<220, airborne) AND no wrist within 140px
+  (a real touch needs a hand at the ball). Applied in the plays stage after
+  enrich_contacts. Validated on the cca-one pose run: −46 apex phantoms,
+  contact P 55->64%, recall -3pp (captured 70->67%), typed 63->64%.
+  Blanket wrist-distance and trajectory (split-gain) filters cost too much
+  recall; the height+wrist combo is the clean one. vbpipe.zip rebuilt.
+
+## Session 6: POSE RUN — attribution wall is IDENTITY, decisively
+- cca-one reprocessed with pose + global static suppression. Results:
+  * static impostors: **0%** at all 4 known spots (global suppression works).
+  * captured 70%, family-typed **63%** (up from 58/46).
+  * attribution: body-center 36%, **wrist 39%** — pose only +3pp, NOT the
+    leap the smoke test implied.
+- WHY pose barely helped — decomposition of attribution (assignment-scored):
+  * ORACLE geometry (assign each touch to the true player's own tracklet):
+    **86%** ceiling with current clusters. So contact->player geometry is
+    near solved; pose/body are close to that ceiling already.
+  * The gap: **42% of matched touches have NO tracklet near the contact
+    whose cluster resolves to the true player.** Split of those 73 failures:
+    **96% = a tracked body IS physically at the ball but carries the wrong
+    cluster label; only 4% genuinely untracked.**
+- CONCLUSION: attribution is now ~100% an IDENTITY-CLUSTERING problem. Not
+  coverage (median 9/12 tracked, toucher present 96%), not geometry (86%
+  ceiling), not contact quality. The OSNet embeddings are degenerate on this
+  footage (AUC 0.57 — every player looks alike: similar builds/jerseys/gym
+  light), so tracked players scatter into wrong/fragment clusters.
+- Pose still earns its keep for the APEX-rejection (precision) it enables,
+  but for ATTRIBUTION the lever is now identity, full stop. Whether to
+  promote wrist attribution (marginal +3pp) is secondary.
+- **THE WALL: can we tell these players apart?** Next lever options in §1.7.
+
+## Session 6: POSE FEASIBILITY CONFIRMED + global static suppression
+- Pose smoke test on CLEAN cca-one (yolo11m-pose): on real-ball contacts at
+  touch height, **86% (24/28) have a wrist within 140px** of the ball
+  (median far tighter than the 227px body-center; min 6px). Answers Ken's
+  "is wrist-finding even feasible" — YES. Pose runs INSIDE player boxes so
+  wall-sign/light false-positives don't apply.
+  * BONUS: all 8 real contacts with the ball HIGH (mid-air/apex) had NO
+    close wrist — pose ALSO solves the apex-phantom problem ("smooth arc AND
+    no wrist at ball" = drop). Attribution + apex fix from one signal.
+  * 12 contacts had a close wrist pointing at a DIFFERENT player than
+    body-center = exactly the attribution errors pose corrects.
+- Smoke test also exposed MORE static ball FPs at ~(776,113)/(43,348) — the
+  gym has several fixed round objects; per-rally suppression missed each
+  (under-threshold individually). 41% of smoke-test contacts were static-FP.
+- FIX: two-pass detect_all + global_static_cells (balltrain.py). A cell is a
+  fixed object if it has sustained presence (>=12 frames) in >=3 rallies AND
+  near-zero position variance (std<2.5px) — the VARIANCE gate is essential:
+  dwelling-count alone flags busy centre-court (nuked recall to 4%); variance
+  cleanly isolates lights (std~0.7px) from the ball scattering through a cell.
+  Found exactly the right cells: ceiling light (20/60,340), upper light
+  (780,100), corner scoreboard (1260,20). Conservative defaults; recall
+  "cost" on thinned data is the lower-bound artifact (recovers on reprocess).
+  Regression: also_static=None == prior behavior. vbpipe.zip rebuilt.
+- NEXT: reprocess cca-one (global static + pose via --pose-model) -> clean
+  ball + wrists in game.json -> score wrist-vs-body attribution + apex-reject
+  against corrections. If wrist attribution wins, PROMOTE it (make wrist the
+  default attribution path). This is the Phase B payoff.
+
+## Session 6: two model-view findings from Ken (residual static + apex)
+- Ken watching cca-one model-view spotted (1) the light/sign STILL detected
+  as ball intermittently, and (2) a PHANTOM contact at the top of every arc.
+- (1) Residual static: per-rally suppression (0.25) missed the light at ~15%
+  of a rally's frames. Lowered static_frac 0.25->**0.15** — contact P
+  51->54%, recall flat, clears the model-view flicker. Global cross-rally
+  static map would be even more robust (TODO: two-pass detect_all). Shipped.
+- (2) Apex phantoms CONFIRMED (Ken's insight): at a parabola apex the ball's
+  vy reverses -> find_contacts' direction-change trigger fires with no real
+  touch. ~38 of 179 phantoms at apexes; phantoms follow a smooth single arc
+  (median parabola-resid 4.6px vs 15.3 for real touches). BUT every
+  trajectory-only rejection (abs residual, two-parabola split-gain, apex
+  velocity signature) also cuts SOFT real touches that barely bend the arc,
+  and "no player near ball" is unreliable (the 227px hand-offset). Net:
+  precision up, recall down — not worth it alone.
+  **Resolution: the apex filter is a Phase B feature** — with wrist
+  keypoints, "smooth arc AND no WRIST at the ball" cleanly removes mid-air
+  apexes without touching real hits. Deferred to pose.
+- vbpipe.zip rebuilt (static_frac 0.15). Next reprocess picks it up.
+
+## Session 6: cca-one REPROCESS with all fixes — big jump
+- New run (yolo11m/conf0.20/fps15 + static suppression + margin + 60fps ball):
+  * static impostor 43% -> **0%** (ceiling light gone). "35.9 det/s" was half
+    garbage; real ball density 18/s.
+  * contact PRECISION 39% -> **52%** (teleport contacts gone); recall 73%.
+  * family typing 46% -> **58%** (de-noised contact stream -> better ordering).
+  * coverage 7.4 -> **8.9** tracked (yolo11m).
+  * attribution (fair/assignment) ~20-22% -> **34%**.
+  * fair JOINT (assignment attribution) **13%** vs prior 5% baseline — the
+    first real multi-lever jump. (eval's raw-resolve JOINT reads 4% because
+    cluster ids shuffle across reprocesses; assignment-based is the honest
+    cross-run yardstick — use it going forward.)
+- Still open: attribution 34% (Phase B pose next — the hand-offset wall),
+  set/attack typing confusion (set 16/49, mostly ->attack), 5 detector-
+  missed rallies. cca-two reprocess pending (expect a bigger jump: it was
+  91% static).
+
+## Session 6: BALL STATIC FALSE-POSITIVES — both games (overlay tool)
+- Ken's video review (via new overlay tool) identified the stuck detections:
+  the trained ball model FALSE-POSITIVES on round/bright static objects —
+  a WALL SIGN on cca-two, a CEILING LIGHT on cca-one. Not stray balls.
+- Scale (both games, static-cell audit): cca-one **43%** of ball detections
+  are a static impostor @~(20,340); cca-two **91%** @~(20,300). Both at
+  far-left edge. cca-one was never "clean" — its density numbers were
+  inflated by the light.
+- Mechanism hurt BOTH funnel legs: (recall) impostor out-confidenced the
+  blurry real ball and detect_all kept only best-per-frame, discarding the
+  real ball; (precision) detector flickering between real ball and a fixed
+  impostor = "teleport" = phantom contacts in find_contacts.
+- FIX validated (balltrain._pick_moving, shipped): on existing data
+  (lower bound — real ball already discarded) contact PRECISION jumps
+  cca-one 38->50%, cca-two 47->60%. Recall recovery needs a REPROCESS
+  (keep all dets/frame, then suppress, then best moving) — can't be shown
+  on old best-per-frame data.
+- **Model-view is now a FIRST-CLASS pipeline output** (Ken's call — this
+  finding proved watching-what-the-model-sees is the best debugger):
+  * vbpipe/overlay.py (package) — render_overlay(video, game, out, ...).
+  * cli: `python -m vbpipe.cli overlay VIDEO -o OUT` (own stage) OR add
+    `--overlay PATH` to a plays run; `--overlay-game-only` trims dead time
+    (default renders EVERYTHING so warmup false-positives stay visible).
+  * pipeline/overlay.py kept as a thin standalone wrapper (--rally/--t0/t1).
+  * Notebook: add the render_overlay call to process() (snippet given) so a
+    model_view_<name>.mp4 lands in Drive/balltime/model_views every run.
+  Draws ball(red)+conf, trail(cyan), player boxes+cluster id(green),
+  contacts(yellow). Default 15fps/720p ~ a few hundred MB for a 17min game.
+- FOLLOW-UP LEVER: add the two static-FP locations as HARD NEGATIVES in the
+  next ball gen (ball_gen2 already mines hard negatives) so the model stops
+  firing on them at the source, not just downstream suppression.
+
+## Session 6: cca-two stuck-ball bug (found via pose smoke test)
+- Pose smoke test on cca-two came back 3/64 wrists ≤140px, 0 disagreements —
+  INCONCLUSIVE, not negative: the ball in cca-two's game.json is pinned at
+  (17,315) [frame-left] for **91% of detections** (conf 0.70, all 35
+  rallies). A spare/dead ball on the left sideline, in frame for cca-two but
+  not cca-one. Explains cca-two contact recall 46% vs cca-one 79%.
+- Root cause: detect_all (trained-ball path) kept only the single highest-
+  conf detection per frame — a confident STATIONARY spare ball beats the
+  blurry moving game ball and discards it every frame they co-occur.
+- FIX: balltrain._pick_moving — keep ALL dets/frame, suppress any 40px cell
+  (+8-neighborhood) lit in >25% of a rally's frames (can't be the game
+  ball), then best moving det/frame. `suppress_static=True` default;
+  `--no-suppress-static` escape hatch. Unit-tested: synthetic spare removed
+  + arc kept; cca-two rally stuck-frac 76%->0%. vbpipe.zip rebuilt.
+  NOTE: existing game.json can't be salvaged (real dets already discarded) —
+  cca-two needs a ball-stage REPROCESS to recover the game ball.
+- Pose verdict still PENDING: re-run pose_smoketest on CCA-ONE (clean ball).
+
+## Session 6: arc-junction negative result + Phase-A coverage plan
+- Arc-junction contact localization PROTOTYPED and A/B'd on both games
+  (scratch only, nothing shipped): captured/typed/attribution all ±2%.
+  Dead end — it shifts the contact ~10px, but attribution error is ~227px
+  (ball-at-hand vs body-center) at ~150px player spacing. Also swept every
+  proximity-attribution variant (instant/window-min/anchor/weight):
+  ALL 20-25% on both games. Attribution is capped by TRACKING COVERAGE +
+  the hand-offset, NOT contact quality or distance math.
+- Two-game frozen baseline (comparison/ folder, current pipeline):
+  JOINT 5%, funnel 60% captured x 43% typed x 19% right-player.
+  comparison/ holds the 4 canonical files (2 games x original+corrections).
+- Decision (Ken: "current model not good enough, need guidance"): pursue
+  PHASE A (detection coverage) then PHASE B (pose-based attribution).
+  More games alone won't fix the cap; both are architectural.
+- **Phase A shipped to config** (vbpipe.zip rebuilt — RE-UPLOAD): det_model
+  yolo11n->yolo11m, det_conf 0.35->0.20, det_fps 10->15 (imgsz already 1280,
+  margin already 90). Costs ~4-6x track time on T4. Ken: reprocess BOTH cca
+  games, send new game.jsons; success = concurrent tracked ~7->~11 and
+  attribution rises. If coverage rises but attribution stays ~25%, Phase B
+  (pose/wrist keypoints for the striking hand) is confirmed necessary.
+- Phase B (next): pose model on tracked players, attribute by min wrist-to-
+  ball distance instead of body-center box. Breaks the 227px ceiling.
+
+## Session 6: reprocess round 3 — attribution diagnosis closed
+- det_imgsz=1280 landed: concurrent tracked 6.0 -> 7.4 (p90 11). Captured
+  76%, R 79%. But attribution stayed ~20-22% even under fair scoring
+  (cluster ids shuffle across reprocesses — eval now needs assignment-based
+  attribution scoring: greedy 1:1 cluster<->person on vote counts; raw
+  resolve() comparison is only valid on the run the corrections came from).
+- Gate/anchor/weight sweeps ALL flat (~20-25%) -> not tunable. Decisive
+  decomposition: truth person tracked near their touch 55% of the time;
+  when tracked, contact->their-box distance median 227px (49% within the
+  220px gate). **Contact positions are jittered ~200-400px (0.3s timing
+  slop × ~900px/s ball speed) — nearest-player attribution is structurally
+  noise at rec-volleyball player spacing (~150px).**
+- Conclusion: stop tuning proximity attribution. Two levers, in order:
+  (1) contact LOCALIZATION: fit the incoming/outgoing arc segments and
+  output their junction as (t,x,y) instead of the raw velocity-discontinuity
+  sample — sharpens time AND position; helps typing too (same jitter caps
+  it at ~46%).
+  (2) learned attribution (PLAN §2): features = distance, incoming-arc
+  direction alignment, timing offset, box size/side; labels = Ken's
+  corrected touches (~500/game, 2 games and counting).
+- cca-one reprocessed (margin + 220/340 gates + 60fps ball). First eval
+  looked like a regression — artifact: segmentation changed 42→45 rallies
+  and eval mapped corrections by IDX. eval_corrections now maps rallies by
+  TIME OVERLAP (idx-equivalent on same-run, correct across reprocesses;
+  unmatched = detector-missed). With honest mapping: **captured 65→75%**,
+  detector-missed rallies 8→5, attribution attempted 95→171 (declined
+  69→17) but right-player still 13% — coverage still ~6/12.
+- Margin verified active (11.7% of tracked feet outside the poly) — so
+  the remaining coverage ceiling is DETECTION, and the bug is found:
+  **track.py never passed imgsz — ultralytics infers at 640**, halving the
+  720p frame; far players ~50px for yolo11n. Fix: det_imgsz=1280 config +
+  passed to model.track. vbpipe.zip rebuilt — RE-UPLOAD + reprocess BOTH
+  cca games again (track stage ~3-4x slower; same lesson as ball gen-3:
+  we were paying for pixels the model never saw).
+- run2 game.json backed up to /tmp/game_cca-one_run2.json for A/B.
+
+## Session 6: identity deep-dive — tracking coverage was the real bottleneck
+- Re-clustering prototype (z-scored embs + junction continuity + cannot-
+  links) barely moved purity (29%->30-38% only via shattering). Embedding
+  AUC on labeled pairs: 0.57 (~noise). Color-histogram features extracted
+  from the video (842 verified crops): AUC 0.59 — also weak. Per-person
+  crop montage exposed why: the (tracklet->person) labels themselves are
+  noise. My earlier "attribution is 92% right at person level" claim was an
+  inference artifact — the eval's 25% was correct all along.
+- **Root cause (validated visually + statistically): the track-stage court
+  poly gate.** Tracked feet fill the clicked playing_area and pile at its
+  boundary (21% within 25px); frame audit shows ~6 players standing OUTSIDE
+  the poly mid-rally (servers, back-row). Concurrent tracked players:
+  median 6 of 12; at the median touch only 5 tracklets are active — the
+  true toucher is untracked half the time, so attribution blames whoever
+  IS tracked nearby, and clustering inherits garbage.
+- FIX: track.py gate now `pointPolygonTest(...,True) < -cfg.court_margin_px`
+  (config default 90px @720p; gate area 18%->43% of frame). vbpipe.zip
+  rebuilt — RE-UPLOAD. Side effect: bench/bystanders may get tracked ->
+  more dismissals in naming; acceptable.
+- Verification plan: delete bundles/game_bundle_cca-one.zip in Drive,
+  re-run process_game (picks up margin + 220/340 attribution gates + the
+  60fps ball path), then eval the NEW game.json against the SAME
+  corrections (no app re-import needed). Expect captured to hold ~65%,
+  attribution to jump, and the identity-feature AUCs to be remeasured on
+  cleaner labels before any clustering rework.
+
+## Session 6: cca-one scorecard (first 60fps side-angle game, 532 corrections)
+- **JOINT PARSE 6%** (vs game2 baseline 2%): captured 65% × family-typed 53%
+  × right-player 18%. Ball density 3.7 → **35.9 det/s**; contact R 57→75%
+  (P 51→43% — 60fps also surfaces more junk; conf/threshold tuning is a
+  future lever). Type exact 38→52%. Typer sweep re-run: serve-gate defaults
+  still win, resync anchors still lose at P43 — unchanged.
+- **Attribution mystery solved in three acts**: (1) measured 25%-when-
+  attempted, 69 declined; gate sweep showed accuracy flat vs gate → not a
+  gate problem. (2) Embedding check claimed 71/95 "misses" were unmerged
+  fragments of the right person — but (3) the named-pair similarity matrix
+  showed OSNet embeddings are DEGENERATE on this footage (every player
+  0.86-0.98 similar to every other; also explains the bogus cross-game
+  "Emily? 93%" suggestions on new players). Spatial audit was decisive:
+  63/71 misses had NO tracked box of the truth player near the contact —
+  the pipeline attributed the only person standing there; the tracklet just
+  carries a fragment cluster label. Real wrong-neighbor picks: 8/95.
+  **Attribution geometry ≈ 92% right at person level; the bottleneck is the
+  identity registry (39 clusters for ~16 people) + collapsed embeddings.**
+- plays.attribute gates 120/260 → **220/340** (declined 69→7, tiny neighbor
+  risk). vbpipe.zip rebuilt — RE-UPLOAD. Person-level projection once Ken
+  merges fragments in the app: JOINT ~24-26%. Remaining gaps after that:
+  capture 65% (serve-side crop + junk precision) and family typing 53%
+  (the §2 learned-typer case grows).
+- Reviewer-workflow adds during Ken's review pass: decisive-grade
+  tail-delete prompt + "🗑 after" button; D-hotkey delete (select-safe);
+  editor chip pulses on playhead sync; "poor" grade for out-of-system
+  passes/digs (amber badge; excluded from positive%, manual-only).
+- Ken's process note: left-side serves are hand-added (off-frame) — they
+  can never be pipeline-captured at this camera position; the joint metric
+  carries that structural tax (~19 serve touches/game).
+- Embedding degeneracy is now a named problem for identity quality:
+  candidate fixes = hi-res crops for embedding (same lesson as ball gen-3:
+  resolution), a stronger reid model, or leaning on spatial continuity.
+  Cross-game suggestion threshold should be raised/disabled meanwhile.
 
 ## Done in session 6 (PLAN-75 §0 + §1: joint metric, serve-anchored typing)
 - **PLAN-75.md** (repo root): roadmap to "ML parses ≥75% of touches, Ken

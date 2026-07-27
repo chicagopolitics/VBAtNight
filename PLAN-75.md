@@ -26,17 +26,110 @@ attributed); Ken fixes the rest; /stats stays honest meanwhile._
   can fix that. RE-RUN typer_sweep.py after each ball-model generation;
   flip the anchors on when they start winning.
 
-## 2. Point the corrections flywheel at more than the ball model
-- [ ] Corrections already capture true type + true player per touch
-      (571 touches from game2 alone; ~5k after ~10 game nights).
-- [ ] Train a small **contact-type classifier** (ball kinematics around the
-      contact + attributed player's pose/position) to replace rules when
-      confident; fall back to grammar otherwise.
-- [ ] Train/tune **attribution** on the same data: depth-adaptive distance
-      gates (already flagged in M2-STATUS) → learned scoring of
-      (contact, tracklet) pairs. Attribution is the weakest measured link.
-- [ ] Keep ball-model gen-N retrains going — but expect diminishing returns;
-      gens mine what the previous gen already sees.
+## 1.5 Identity: the REAL bottleneck is tracking coverage (revised 2026-07-23)
+The deep-dive corrected itself twice; final findings, in causal order:
+1. **Tracking covers ~6 of 12 on-court players** (median touch: 5 active
+   tracklets). Root cause: the court-poly gate uses the CLICKED playing
+   area, but servers + back-row stand OUTSIDE the lines — feet heatmap
+   piles at the poly fence; frame audit shows ~6 players outside at once.
+   [x] FIXED: track.py gate now allows court_margin_px (90px @720p) outside
+   the poly. vbpipe.zip rebuilt. **Verify by reprocessing cca-one** —
+   expect concurrent tracked ~6 -> ~11-12 and attribution to jump.
+2. With coverage broken, attribution labels are noise -> the earlier "92%
+   right person" spatial audit was an artifact; the eval's 25% was honest.
+   Cluster mega-merge ("blue shirt black shorts" absorbing 8 people) and
+   fragmentation are downstream of the same noise.
+3. OSNet embeddings measure AUC 0.57 and color-histogram features 0.59 on
+   current labels — but those labels are coverage-noised; REMEASURE after
+   reprocess before condemning either feature. (Crop-extraction + purity
+   harness live in /tmp scripts; re-clustering prototype exists.)
+- [x] plays.attribute gates 120/260 -> 220/340 (declined 69->7 on cca-one).
+- [x] Reprocess rounds 2+3 done: margin verified, det_imgsz=1280 shipped
+      (coverage 6.0→7.4), captured 76%. Attribution ~20-22% under fair
+      assignment scoring — NOT tunable (all sweeps flat). Diagnosis: contact
+      positions jittered 200-400px; nearest-player is structurally noise.
+- [x] **Contact localization (arc-junction)** — TESTED, DOES NOT HELP.
+      Prototype fit incoming/outgoing arcs, output their junction as the
+      contact. A/B on both games: captured/typed/attribution all within ±2%.
+      Root cause it can't touch: attribution error is ~227px (ball-at-hand
+      vs body-center box) and player spacing is ~150px; a 10px sharper
+      contact is irrelevant. NOT shipped.
+- [x] **Attribution is capped ~25% by TRACKING COVERAGE, not geometry.**
+      Every proximity variant (instant / window-min / anchor / weight)
+      = 20-25% on both games. True player tracked near their touch only
+      ~55%; even then contact is 227px from body-center. The lever is
+      getting the right player tracked + disambiguating at the hand — not
+      contact quality. Two candidate directions below (Ken's call).
+- [ ] Raise/disable cross-game embedding suggestions (fired 92-93% on
+      all-new players).
+- See §1.6 for the phased plan out of the 25% attribution ceiling.
+
+## 1.6 Attribution roadmap — the two-phase plan (2026-07-24)
+Attribution is the binding constraint (funnel: 60% captured × 43% typed ×
+**19% right-player**). Diagnosis is settled: it's capped ~25% by (a) the true
+toucher only being TRACKED ~55% of the time and (b) the ball-at-hand sitting
+~227px from the body-center box at ~150px player spacing. Neither contact
+localization nor any proximity-metric tuning moved it. More games alone won't
+either — the cap is structural. Two architectural phases, sequenced:
+
+### Phase A — detection coverage  [SHIPPED to config, awaiting reprocess]
+- [x] det_model yolo11n→yolo11m, det_conf 0.35→0.20, det_fps 10→15
+      (det_imgsz 1280 + court_margin 90 already in). Costs ~4-6x track time.
+- [ ] Ken: reprocess both cca games, send game.jsons. Success =
+      concurrent tracked ~7→~11; measure attribution lift under body-center.
+- Decision gate: if coverage rises but attribution stays ~25% → the
+  hand-offset is the wall, Phase B is confirmed. If attribution rises with
+  coverage → we may need less of Phase B.
+
+### Phase B — pose-based attribution  [prototype ready to ride Phase A reprocess]
+- Idea: attribute to the nearest WRIST keypoint, not the body-center box —
+  matches the ball to the striking hand, which is what disambiguates players
+  at 150px spacing.
+- Design (non-invasive): a pose pass runs ONLY at contact times (~500/game,
+  cheap vs per-frame), enriches each contact with nearby wrist keypoints +
+  their tracklet id. Default attribution UNCHANGED, so it can't regress the
+  Phase-A coverage measurement. Ken runs it in the SAME reprocess; wrist-vs-
+  body attribution is then compared OFFLINE against corrections (no second
+  slow run, effects stay separable). `pipeline/pose_attrib.py` (new).
+- [ ] Validate wrist keypoints are sane on a few rallies before trusting the
+      full run (measure-first, same discipline as arc-junction).
+
+### Phase B RESULT (2026-07-24): geometry solved, IDENTITY is the wall
+Pose ran on cca-one. Attribution 36% (body) -> 39% (wrist), only +3pp,
+because contact->player geometry is already near its 86% oracle ceiling.
+The real gap: 42% of touches have no correctly-clustered tracklet for the
+toucher — and 96% of those are a tracked body AT the ball with the WRONG
+cluster label. Attribution is now purely an identity problem.
+
+## 1.7 IDENTITY — the final attribution lever (the model can't tell players apart)
+OSNet embeddings AUC 0.57, color-hist 0.59 on this footage: similar builds,
+jerseys, gym lighting. Options, roughly in effort order:
+- [x] Hi-res reid crops: TESTED — embedding AUC 0.57->0.61, attribution
+      UNCHANGED (36/39%). Players genuinely too similar; appearance ID is a
+      dead end at any resolution. crop_hires can be flipped off.
+- [ ] Stronger reid model / different backbone; or fine-tune reid on Ken's
+      corrected identities (he labels players every game — training data).
+- [ ] Jersey-number OCR if numbers are legible (may not be, rec league).
+- [ ] Spatial-temporal identity: within a rally ByteTrack IS locally correct;
+      lean on court-position continuity + team side to link tracklets to
+      players instead of appearance alone.
+- [ ] Product fallback: automated attribution caps ~40%, but Ken's review
+      (merge/split, already built) produces CORRECT stats. The automated
+      number reduces review burden; it isn't the final accuracy. Decide how
+      much identity R&D is worth vs. accepting review-assisted attribution.
+
+### Phase C — learned attribution + flywheel  [after A/B measured]
+- Train a small scorer over (distance, incoming-arc angle, timing offset,
+  wrist-vs-body, box geometry) on ~1000+ corrected touches. Inherits the
+  coverage cap, so it comes AFTER A/B, not before.
+- Contact-type classifier likewise (replaces rule typing when confident).
+- Keep ball-model gen-N retrains going (diminishing returns expected).
+
+## 2. Corrections flywheel  → folded into §1.6 Phase C
+The learned contact-type classifier + learned attribution scorer now live in
+§1.6 Phase C (they inherit the coverage cap, so they run after Phase A/B are
+measured). Ball-model gen-N retrains continue independently as corrections
+accumulate (~465-571 touches/game; ~2 games in hand).
 
 ## 3. Capture-side levers (cheapest wins per unit effort)
 - [x] **60 fps recording**: Ken switching all future recordings to 1080p60.
@@ -85,9 +178,15 @@ attributed); Ken fixes the rest; /stats stays honest meanwhile._
       charge (needs teams); reception on a 0–3 passing scale instead of
       binary (one more option in the grade override).
 
-## Suggested order
-1. §0 joint metric (an afternoon; everything else is measured against it)
-2. §3 capture changes (next game night — zero code risk, big data upside)
-3. §1 resync typer (attacks the worst measured number)
-4. §4 stats fixes (visible product wins, independent of ML work)
-5. §2 learned models (once corrections cross ~2–3k touches)
+## Suggested order (revised 2026-07-24)
+DONE: §0 joint metric · §1 serve-anchored typer · §3 capture (60fps + fps-
+aware pipeline + camera) · §1.5 tracking margin + det_imgsz + gates.
+NOW:
+1. §1.6 Phase A reprocess (SHIPPED, awaiting Ken's Colab run) + Phase B pose
+   prototype riding the same run — the attribution ceiling is the binding
+   constraint on the joint score.
+2. §4 stats fixes — visible product value, zero ML dependency, can proceed
+   in parallel with reprocesses (scores/win-loss first).
+3. §1.6 Phase C learned models — after A/B are measured on ≥2 games.
+NOTE: current 2-game frozen baseline = JOINT 5% (60% captured × 43% typed ×
+19% right-player); every change is measured against comparison/ on BOTH games.

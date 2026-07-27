@@ -51,19 +51,33 @@ def score(corr, pipe, s, conf, per_type):
     """Accumulate one game's numbers into tallies s / conf / per_type."""
     resolve = make_resolver(corr.get("identities", []))
 
-    # rallies split in the app share one pipeline idx — regroup so each
-    # pipeline rally is scored against the union of its halves' plays.
-    # idx -1 = rally added manually in the app (detector missed it entirely).
+    # Map corrections rallies to pipeline rallies by TIME OVERLAP, not by the
+    # stored idx: reprocessing a game can change segmentation (rally count /
+    # boundaries), which silently breaks idx-based scoring. Overlap mapping is
+    # identical to idx mapping when evaluating the run the corrections came
+    # from, and stays correct across reprocessed pipelines. Corrections
+    # rallies with no overlapping pipeline rally = detector-missed.
+    def best_overlap(cr):
+        t0, t1 = cr.get("start"), cr.get("end")
+        if t0 is None or t1 is None:   # no times exported -> fall back to idx
+            i = cr.get("idx")
+            return i if i is not None and 0 <= i < len(pipe["rallies"]) else None
+        best, bo = None, 0.0
+        for i, pr in enumerate(pipe["rallies"]):
+            o = min(t1, pr["end"]) - max(t0, pr["start"])
+            if o > bo: bo, best = o, i
+        return best if bo > 0.2 * max(t1 - t0, 0.1) else None
     by_idx = defaultdict(list)
     for cr in corr["rallies"]:
         if cr["phase"] != "game": continue
-        if cr["idx"] is None or cr["idx"] < 0:
+        pi = best_overlap(cr)
+        if pi is None:
             tp = sum(1 for p in cr["plays"] if p.get("play_type"))
             s["manual_rallies"] += 1
             s["manual_touches"] += tp
             s["gt"] += tp        # missed outright still counts against JOINT
             continue
-        by_idx[cr["idx"]].append(cr)
+        by_idx[pi].append(cr)
 
     for idx, crs in sorted(by_idx.items()):
         pr = pipe["rallies"][idx]

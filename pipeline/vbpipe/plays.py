@@ -61,9 +61,16 @@ def find_contacts(ball_pts, min_gap=0.35, cos_thr=0.55, dv_thr=260, vel_win=0.1)
     for e in ev: e.pop("_m", None)
     return ev
 
-def attribute(contacts, tracklets, rally_idx):
-    """Nearest player; contacts with nobody within 260px are dropped as spurious.
-    Court side comes from the player's feet (geometrically unambiguous)."""
+def attribute(contacts, tracklets, rally_idx, gate=220, drop=340):
+    """Nearest player; contacts with nobody within `drop` px are dropped as
+    spurious; nearest player closer than `gate` px gets the attribution.
+    Court side comes from the player's feet (geometrically unambiguous).
+
+    Gates re-tuned 2026-07-23 on cca-one (elevated side camera, 60fps):
+    old 120/260 declined 69 of 263 GT touches; 220/340 declines 7, and a
+    spatial audit showed the wrong-neighbor risk is small (8/95) — when the
+    right player isn't tracked at the contact, declining just loses the
+    touch, it doesn't prevent errors."""
     trs = [tr for tr in tracklets if tr["rally"] == rally_idx]
     out = []
     for c in contacts:
@@ -74,9 +81,9 @@ def attribute(contacts, tracklets, rally_idx):
                 bx, by = b[1]+b[3]/2, b[2]+b[4]*0.35
                 d = np.hypot(bx - c["x"], (by - c["y"])*0.6)
                 if d < bd: bd, best, bbox = d, tr, b
-        if best is None or bd > 260:
+        if best is None or bd > drop:
             continue
-        c["cluster"] = best.get("cluster") if bd < 120 else None
+        c["cluster"] = best.get("cluster") if bd < gate else None
         c["tracklet"] = best["id"]
         c["dist_px"] = round(float(bd), 1)
         c["side"] = _side(bbox[1]+bbox[3]/2, bbox[2]+bbox[4])
