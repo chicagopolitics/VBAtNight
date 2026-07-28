@@ -73,10 +73,10 @@ export default function Review({ rallies, idents, plays, video }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, deleted: 1 }) });
   }
-  async function removeAfter(p) {
+  async function removeAfter(p, silent = false) {
     const after = rallyPlays.filter(x => x.t > p.t);
     if (!after.length) return;
-    if (!confirm(`Delete ${after.length} touch${after.length > 1 ? "es" : ""} after this one?`)) return;
+    if (!silent && !confirm(`Delete ${after.length} touch${after.length > 1 ? "es" : ""} after this one?`)) return;
     const ids = after.map(x => x.id);
     setAllPlays(ps => ps.filter(x => !ids.includes(x.id)));
     for (const id of ids)
@@ -84,6 +84,28 @@ export default function Review({ rallies, idents, plays, video }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, deleted: 1 }) });
   }
+  // set a touch's quality grade; a decisive grade (kill/ace/stuff, or a final
+  // serve/attack error) also fills the rally outcome, trims the rally to the
+  // finishing touch + 3s, and clears any trailing junk touches.
+  function setGrade(p, gv) {
+    save(p.id, { grade: gv });
+    const isLast = rallyPlays[rallyPlays.length - 1]?.id === p.id;
+    const ot =
+      gv === "kill" && p.play_type === "attack" ? "kill" :
+      gv === "stuff" && p.play_type === "block" ? "block" :
+      gv === "ace" && p.play_type === "serve" ? "ace" :
+      gv === "error" && p.play_type === "serve" && isLast ? "service_error" :
+      gv === "error" && p.play_type === "attack" && isLast ? "attack_error" :
+      null;
+    if (ot) {
+      saveRally(rally.id, { outcome_type: ot,
+        outcome_cluster: p.cluster_id ?? rally.outcome_cluster ?? null,
+        end_s: Math.round((p.t + 3) * 10) / 10 });   // auto-trim to touch + 3s
+      removeAfter(p, true);
+    }
+  }
+  // per-type "good" grade for the K hotkey (kill/ace/stuff/assist/success/positive)
+  const winGrade = ty => (GRADE_OPTIONS[ty] || [])[0] || null;
 
   const clipStart = r => r.clip_file ? (r.clip_start_s ?? r.start_s - 2) : 0;
   const mediaFor = r => {
@@ -215,6 +237,12 @@ export default function Review({ rallies, idents, plays, video }) {
         case "p": case "P":
           e.preventDefault(); if (f) { setPicker({ filter: "", sel: 0 });
             setTimeout(() => pinput.current?.focus(), 0); } break;
+        case "k": case "K": e.preventDefault(); if (f) setGrade(f, winGrade(f.play_type)); break;
+        case "e": case "E": e.preventDefault(); if (f) setGrade(f, "error"); break;
+        case "w": case "W":   // poor (weak) — only valid for receive/dig
+          e.preventDefault();
+          if (f && (GRADE_OPTIONS[f.play_type] || []).includes("poor")) setGrade(f, "poor");
+          break;
         default:
           if (TYPE_KEY[e.key] && f) { e.preventDefault(); save(f.id, { play_type: TYPE_KEY[e.key] }); }
       }
@@ -222,6 +250,23 @@ export default function Review({ rallies, idents, plays, video }) {
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   });
+
+  // scroll-wheel over the video scrubs ±0.5s per bump (native, non-passive so
+  // it can preventDefault and not scroll the page)
+  useEffect(() => {
+    const v = vid.current;
+    if (!v || !rally || rally.phase === "skipped") return;
+    const onWheel = ev => {
+      ev.preventDefault();
+      const t0 = Math.max(0, rally.start_s - clipStart(rally) - 2);
+      const t1 = rally.end_s - clipStart(rally) + 2;
+      const lo = full ? 0 : t0, hi = full ? (mediaDur || t1) : t1;
+      v.currentTime = Math.max(lo, Math.min(hi, v.currentTime + (ev.deltaY > 0 ? 0.5 : -0.5)));
+      v.pause();
+    };
+    v.addEventListener("wheel", onWheel, { passive: false });
+    return () => v.removeEventListener("wheel", onWheel);
+  }, [rally, full, mediaDur]);
 
   const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   const doneCount = visible.filter(r => r.outcome_type).length;
@@ -291,8 +336,8 @@ export default function Review({ rallies, idents, plays, video }) {
       </div>
 
       <div className="keyhint muted">
-        <b>↑↓</b> touch · <b>1–6</b> type · <b>P</b> player · <b>←→</b> ±1s ·
-        {" "}<b>A</b> add · <b>X</b> delete · <b>space</b> play · <b>[ ]</b> rally · <b>Enter</b> score + next
+        <b>↑↓</b> touch · <b>1–6</b> type · <b>P</b> player · <b>K</b> kill · <b>E</b> error · <b>W</b> poor ·
+        {" "}<b>←→</b> ±1s · <b>scroll</b> ±0.5s · <b>A</b> add · <b>X</b> del · <b>space</b> play · <b>[ ]</b> rally · <b>Enter</b> score + next
       </div>
 
       {skipped.length > 0 && (
@@ -442,21 +487,7 @@ export default function Review({ rallies, idents, plays, video }) {
                       <span className="focctl">
                         <select title="quality grade" value={p.grade || ""}
                           onClick={e => e.stopPropagation()}
-                          onChange={e => {
-                            const gv = e.target.value || null;
-                            save(p.id, { grade: gv });
-                            const isLast = rallyPlays[rallyPlays.length - 1]?.id === p.id;
-                            const ot =
-                              gv === "kill" && p.play_type === "attack" ? "kill" :
-                              gv === "stuff" && p.play_type === "block" ? "block" :
-                              gv === "ace" && p.play_type === "serve" ? "ace" :
-                              gv === "error" && p.play_type === "serve" && isLast ? "service_error" :
-                              gv === "error" && p.play_type === "attack" && isLast ? "attack_error" :
-                              null;
-                            if (ot) { saveRally(rally.id, { outcome_type: ot,
-                              outcome_cluster: p.cluster_id ?? rally.outcome_cluster ?? null });
-                              removeAfter(p); }
-                          }}>
+                          onChange={e => setGrade(p, e.target.value || null)}>
                           <option value="">auto: {g || "?"}</option>
                           {(GRADE_OPTIONS[p.play_type] || []).map(gg => (
                             <option key={gg} value={gg}>{gg.replace("_", " ")}</option>
