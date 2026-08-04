@@ -13,6 +13,7 @@
     "yt-probe": "node scripts/yt-probe.mjs",
     "shorts-worker": "node scripts/shorts-worker.mjs",
     "backfill-gamejson": "node scripts/backfill-gamejson.mjs",
+    "fetch-gamejson": "node scripts/fetch-gamejson.mjs",
     "backfill-players": "node scripts/backfill-players.mjs"
   },
   "dependencies": {
