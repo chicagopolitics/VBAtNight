@@ -18,7 +18,22 @@ echo "=== [3/5] Node.js 22 ==="
 curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 # libarchive-tools = bsdtar, needed to extract >2GiB game bundles (GNU tar
 # can't read zips; adm-zip caps at 2GiB)
-apt-get install -yq nodejs build-essential python3 sqlite3 libarchive-tools
+# ffmpeg + python3-venv are for the Shorts renderer (pipeline/vbpipe/shorts.py),
+# driven by app/scripts/shorts-worker.mjs. Without them the queue just fails.
+apt-get install -yq nodejs build-essential python3 python3-venv sqlite3 \
+  libarchive-tools ffmpeg
+
+echo "=== [3b/5] Shorts render venv ==="
+# A venv rather than pip --break-system-packages: opencv + numpy are chunky
+# and shouldn't be able to disturb anything the OS depends on. The worker
+# finds this via SHORTS_PYTHON.
+if [ ! -x /opt/vbatnight-shorts/bin/python ]; then
+  python3 -m venv /opt/vbatnight-shorts
+  /opt/vbatnight-shorts/bin/pip install -q --upgrade pip
+  # headless: no GUI libs on a server, and it's a third the size
+  /opt/vbatnight-shorts/bin/pip install -q numpy opencv-python-headless
+fi
+/opt/vbatnight-shorts/bin/python -c "import cv2,numpy;print('  cv2',cv2.__version__)"
 
 echo "=== [4/5] Caddy (web server, automatic HTTPS) ==="
 apt-get install -yq debian-keyring debian-archive-keyring apt-transport-https

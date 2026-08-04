@@ -5,10 +5,18 @@ node_modules/
 # secrets
 .env
 .env.*
+# ...but NOT the template. `.env.*` was swallowing .env.example, so the only
+# documentation of which env vars exist (Drive OAuth, YouTube OAuth, Resend)
+# never reached the repo — a fresh clone or a rebuilt droplet had nothing to
+# copy from. It contains names and comments only, never values.
+!.env.example
 
-# runtime data — live DB and served media stay out of git
+# runtime data — live DB and served media stay out of git.
+# app/public/media/ also covers what the Shorts pipeline writes: each game's
+# retained game.json and the rendered shorts/ clips.
 app/data/
 app/public/media/
+*.log
 
 # large artifacts
 *.mp4

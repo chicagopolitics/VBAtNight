@@ -12,6 +12,16 @@ export function importGameFromDir(dir, name) {
   fs.mkdirSync(path.join(gdir, "crops"), { recursive: true });
   fs.mkdirSync(path.join(gdir, "clips"), { recursive: true });
 
+  // Keep the bundle's game.json alongside the video.
+  //
+  // Everything the app needs day-to-day gets flattened into SQLite below, so
+  // this looked redundant — but the flattening is lossy. The per-frame BALL
+  // TRACK has no table and is dropped entirely, and that track is what lets
+  // the Shorts renderer follow the play (pipeline/vbpipe/shorts.py). Without
+  // this file a game can be watched and scored but never turned into a Short.
+  // ~9 MB next to a 2.5 GB video: keep it.
+  fs.copyFileSync(path.join(dir, "game.json"), path.join(gdir, "game.json"));
+
   // v8 bundles ship the full source video (played via media fragments)
   // instead of per-rally clips
   const bundleVideo = fs.readdirSync(dir).find(f => /^game\.(mp4|mov|mkv)$/i.test(f));

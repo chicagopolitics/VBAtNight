@@ -61,8 +61,34 @@ RestartSec=3
 [Install]
 WantedBy=multi-user.target
 EOF
+
+# Shorts render worker. Separate service because a render is 1-2 minutes of
+# ffmpeg + OpenCV and must not run inside a web request. Nice'd so it can't
+# make the site sluggish while it works — a Short being ready two minutes
+# later is fine; a laggy page is not.
+cat > /etc/systemd/system/vbatnight-shorts.service <<EOF
+[Unit]
+Description=VBAtNight Shorts renderer
+After=network.target
+
+[Service]
+Type=simple
+User=vbat
+WorkingDirectory=$APP_DIR/app
+Environment=SHORTS_PYTHON=/opt/vbatnight-shorts/bin/python
+Environment=PIPELINE_DIR=$APP_DIR/pipeline
+ExecStart=/usr/bin/node scripts/shorts-worker.mjs --watch
+Nice=10
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 systemctl daemon-reload
 systemctl enable --now vbatnight
+systemctl enable --now vbatnight-shorts
 
 echo "=== [6/7] Caddy ==="
 cat > /etc/caddy/Caddyfile <<EOF
@@ -70,6 +96,12 @@ $DOMAIN {
     # /media served by Caddy, not Next: next start only serves public/ files
     # that existed at BUILD time, so game media imported later would 404.
     # Caddy also gives proper Range support for multi-GB rally videos.
+    # game.json sits in /media so the Shorts renderer can find it, but it's
+    # internal pipeline output (~9 MB of tracks and embeddings), not content.
+    # Must come before the file_server handler to win.
+    handle /media/*/game.json {
+        respond 404
+    }
     handle /media/* {
         root * $APP_DIR/app/public
         file_server

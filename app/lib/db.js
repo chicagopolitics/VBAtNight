@@ -27,6 +27,27 @@ const MIGRATIONS = [
   // links a per-game identity to a global players row = the durable, unique
   // player identity. Null = not yet linked (falls back to name in stats).
   "ALTER TABLE identities ADD COLUMN player_id INTEGER REFERENCES players(id)",
+  // --- YouTube delivery (see YOUTUBE-PLAN.md) ---------------------------
+  // The local MP4 is the RAW (review scrubs it); YouTube is the exported
+  // JPEG (the public /watch page streams it). These columns track the
+  // export so local media can eventually be reclaimed.
+  "ALTER TABLE games ADD COLUMN yt_video_id TEXT",        // 11-char id
+  "ALTER TABLE games ADD COLUMN yt_privacy TEXT",         // unlisted|public|private
+  "ALTER TABLE games ADD COLUMN yt_uploaded_at TEXT",
+  // media lifecycle: local (only on disk) | both (uploaded, disk copy kept
+  // for review) | youtube (disk copy reclaimed — watchable, not reviewable).
+  // Null is read as 'local' so existing rows need no backfill.
+  "ALTER TABLE games ADD COLUMN media_state TEXT",
+  // Ken has explicitly finished pulling Shorts out of this game. Gates the
+  // purge: the local mp4 is the ONLY thing a Short can be rendered from, so
+  // deleting it permanently closes the door on this game's highlights.
+  "ALTER TABLE games ADD COLUMN shorts_done INTEGER DEFAULT 0",
+  // A Short is about a MOMENT — a kill, a dig, a block — not a whole rally.
+  // play_id anchors it; the clip becomes that play plus `lead` touches of
+  // run-up. Null play_id = legacy whole-rally behaviour. This is also what
+  // lets one rally yield two Shorts (the dig AND the kill it set up).
+  "ALTER TABLE shorts ADD COLUMN play_id INTEGER REFERENCES plays(id)",
+  "ALTER TABLE shorts ADD COLUMN lead INTEGER DEFAULT 4",
 ];
 
 export function db() {

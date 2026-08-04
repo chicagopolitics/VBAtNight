@@ -1,12 +1,19 @@
 import { Suspense } from "react";
 import { db } from "@/lib/db";
 import { deriveGrades, teamMap } from "@/lib/grades";
+import { getSessionUser, isOrganizer } from "@/lib/auth";
+import { blockedReason } from "@/lib/shorts";
 import Highlights from "./ui";
 export const dynamic = "force-dynamic";
 
 export default async function Watch() {
   // public: anyone can watch published games
   const d = db();
+  // ...but an organizer gets Shorts controls on the same page. This is where
+  // the browsing tools already are (player + stat filters, outcome pills), so
+  // hunting for clip-worthy rallies belongs here rather than in a second,
+  // duplicate browser somewhere in the admin area.
+  const admin = isOrganizer(await getSessionUser());
   const games = d.prepare("SELECT * FROM games WHERE published = 1 ORDER BY id DESC")
     .all().map(g => ({ ...g }));
   const data = games.map(g => {
@@ -49,7 +56,17 @@ export default async function Watch() {
     }
     const score = teams && ptsA + ptsB > 0
       ? { A: ptsA, B: ptsB, approx: uncounted > 0 } : null;
+    // Shorts state, admin only — a public visitor gets none of this in their
+    // payload, not merely a hidden button.
+    const shorts = admin
+      ? d.prepare("SELECT * FROM shorts WHERE game_id = ? ORDER BY id").all(g.id)
+        .map(s => ({ ...s })) : [];
     return { id: g.id, name: g.name, video_file: g.video_file,
+      // playback source resolution happens in lib/video-source.js — it needs
+      // the YouTube export state as well as the local path
+      yt_video_id: g.yt_video_id ?? null, media_state: g.media_state ?? "local",
+      ...(admin ? { shorts, shorts_done: !!g.shorts_done,
+        shorts_blocked: blockedReason(g) } : {}),
       date: g.created_at?.slice(0, 10) ?? null, score,
       teamA: roster("A"), teamB: roster("B"),
       others: idents.filter(i => i.named && i.team !== "A" && i.team !== "B")
@@ -60,9 +77,12 @@ export default async function Watch() {
         const rows = byRally.get(r.id) || [];
         const grades = deriveGrades(rows, r, teams);
         return { ...r, touches: rows.map(t => ({ t: t.t, type: t.play_type,
+          // the play id is what a Short anchors on (admin only — a public
+          // visitor has no use for it and shouldn't be handed row ids)
+          ...(admin ? { id: t.id } : {}),
           name: names.get(t.cluster_id) || null,
           grade: grades.get(t.id) || null })) };
       }) };
   });
-  return <Suspense><Highlights games={data} /></Suspense>;
+  return <Suspense><Highlights games={data} admin={admin} /></Suspense>;
 }

@@ -9,6 +9,10 @@
     "import": "node scripts/import-game.js",
     "export": "node scripts/export-corrections.js",
     "drive-auth": "node scripts/drive-auth.js",
+    "yt-auth": "node scripts/yt-auth.js",
+    "yt-probe": "node scripts/yt-probe.mjs",
+    "shorts-worker": "node scripts/shorts-worker.mjs",
+    "backfill-gamejson": "node scripts/backfill-gamejson.mjs",
     "backfill-players": "node scripts/backfill-players.mjs"
   },
   "dependencies": {

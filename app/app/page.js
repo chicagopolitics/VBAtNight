@@ -1,8 +1,9 @@
 import { db } from "@/lib/db";
 import { getSessionUser, isOrganizer } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import PublishToggle, { DeleteGame, ExportButton } from "./publish-toggle";
+import PublishToggle, { DeleteGame, ExportButton, YouTubeCell } from "./publish-toggle";
 import { driveCanUpload } from "@/lib/drive";
+import { youtubeConfigured } from "@/lib/youtube";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
@@ -10,6 +11,7 @@ export default async function Home() {
   if (!isOrganizer(user)) redirect("/watch"); // public visitors land on Watch
   const games = db().prepare("SELECT * FROM games ORDER BY id DESC").all().map(g => ({ ...g }));
   const driveReady = driveCanUpload();
+  const ytReady = youtubeConfigured();
   return (
     <div>
       <div className="row" style={{ justifyContent: "space-between" }}>
@@ -29,6 +31,8 @@ export default async function Home() {
             <div className="muted">{g.created_at}</div>
           </div>
           <PublishToggle id={g.id} published={!!g.published} />
+          <YouTubeCell id={g.id} videoId={g.yt_video_id}
+            mediaState={g.media_state} canUpload={ytReady} />
           <ExportButton id={g.id} driveReady={driveReady} />
           <a href={`/games/${g.id}/identities`}><button>1 · Name players</button></a>
           <a href={`/games/${g.id}/review`}><button className="primary">2 · Review plays</button></a>

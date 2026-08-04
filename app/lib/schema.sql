@@ -61,6 +61,29 @@ CREATE TABLE IF NOT EXISTS sessions (
   user_id INTEGER NOT NULL REFERENCES users(id),
   expires_at TEXT NOT NULL
 );
+-- One row per Short we intend to make from a rally. Rendering is slow (a
+-- minute or two of ffmpeg + OpenCV on a 2-vCPU droplet), far too slow for an
+-- HTTP request, so this table IS the queue: the UI writes 'queued' rows and
+-- scripts/shorts-worker.mjs drains them.
+--   queued -> rendering -> ready -> published
+--                       -> failed (error holds why; requeue by setting queued)
+CREATE TABLE IF NOT EXISTS shorts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  game_id INTEGER NOT NULL REFERENCES games(id),
+  rally_id INTEGER NOT NULL REFERENCES rallies(id),
+  status TEXT NOT NULL DEFAULT 'queued',
+  caption TEXT, subcaption TEXT,
+  zoom REAL DEFAULT 1.0,
+  file TEXT,                 -- /media/<gid>/shorts/<id>.mp4 once rendered
+  yt_video_id TEXT,
+  error TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  rendered_at TEXT,
+  published_at TEXT
+);
+CREATE INDEX IF NOT EXISTS shorts_game ON shorts(game_id);
+CREATE INDEX IF NOT EXISTS shorts_status ON shorts(status);
+
 CREATE TABLE IF NOT EXISTS tracklets (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   game_id INTEGER NOT NULL REFERENCES games(id),
