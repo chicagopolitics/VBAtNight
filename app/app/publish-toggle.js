@@ -1,6 +1,33 @@
 "use client";
 import { useState } from "react";
 
+// Every fetch on this page goes through here.
+//
+// `await res.json()` on its own is a trap: when a route handler throws, Next
+// answers with a 500 and an EMPTY body, and the browser surfaces that as
+// "Failed to execute 'json' on 'Response': Unexpected end of JSON input" —
+// a message about the parser, not about the thing that broke. Read the body
+// as text first so a bodyless or HTML error (a proxy timeout, a 502) reports
+// as what it is.
+async function callJson(url, method, body) {
+  const res = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const text = await res.text();
+  let j = null;
+  if (text) { try { j = JSON.parse(text); } catch { /* not JSON */ } }
+  if (!res.ok) {
+    throw new Error(j?.error
+      || (text ? `HTTP ${res.status}: ${text.slice(0, 200)}`
+               : `HTTP ${res.status} ${res.statusText || ""} — the server sent an ` +
+                 `empty response. Check the server log for the real error.`));
+  }
+  if (j === null) throw new Error("the server sent a response that wasn't JSON");
+  return j;
+}
+
 export function DeleteGame({ id, name }) {
   return (
     <button className="danger" onClick={async () => {
@@ -27,11 +54,8 @@ export function GameDate({ id, playedOn, label, needsDate }) {
 
   async function save(patch) {
     setStatus("…");
-    const res = await fetch("/api/games", { method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, ...patch }) });
-    const j = await res.json();
-    if (!res.ok) { setStatus("✗ " + (j.error || "failed")); return; }
+    try { await callJson("/api/games", "PATCH", { id, ...patch }); }
+    catch (e) { setStatus("✗ " + e.message); return; }
     // The date drives slot numbering for every game that night, so a save
     // can rename siblings too — reload rather than patch one row's state.
     window.location.reload();
@@ -137,13 +161,14 @@ export function YouTubeCell({ id, videoId, mediaState, canUpload }) {
     setOpen(false);
     setStatus("…");
     try {
-      const res = await fetch("/api/youtube", { method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, ...body }) });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j.error || "failed");
-      return j;
-    } catch (e) { setStatus("✗ " + e.message); return null; }
+      return await callJson("/api/youtube", method, { id, ...body });
+    } catch (e) {
+      setStatus("✗ " + e.message);
+      // A reclaim can fail after the file is already gone; the details matter
+      // too much to leave in a truncated button label.
+      if (method === "DELETE") alert(e.message);
+      return null;
+    }
   }
 
   async function link() {

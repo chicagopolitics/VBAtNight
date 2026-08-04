@@ -147,12 +147,54 @@ export async function DELETE(req) {
     return Response.json({ error: `${busy} short(s) still rendering from this video` },
       { status: 409 });
 
+  // Everything past this point touches the filesystem, and an uncaught throw
+  // in a route handler makes Next return a 500 with an EMPTY body — which the
+  // browser then reports as "Unexpected end of JSON input", a message that
+  // says nothing about the actual failure (a permissions error, a read-only
+  // mount, a file already gone). Every exit from here is JSON.
+  let stage = "start";
   let freed = 0;
-  if (game.video_file?.startsWith("/media/")) {
-    const abs = path.join(process.cwd(), "public", game.video_file.replace(/^\//, ""));
-    if (fs.existsSync(abs)) { freed = fs.statSync(abs).size; fs.rmSync(abs, { force: true }); }
+  try {
+    if (game.video_file?.startsWith("/media/")) {
+      stage = "resolve";
+      const abs = path.join(process.cwd(), "public", game.video_file.replace(/^\//, ""));
+      stage = "stat";
+      // statSync rather than existsSync-then-stat: the two-call version has a
+      // race, and a broken symlink passes existsSync but throws on stat.
+      let st = null;
+      try { st = fs.statSync(abs); }
+      catch (e) { if (e.code !== "ENOENT") throw e; }
+
+      if (st) {
+        if (!st.isFile())
+          return Response.json({ error: `${game.video_file} is not a regular file` },
+            { status: 409 });
+        freed = st.size;
+        stage = "unlink";
+        fs.rmSync(abs, { force: true });
+      }
+      // st === null means the file is already gone. Not an error: finish the
+      // job by recording the state the disk is actually in.
+    }
+
+    stage = "db";
+    db().prepare("UPDATE games SET media_state = 'youtube' WHERE id = ?").run(id);
+  } catch (e) {
+    console.error(`reclaim failed for game ${id} at stage "${stage}":`, e);
+    // If the file went but the DB update didn't, say so plainly — the row is
+    // now lying about what's on disk and someone has to know.
+    const orphaned = stage === "db";
+    return Response.json({
+      error: `Reclaim failed while ${{
+        resolve: "resolving the video path", stat: "reading the video file",
+        unlink: "deleting the video file", db: "updating the database",
+      }[stage] || stage}: ${e.code ? e.code + " — " : ""}${e.message}` +
+        (orphaned ? " ⚠ The local file WAS deleted but the game still says " +
+          "'both'. Re-run reclaim to correct the record." : ""),
+      stage,
+    }, { status: 500 });
   }
-  db().prepare("UPDATE games SET media_state = 'youtube' WHERE id = ?").run(id);
+
   return Response.json({ ok: true, freed_bytes: freed,
     freed: (freed / 1e9).toFixed(2) + " GB" });
 }

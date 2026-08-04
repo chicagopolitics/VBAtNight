@@ -63,8 +63,28 @@ async function accessToken() {
       client_id: c.id, client_secret: c.secret, refresh_token: c.refresh }),
   });
   const j = await res.json();
-  if (!res.ok)
-    throw new Error("YouTube auth failed: " + (j.error_description || j.error));
+  if (!res.ok) {
+    // Google's error_description here is famously useless ("Bad Request").
+    // The machine-readable `error` is the part that identifies the cause, so
+    // lead with that and translate the two that actually happen.
+    const code = j.error || "unknown";
+    const hint =
+      code === "invalid_grant"
+        ? "\n  The refresh token was rejected. Usually one of:\n" +
+          "    • YT_OAUTH_REFRESH_TOKEN in .env.local is stale — re-consenting\n" +
+          "      can revoke earlier tokens, so an old value stops working the\n" +
+          "      moment you run yt-auth again.\n" +
+          "    • the file has TWO YT_OAUTH_REFRESH_TOKEN lines (check with\n" +
+          "      `grep -n YT_OAUTH_REFRESH_TOKEN .env.local` — keep one).\n" +
+          "    • the value got truncated or wrapped when it was pasted in.\n" +
+          "  Fix: `npm run yt-auth -- --manual`, then replace the line."
+      : code === "invalid_client"
+        ? "\n  YT_OAUTH_CLIENT_ID / YT_OAUTH_CLIENT_SECRET don't match the\n" +
+          "  OAuth client the token was issued for."
+      : "";
+    throw new Error(`YouTube auth failed: ${code}` +
+      (j.error_description ? ` (${j.error_description})` : "") + hint);
+  }
   _tok = { token: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000 };
   return _tok.token;
 }

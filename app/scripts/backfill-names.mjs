@@ -108,7 +108,16 @@ for (const [id, day] of assign) {
     console.error(`game ${id} not found — skipping`); continue;
   }
   upd.run(day, id);
-  console.log(`game ${id} -> played_on ${day}`);
+  const g = games.find(x => x.id === id);
+  // A game cannot be imported before it is played. `created_at` is the import
+  // timestamp (UTC), so a played_on after it means the date is wrong — the
+  // most likely cause being two games mixed up. Warn rather than refuse:
+  // a league east of UTC can legitimately trip this by a few hours.
+  const importedDay = (g?.created_at || "").slice(0, 10);
+  const suspect = importedDay && day > importedDay;
+  console.log(`game ${id} -> played_on ${day}` +
+    (suspect ? `   ⚠ but this game was IMPORTED on ${importedDay} — ` +
+               `you can't import a game before playing it` : ""));
 }
 
 // Renumber every affected night by recording time, falling back to id where
