@@ -11,7 +11,7 @@
 import fs from "fs";
 import { db } from "@/lib/db";
 import { getSessionUser, isOrganizer } from "@/lib/auth";
-import { blockedReason, shortsDir, absFromUrl } from "@/lib/shorts";
+import { blockedReason, shortsDir, absFromUrl, publicCaption } from "@/lib/shorts";
 import { uploadVideo, youtubeConfigured } from "@/lib/youtube";
 
 // Shorts default to PUBLIC, unlike full games. That's not an oversight: an
@@ -74,8 +74,10 @@ export async function POST(req) {
   const id = d.prepare(
     `INSERT INTO shorts (game_id, rally_id, play_id, lead, caption, subcaption, zoom)
      VALUES (?, ?, ?, ?, ?, ?, ?)`)
+    // first names only — this text is burned into the video and becomes the
+    // YouTube title. See publicCaption.
     .run(game.id, rid, play ? play.id : null, lead ?? 4,
-         caption || null, subcaption || null, zoom ?? 1.0)
+         publicCaption(caption) || null, subcaption || null, zoom ?? 1.0)
     .lastInsertRowid;
   return Response.json({ ok: true,
     short: d.prepare("SELECT * FROM shorts WHERE id = ?").get(id) });
@@ -117,7 +119,8 @@ export async function PATCH(req) {
   // caption edit (takes effect on the next render)
   if (body.caption !== undefined || body.subcaption !== undefined) {
     if (body.caption !== undefined)
-      d.prepare("UPDATE shorts SET caption=? WHERE id=?").run(body.caption || null, short.id);
+      d.prepare("UPDATE shorts SET caption=? WHERE id=?")
+        .run(publicCaption(body.caption) || null, short.id);
     if (body.subcaption !== undefined)
       d.prepare("UPDATE shorts SET subcaption=? WHERE id=?")
         .run(body.subcaption || null, short.id);
