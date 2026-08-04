@@ -20,6 +20,7 @@
 //
 // Validation and the actual install are delegated to backfill-gamejson.mjs
 // so there's exactly one implementation of "is this the right file".
+import "../lib/load-env.js";   // must precede anything that reads credentials
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -49,8 +50,14 @@ function freeBytes(dir) {
 }
 
 if (!driveConfigured()) {
-  console.error("Drive isn't configured — need GOOGLE_OAUTH_* (or GOOGLE_SA_KEY) " +
-    "plus DRIVE_FOLDER_ID in .env.local. See DRIVE-SETUP.md.");
+  const has = k => (process.env[k] ? "set" : "MISSING");
+  console.error("Drive isn't configured. Run this from the app directory " +
+    "(where .env.local lives). Currently:");
+  console.error(`  cwd                        ${process.cwd()}`);
+  for (const k of ["DRIVE_FOLDER_ID", "GOOGLE_OAUTH_CLIENT_ID",
+    "GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_OAUTH_REFRESH_TOKEN", "GOOGLE_SA_KEY"])
+    console.error(`  ${k.padEnd(27)}${has(k)}`);
+  console.error("\nSee DRIVE-SETUP.md.");
   process.exit(1);
 }
 
