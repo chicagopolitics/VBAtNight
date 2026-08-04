@@ -1,4 +1,10 @@
 import { db } from "./db";
+import { displayName, slug } from "./game-name";
+
+// Filesystem-safe stem. Shared with the export route so the filename and the
+// `video_stem` field in the payload can't disagree.
+export const stemOf = s => (s || "game").trim().toLowerCase()
+  .replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "game";
 
 export function buildCorrections(gid) {
   const d = db();
@@ -23,7 +29,19 @@ export function buildCorrections(gid) {
   const nCorr = rallies.reduce((a, r) =>
     a + r.plays.filter(p => p.corrected).length + r.removed_plays.length, 0);
   return {
-    game_id: +gid, name: game.name, exported_at: new Date().toISOString(),
+    // `slug` as well as `name`: corrections files get filed, diffed and
+    // re-imported months later, and a stable machine key survives a rename
+    // where a display string doesn't.
+    game_id: +gid, name: displayName(game), slug: slug(game),
+    played_on: game.played_on ?? null,
+    // The stem the corrections file must be named after. NOT the display
+    // name: the gen-2 ball notebook pairs corrections_<stem>.json with
+    // <stem>.mp4, so this has to track the video, not the label. Falls back
+    // to the legacy name for games imported before source_file existed, which
+    // is exactly what those files are already called on disk.
+    video_stem: stemOf(game.source_file
+      ? game.source_file.replace(/\.[^.]+$/, "") : game.name),
+    exported_at: new Date().toISOString(),
     review_stats: {
       corrected_or_removed: nCorr,
       outcomes_set: rallies.filter(r => r.outcome).length,

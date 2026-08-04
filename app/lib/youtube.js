@@ -20,10 +20,22 @@
 import fs from "fs";
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
-// youtube.upload is the minimum for videos.insert. Deliberately NOT the full
-// `youtube` scope: this code never reads, edits or deletes anything on the
-// channel, and the consent screen should say so.
-export const SCOPE = "https://www.googleapis.com/auth/youtube.upload";
+// youtube.upload is the minimum for videos.insert.
+//
+// `youtube` (read/write) is added ONLY for videos.update — re-syncing a title
+// after a game is renamed (see NAMING-PLAN.md). videos.update is not covered
+// by the upload scope, so without this a re-title fails with 403
+// insufficientPermissions. Still deliberately NOT force-ssl: nothing here
+// deletes anything on the channel.
+//
+// ⚠ Adding a scope does not upgrade an existing refresh token. A token minted
+// before this change will keep uploading fine and fail only on re-title, with
+// the error below telling you to re-run `npm run yt-auth`. That's on purpose:
+// re-consent is a deliberate act, not something an upload should trigger.
+export const SCOPE = [
+  "https://www.googleapis.com/auth/youtube.upload",
+  "https://www.googleapis.com/auth/youtube",
+].join(" ");
 
 function creds() {
   const id = process.env.YT_OAUTH_CLIENT_ID;
@@ -184,4 +196,62 @@ export async function uploadVideo(filePath, o = {}) {
   }
   } finally { fs.closeSync(fd); }
   throw new Error("YouTube upload ended without a video id");
+}
+
+/**
+ * Rename an already-uploaded video.
+ *
+ * This is what makes the naming scheme reversible: the site name is derived
+ * and therefore live, but a YouTube title is a snapshot taken at upload, so
+ * the two drift the moment a game's date or label is corrected. Rather than
+ * treating the first upload as final, push the current derived title up.
+ *
+ * videos.update REPLACES the parts you send, so the existing snippet is read
+ * first and only `title` is changed — send a bare {title} and you silently
+ * wipe the description (which holds the /watch link) and the tags.
+ * `categoryId` is required on any snippet update, which is the other reason
+ * a read-modify-write is not optional here.
+ *
+ * Quota: 1 unit for the list + 50 for the update, against 10,000/day.
+ */
+export async function updateVideoTitle(videoId, title) {
+  const token = await accessToken();
+  const auth = { authorization: `Bearer ${token}` };
+
+  const listRes = await fetch(
+    "https://www.googleapis.com/youtube/v3/videos?part=snippet&id=" +
+    encodeURIComponent(videoId), { headers: auth });
+  const listJson = await listRes.json();
+  if (!listRes.ok)
+    throw new Error(scopeHint(listRes.status, listJson) ||
+      ("couldn't read video " + videoId + ": " + (listJson.error?.message || listRes.status)));
+  const snippet = listJson.items?.[0]?.snippet;
+  if (!snippet) throw new Error(`video ${videoId} not found on this channel`);
+
+  const next = { ...snippet, title: String(title).slice(0, 100) };
+  if (next.title === snippet.title)
+    return { id: videoId, title: next.title, changed: false };
+
+  const res = await fetch(
+    "https://www.googleapis.com/youtube/v3/videos?part=snippet",
+    { method: "PUT",
+      headers: { ...auth, "content-type": "application/json" },
+      body: JSON.stringify({ id: videoId, snippet: next }) });
+  const j = await res.json();
+  if (!res.ok)
+    throw new Error(scopeHint(res.status, j) ||
+      (j.error?.message || "re-title failed: HTTP " + res.status));
+  return { id: videoId, title: j.snippet?.title ?? next.title, changed: true };
+}
+
+// A 403 here almost always means the refresh token predates the `youtube`
+// scope, not that something is broken. Say so, with the fix.
+function scopeHint(status, j) {
+  const reason = j?.error?.errors?.[0]?.reason || "";
+  if (status === 403 && /insufficient|forbidden/i.test(reason + (j?.error?.message || "")))
+    return "YouTube refused the edit (insufficient permissions). This token was " +
+           "issued before re-titling existed — re-run `npm run yt-auth` and " +
+           "update YT_OAUTH_REFRESH_TOKEN in .env.local. Uploads keep working " +
+           "either way.";
+  return null;
 }

@@ -36,6 +36,56 @@ def _resolve_ball_fps(arg, video):
     print(f"[ball] source {src:.2f} fps -> sampling at {fps:g} fps")
     return fps
 
+def _probe_provenance(video):
+    """When was this actually filmed, and how long is it?
+
+    Must run against the ORIGINAL camera file, before any stage re-encodes:
+    ffmpeg rewrites container `creation_time` to the encode time unless told
+    otherwise, so a probe of a processed mp4 reports when the pipeline ran,
+    not when the game was played. (Measured on cca-one.mp4: creation_time
+    2026-07-23, encoder Lavf62.3.100 — the re-encode, not the match.)
+
+    Returns {recorded_at, source_file, duration_s}. `recorded_at` is None
+    rather than a guess when the container carries no timestamp — the app
+    prompts for a missing date, but silently accepts a wrong one, and a wrong
+    date poisons the derived game ordering for that whole night.
+    """
+    prov = {"source_file": os.path.basename(video), "recorded_at": None,
+            "duration_s": None}
+    try:
+        out = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries",
+             "format=duration:format_tags=creation_time", "-of", "json", video],
+            capture_output=True, text=True).stdout
+        fmt = json.loads(out).get("format", {})
+        if fmt.get("duration"):
+            prov["duration_s"] = round(float(fmt["duration"]), 3)
+        ct = (fmt.get("tags") or {}).get("creation_time")
+        if ct:
+            prov["recorded_at"] = ct
+    except Exception as e:
+        print(f"[meta] WARNING: could not probe {video}: {e}")
+
+    if not prov["recorded_at"]:
+        # Filesystem mtime is a weaker signal (a Drive round-trip or a copy
+        # can reset it) but it is still anchored to the file rather than to
+        # whatever the operator typed, so it beats nothing.
+        try:
+            import datetime as _dt
+            mt = _dt.datetime.fromtimestamp(os.path.getmtime(video),
+                                            _dt.timezone.utc)
+            prov["recorded_at"] = mt.isoformat().replace("+00:00", "Z")
+            prov["recorded_at_source"] = "mtime"
+            print(f"[meta] no creation_time; falling back to mtime "
+                  f"{prov['recorded_at']}")
+        except Exception:
+            print("[meta] WARNING: no recorded_at — the app will ask for a date")
+    else:
+        prov["recorded_at_source"] = "creation_time"
+        print(f"[meta] recorded_at {prov['recorded_at']} (container)")
+    return prov
+
+
 def main():
     ap = argparse.ArgumentParser(prog="vbpipe")
     ap.add_argument("stage", choices=["rally", "full", "plays", "overlay"])
@@ -92,6 +142,13 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     gj = os.path.join(a.out, "game.json")
     game = json.load(open(gj)) if os.path.exists(gj) else {"video": a.video}
+
+    # Provenance: captured once, on the first stage to see this video, and
+    # never recomputed — later stages run against re-encodes and would
+    # overwrite the true date with an encode timestamp. See NAMING-PLAN.md.
+    if "recorded_at" not in game:
+        game.update(_probe_provenance(a.video))
+        _save(game, gj)
 
     if a.stage == "overlay":
         from .overlay import render_overlay

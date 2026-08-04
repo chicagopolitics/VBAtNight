@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { deriveGrades, teamMap } from "@/lib/grades";
+import { displayName } from "@/lib/game-name";
 import Boards from "./ui";
 export const dynamic = "force-dynamic";
 
@@ -11,8 +12,8 @@ export default async function Stats({ searchParams }) {
   const sp = await searchParams;
   const reqId = /^\d+$/.test(sp?.game ?? "") ? +sp.game : null;
   const gameRow = reqId ? d.prepare(
-    "SELECT id, name FROM games WHERE id = ? AND published = 1").get(reqId) : null;
-  const game = gameRow ? { id: gameRow.id, name: gameRow.name } : null;
+    "SELECT * FROM games WHERE id = ? AND published = 1").get(reqId) : null;
+  const game = gameRow ? { id: gameRow.id, name: displayName(gameRow) } : null;
   const gf = game ? " AND g.id = ?" : "";
   const args = game ? [game.id] : [];
 

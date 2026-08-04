@@ -13,6 +13,61 @@ export function DeleteGame({ id, name }) {
   );
 }
 
+// The date line under a game's name, and the only place a name is editable.
+//
+// A game with no date is not a cosmetic problem — it has no slot, so it can't
+// be ordered within its night and its YouTube title would be a fallback. So
+// an undated game shows an open date field rather than a quiet "unknown":
+// the prompt is the point. See NAMING-PLAN.md.
+export function GameDate({ id, playedOn, label, needsDate }) {
+  const [date, setDate] = useState(playedOn || "");
+  const [lab, setLab] = useState(label || "");
+  const [editing, setEditing] = useState(false);
+  const [status, setStatus] = useState(null);
+
+  async function save(patch) {
+    setStatus("…");
+    const res = await fetch("/api/games", { method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...patch }) });
+    const j = await res.json();
+    if (!res.ok) { setStatus("✗ " + (j.error || "failed")); return; }
+    // The date drives slot numbering for every game that night, so a save
+    // can rename siblings too — reload rather than patch one row's state.
+    window.location.reload();
+  }
+
+  if (needsDate || editing) {
+    return (
+      <div className="row" style={{ gap: 6, marginTop: 4 }}>
+        <input type="date" value={date} onChange={e => setDate(e.target.value)}
+          style={{ fontSize: 12 }} />
+        <input placeholder="optional name override" value={lab}
+          onChange={e => setLab(e.target.value)}
+          title='Wins over the derived name. Use for the rare game that has a real name — "Championship final".'
+          style={{ fontSize: 12, width: 190 }} />
+        <button style={{ fontSize: 12 }} disabled={!date}
+          onClick={() => save({ played_on: date, label: lab })}>Save</button>
+        {!needsDate && (
+          <button style={{ fontSize: 12 }} onClick={() => setEditing(false)}>
+            Cancel</button>
+        )}
+        <span className="muted" style={{ fontSize: 12 }}>
+          {status || (needsDate ? "← this bundle carried no recording date" : "")}
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
+      {playedOn}
+      {label ? " · named manually" : ""}
+      {" · "}
+      <a href="#" onClick={e => { e.preventDefault(); setEditing(true); }}>edit</a>
+    </div>
+  );
+}
+
 export function ExportButton({ id, driveReady = false }) {
   const [status, setStatus] = useState(null);
   const [open, setOpen] = useState(false);
@@ -149,6 +204,14 @@ export function YouTubeCell({ id, videoId, mediaState, canUpload }) {
                 <button style={{ textAlign: "left", width: "100%" }}>
                   Open on YouTube</button>
               </a>
+            )}
+            {vid && (
+              <button style={{ textAlign: "left" }}
+                title="Push the current derived name up to YouTube. The site name is live; the YouTube title is a snapshot taken at upload, so the two can drift."
+                onClick={async () => {
+                  const j = await call("PATCH", { retitle: true });
+                  if (j) setStatus("✓ " + j.title);
+                }}>Re-sync title</button>
             )}
             {vid && state === "both" && (
               <button className="danger" style={{ textAlign: "left" }}

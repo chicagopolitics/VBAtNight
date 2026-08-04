@@ -24,9 +24,10 @@ export async function POST(req) {
     return Response.json({ error: "forbidden" }, { status: 403 });
   let tmp;
   try {
+    // `name` is legacy and optional — identity comes from the bundle's
+    // recorded_at now, not the zip's filename. See NAMING-PLAN.md.
     const { id, name } = await req.json();
-    if (!id || !name)
-      return Response.json({ error: "missing id or name" }, { status: 400 });
+    if (!id) return Response.json({ error: "missing id" }, { status: 400 });
     tmp = fs.mkdtempSync(path.join(os.tmpdir(), "btimport-"));
     const zipPath = path.join(tmp, "bundle.zip");
     await downloadFile(id, zipPath);

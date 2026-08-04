@@ -2,12 +2,48 @@
 import fs from "fs";
 import path from "path";
 import { db } from "./db";
+import { playedOnFrom } from "./game-name";
+
+/**
+ * Number a night's games 1..N in the order they were RECORDED.
+ *
+ * This is the bit that stops names depending on what got typed while saving
+ * an mp4: import order, filenames and row ids are all accidents of how the
+ * evening was handled afterwards, but recorded_at is a property of the game
+ * itself. Re-run after every insert so a late import of an early game slots
+ * into the right place instead of being appended.
+ *
+ * Games with no recorded_at sort last (by id) rather than being skipped —
+ * they still need a number, they just can't claim to know where they belong.
+ */
+export function resequenceNight(played_on) {
+  if (!played_on) return;
+  const d = db();
+  const rows = d.prepare(
+    `SELECT id, recorded_at FROM games WHERE played_on = ?
+      ORDER BY (recorded_at IS NULL), recorded_at, id`).all(played_on);
+  const upd = d.prepare("UPDATE games SET slot = ? WHERE id = ?");
+  rows.forEach((r, i) => upd.run(i + 1, r.id));
+}
 
 export function importGameFromDir(dir, name) {
   const g = JSON.parse(fs.readFileSync(path.join(dir, "game.json"), "utf8"));
   const d = db();
-  const gid = Number(d.prepare("INSERT INTO games (name, video_file) VALUES (?, ?)")
-    .run(name, g.video || null).lastInsertRowid);
+  // Provenance from the bundle, written by the pipeline against the ORIGINAL
+  // camera file (pipeline/vbpipe/cli.py:_probe_provenance). Absent on
+  // pre-naming bundles — then played_on stays null and the app asks.
+  const recorded_at = g.recorded_at || null;
+  const played_on = playedOnFrom(recorded_at);
+  // Original camera filename. `g.source_file` is written by the pipeline;
+  // `g.video` is the Colab path it was processed from. Either beats guessing,
+  // and this is what corrections files get keyed to — see lib/export.js.
+  const source_file = g.source_file || (g.video ? path.basename(g.video) : null);
+  const gid = Number(d.prepare(
+    `INSERT INTO games (name, video_file, recorded_at, played_on, source_file)
+     VALUES (?, ?, ?, ?, ?)`)
+    .run(name ?? null, g.video || null, recorded_at, played_on, source_file)
+    .lastInsertRowid);
+  resequenceNight(played_on);
   const gdir = path.join(process.cwd(), "public", "media", String(gid));
   fs.mkdirSync(path.join(gdir, "crops"), { recursive: true });
   fs.mkdirSync(path.join(gdir, "clips"), { recursive: true });
@@ -126,5 +162,5 @@ export async function importGameFromZip(zipPath, tmp, name) {
   fs.rmSync(zipPath, { force: true });
   if (!fs.existsSync(path.join(tmp, "game.json")))
     throw new Error("bundle has no game.json");
-  return importGameFromDir(tmp, String(name));
+  return importGameFromDir(tmp, name == null ? null : String(name));
 }

@@ -48,6 +48,24 @@ const MIGRATIONS = [
   // lets one rally yield two Shorts (the dig AND the kill it set up).
   "ALTER TABLE shorts ADD COLUMN play_id INTEGER REFERENCES plays(id)",
   "ALTER TABLE shorts ADD COLUMN lead INTEGER DEFAULT 4",
+  // --- Naming (see NAMING-PLAN.md) --------------------------------------
+  // A name is a RENDERING, not a stored string. These are the facts; the
+  // label is derived in lib/game-name.js so the site and the YouTube title
+  // cannot drift. `games.name` stays for fallback on pre-naming rows.
+  "ALTER TABLE games ADD COLUMN played_on TEXT",    // 'YYYY-MM-DD', local date
+  "ALTER TABLE games ADD COLUMN recorded_at TEXT",  // full ISO, from the source file
+  "ALTER TABLE games ADD COLUMN slot INTEGER",      // derived: game N of that night
+  "ALTER TABLE games ADD COLUMN court TEXT",        // venue; not rendered while there's one gym
+  // Manual override; wins unconditionally. A derived name is right ~95% of
+  // the time and wrong in exactly the cases that matter most ("Championship
+  // final"), and an override is cheaper than a scheme that anticipates them.
+  "ALTER TABLE games ADD COLUMN label TEXT",
+  // Basename of the ORIGINAL camera file, from the bundle. Not cosmetic:
+  // corrections files are keyed to the video stem (the gen-2 ball notebook
+  // pairs corrections_<stem>.json to <stem>.mp4), and that pairing used to
+  // ride on games.name. Deriving the name broke that link, so the stem now
+  // has its own column instead of being a side effect of the label.
+  "ALTER TABLE games ADD COLUMN source_file TEXT",
 ];
 
 export function db() {

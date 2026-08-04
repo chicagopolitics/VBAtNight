@@ -7,12 +7,15 @@ import path from "path";
 // Writes corrections_<stem>.json into the app folder (process.cwd()) — the
 // same place `npm run export` writes — instead of a browser download, so the
 // file is already where the Colab-upload step expects it.
-// IMPORTANT: the file stem must match the video/bundle stem (the game NAME,
-// e.g. game1.mp4 -> corrections_game1.json), NOT the DB id — the gen-2 ball
-// notebook keys corrections to videos by stem.  ?download=1 keeps the old
-// attachment behavior.
-const stemOf = name => (name || "game").trim().toLowerCase()
-  .replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "game";
+// IMPORTANT: the file stem must match the VIDEO stem (cca-one.mp4 ->
+// corrections_cca_one.json), NOT the DB id and NOT the display name — the
+// gen-2 ball notebook keys corrections to videos by stem.
+//
+// This used to be derived from games.name, which worked only because the name
+// happened to be the bundle filename. Names are derived now (NAMING-PLAN.md),
+// so the stem comes from games.source_file via buildCorrections instead, and
+// the pairing no longer breaks when a game is renamed.
+// ?download=1 keeps the old attachment behavior.
 export async function GET(req, { params }) {
   if (!isOrganizer(await getSessionUser()))
     return Response.json({ error: "forbidden" }, { status: 403 });
@@ -20,7 +23,7 @@ export async function GET(req, { params }) {
   const data = buildCorrections(id);
   if (!data) return Response.json({ error: "no such game" }, { status: 404 });
   const body = JSON.stringify(data, null, 1);
-  const file = `corrections_${stemOf(data.name)}.json`;
+  const file = `corrections_${data.video_stem}.json`;
   const dest = new URL(req.url).searchParams.get("dest");
 
   if (new URL(req.url).searchParams.get("download"))

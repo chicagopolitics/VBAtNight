@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { deriveGrades, teamMap } from "@/lib/grades";
 import { getSessionUser, isOrganizer } from "@/lib/auth";
 import { blockedReason } from "@/lib/shorts";
+import { displayName } from "@/lib/game-name";
 import Highlights from "./ui";
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,12 @@ export default async function Watch() {
   // hunting for clip-worthy rallies belongs here rather than in a second,
   // duplicate browser somewhere in the admin area.
   const admin = isOrganizer(await getSessionUser());
-  const games = d.prepare("SELECT * FROM games WHERE published = 1 ORDER BY id DESC")
+  // Newest night first, and within a night the last game first — what a
+  // viewer wants after an evening is the game that just finished. id DESC is
+  // the tiebreak for anything still undated.
+  const games = d.prepare(
+    `SELECT * FROM games WHERE published = 1
+      ORDER BY played_on IS NULL, played_on DESC, slot DESC, id DESC`)
     .all().map(g => ({ ...g }));
   const data = games.map(g => {
     // per-game name resolution (cluster ids are game-local)
@@ -61,13 +67,15 @@ export default async function Watch() {
     const shorts = admin
       ? d.prepare("SELECT * FROM shorts WHERE game_id = ? ORDER BY id").all(g.id)
         .map(s => ({ ...s })) : [];
-    return { id: g.id, name: g.name, video_file: g.video_file,
+    return { id: g.id, name: displayName(g), video_file: g.video_file,
       // playback source resolution happens in lib/video-source.js — it needs
       // the YouTube export state as well as the local path
       yt_video_id: g.yt_video_id ?? null, media_state: g.media_state ?? "local",
       ...(admin ? { shorts, shorts_done: !!g.shorts_done,
         shorts_blocked: blockedReason(g) } : {}),
-      date: g.created_at?.slice(0, 10) ?? null, score,
+      // When it was PLAYED. Was created_at, which is when the bundle happened
+      // to be imported — for the July games, the morning after.
+      date: g.played_on ?? g.created_at?.slice(0, 10) ?? null, score,
       teamA: roster("A"), teamB: roster("B"),
       others: idents.filter(i => i.named && i.team !== "A" && i.team !== "B")
         .map(i => i.name),

@@ -1,8 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
 
-const niceName = f => f.replace(/^game_bundle_/, "").replace(/\.zip$/, "")
-  .replace(/[_-]+/g, " ");
+// No filename parsing here any more. A game's identity is its recording
+// date and its order in the night, both read from the bundle's own
+// game.json (written by the pipeline against the original camera file).
+// Bundles whose date can't be determined land on the games list asking for
+// one. See NAMING-PLAN.md.
 const gb = n => n >= 2 ** 30 ? (n / 2 ** 30).toFixed(1) + " GB"
   : Math.round(n / 2 ** 20) + " MB";
 
@@ -23,7 +26,7 @@ export default function ImportPage() {
     try {
       const res = await fetch("/api/drive", { method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id: f.id, name: niceName(f.name) }) });
+        body: JSON.stringify({ id: f.id }) });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || "failed");
       setDriveStatus(s => ({ ...s, [f.id]: "✓ imported" }));
@@ -43,13 +46,10 @@ export default function ImportPage() {
     let lastId = null;
     for (let i = 0; i < files.length; i++) {
       setItems(it => it.map((x, j) => j === i ? { ...x, status: "importing…" } : x));
-      // game name from filename: game_bundle_july24_g3.zip -> "july24 g3"
-      const nice = files[i].name.replace(/^game_bundle_/, "").replace(/\.zip$/, "")
-        .replace(/[_-]+/g, " ");
       try {
         // raw body upload (not FormData): bundles are multi-GB and the
         // server streams them straight to disk
-        const res = await fetch(`/api/import?name=${encodeURIComponent(nice)}`, {
+        const res = await fetch(`/api/import`, {
           method: "POST",
           headers: { "content-type": "application/zip" },
           body: files[i],
@@ -96,8 +96,10 @@ export default function ImportPage() {
       )}
       <p className="muted">
         Select one or more <code>game_bundle_….zip</code> files (from
-        Drive/VBAtNight/bundles). Game names come from the file names — you can
-        rename bundles before importing if you like.
+        Drive/VBAtNight/bundles). Names are derived from each game&rsquo;s
+        recording date and its order in the night — the file name doesn&rsquo;t
+        matter. If a bundle carries no date, the game appears on the games
+        list asking for one.
       </p>
       <form onSubmit={submit}>
         <div className="row" style={{ marginBottom: 14 }}>

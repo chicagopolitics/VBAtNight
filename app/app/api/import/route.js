@@ -14,9 +14,12 @@ export async function POST(req) {
     return Response.json({ error: "forbidden" }, { status: 403 });
   let tmp;
   try {
+    // `name` is legacy and optional: the game's identity now comes from the
+    // bundle's own recorded_at, not from whatever the zip was called. Kept
+    // as an accepted param so an older client doesn't 400. See NAMING-PLAN.md.
     const name = new URL(req.url).searchParams.get("name");
-    if (!name || !req.body)
-      return Response.json({ error: "missing name or file" }, { status: 400 });
+    if (!req.body)
+      return Response.json({ error: "missing file" }, { status: 400 });
     tmp = fs.mkdtempSync(path.join(os.tmpdir(), "btimport-"));
     const zipPath = path.join(tmp, "bundle.zip");
     await pipeline(Readable.fromWeb(req.body), fs.createWriteStream(zipPath));

@@ -1,11 +1,14 @@
 #!/usr/bin/env node
-// Usage: node scripts/import-game.js <game.json> <name> [clips_dir] [crops_dir]
+// Usage: node scripts/import-game.js <game.json> [clips_dir] [crops_dir]
+//
+// No <name> argument any more: a game is identified by when it was recorded
+// and its order in the night, both read from game.json. See NAMING-PLAN.md.
 const fs = require("fs");
 const path = require("path");
 
-const [,, gameJson, name, clipsDir, cropsDir] = process.argv;
-if (!gameJson || !name) {
-  console.error("usage: import-game.js <game.json> <name> [clips_dir] [crops_dir]");
+const [,, gameJson, clipsDir, cropsDir] = process.argv;
+if (!gameJson) {
+  console.error("usage: import-game.js <game.json> [clips_dir] [crops_dir]");
   process.exit(1);
 }
 const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), "data", "balltime.db");
@@ -18,8 +21,31 @@ db.exec(fs.readFileSync(path.join(__dirname, "..", "lib", "schema.sql"), "utf8")
 const g = JSON.parse(fs.readFileSync(gameJson, "utf8"));
 const mediaRoot = path.join(process.cwd(), "public", "media");
 
-const gid = db.prepare("INSERT INTO games (name, video_file) VALUES (?, ?)")
-  .run(name, g.video || null).lastInsertRowid;
+// Mirrors lib/import.js. Kept in raw SQL because this script is CommonJS and
+// predates the ESM lib; if it drifts again, that's the signal to delete it.
+const recordedAt = g.recorded_at || null;
+let playedOn = null;
+if (recordedAt) {
+  const t = new Date(recordedAt);
+  if (!isNaN(t)) {
+    const p = n => String(n).padStart(2, "0");
+    playedOn = `${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}`;
+  }
+}
+const sourceFile = g.source_file || (g.video ? path.basename(g.video) : null);
+const gid = db.prepare(
+  `INSERT INTO games (name, video_file, recorded_at, played_on, source_file)
+   VALUES (NULL, ?, ?, ?, ?)`)
+  .run(g.video || null, recordedAt, playedOn, sourceFile).lastInsertRowid;
+
+// Renumber the night by recording time (see resequenceNight in lib/import.js).
+if (playedOn) {
+  const rows = db.prepare(
+    `SELECT id FROM games WHERE played_on = ?
+      ORDER BY (recorded_at IS NULL), recorded_at, id`).all(playedOn);
+  const upd = db.prepare("UPDATE games SET slot = ? WHERE id = ?");
+  rows.forEach((r, i) => upd.run(i + 1, r.id));
+}
 const gdir = path.join(mediaRoot, String(gid));
 fs.mkdirSync(path.join(gdir, "crops"), { recursive: true });
 fs.mkdirSync(path.join(gdir, "clips"), { recursive: true });

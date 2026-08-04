@@ -10,7 +10,9 @@ import fs from "fs";
 import path from "path";
 import { db } from "@/lib/db";
 import { getSessionUser, isOrganizer } from "@/lib/auth";
-import { uploadVideo, youtubeConfigured, defaultPrivacy } from "@/lib/youtube";
+import { uploadVideo, updateVideoTitle, youtubeConfigured, defaultPrivacy }
+  from "@/lib/youtube";
+import { youtubeTitle, displayName } from "@/lib/game-name";
 
 // Accept a bare id, a watch URL, a youtu.be link or an embed URL — Ken will
 // paste whatever YouTube Studio put on his clipboard, and all four are the
@@ -31,9 +33,25 @@ async function guard() {
 // Studio, paste the link here. See YOUTUBE-PLAN.md.
 export async function PATCH(req) {
   if (!await guard()) return Response.json({ error: "forbidden" }, { status: 403 });
-  const { id, video, privacy } = await req.json();
+  const { id, video, privacy, retitle } = await req.json();
   const game = db().prepare("SELECT * FROM games WHERE id = ?").get(id);
   if (!game) return Response.json({ error: "no such game" }, { status: 404 });
+
+  // Re-sync the title. Separate from linking because it's the one PATCH that
+  // talks to YouTube rather than just to our own row.
+  if (retitle) {
+    if (!game.yt_video_id)
+      return Response.json({ error: "not on YouTube yet" }, { status: 409 });
+    if (!youtubeConfigured())
+      return Response.json({ error: "YouTube not configured — run `npm run yt-auth`" },
+        { status: 400 });
+    try {
+      const r = await updateVideoTitle(game.yt_video_id, youtubeTitle(game));
+      return Response.json({ ok: true, ...r });
+    } catch (e) {
+      return Response.json({ error: e.message }, { status: 502 });
+    }
+  }
 
   if (video === null || video === "") {          // unlink
     if ((game.media_state ?? "local") === "youtube")
@@ -78,7 +96,7 @@ export async function POST(req) {
 
   try {
     const v = await uploadVideo(abs, {
-      title: game.name,
+      title: youtubeTitle(game),
       description:
         `Full game. Rally-by-rally highlights and stats: https://vbatnight.com/watch?game=${game.id}`,
       tags: ["volleyball", "vbatnight"],
