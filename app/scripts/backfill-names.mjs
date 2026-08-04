@@ -20,7 +20,7 @@ import "../lib/load-env.js";
 import path from "path";
 import { execFileSync } from "child_process";
 import { createRequire } from "module";
-import { displayName, youtubeTitle, slug } from "../lib/game-name.js";
+import { displayName, youtubeTitle, slug, needsDate } from "../lib/game-name.js";
 
 const require_ = createRequire(import.meta.url);
 const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), "data", "balltime.db");
@@ -131,10 +131,20 @@ for (const g of db.prepare("SELECT * FROM games").all()) {
 }
 
 console.log("\nResult:");
+const undated = [];
 for (const g of db.prepare("SELECT * FROM games ORDER BY played_on, slot, id").all()) {
-  console.log(`  ${String(g.id).padStart(3)}  ${displayName(g)}`);
-  console.log(`       yt: ${youtubeTitle(g)}`);
-  console.log(`       slug: ${slug(g)}`);
+  const bad = needsDate(g);
+  if (bad) undated.push(g);
+  console.log(`  ${String(g.id).padStart(3)}  ${displayName(g)}${bad ? "   <- STILL UNDATED" : ""}`);
+  if (!bad) {
+    console.log(`       yt: ${youtubeTitle(g)}`);
+    console.log(`       slug: ${slug(g)}`);
+  }
+}
+if (undated.length) {
+  console.log(`\n⚠ ${undated.length} game(s) still have no date and are still ` +
+    `falling back to their old names.\n  Finish them with:\n    npm run ` +
+    `backfill-names -- ${undated.map(g => `${g.id}=YYYY-MM-DD`).join(" ")}`);
 }
 
 if (!RETITLE) {
@@ -149,6 +159,14 @@ if (!youtubeConfigured()) {
   process.exit(1);
 }
 for (const g of db.prepare("SELECT * FROM games WHERE yt_video_id IS NOT NULL").all()) {
+  // Never push a fallback title. An undated game renders as the legacy name
+  // with a channel prefix ("VB at Night — cca one"), which is churn on the
+  // channel and no better than what's already there. Date it first.
+  if (needsDate(g)) {
+    console.log(`  ${g.yt_video_id} skipped — game ${g.id} has no date yet ` +
+      `(would become "${youtubeTitle(g)}")`);
+    continue;
+  }
   const want = youtubeTitle(g);
   try {
     const r = await updateVideoTitle(g.yt_video_id, want);

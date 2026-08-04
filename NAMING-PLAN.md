@@ -15,16 +15,28 @@ see below.
 | ✅ Import reads structure | filename regex deleted; `slot` derived by recording time |
 | ✅ Read sites swapped | games list, `/watch`, `/stats`, YouTube title, corrections export |
 | ✅ Re-title path | `updateVideoTitle` + **YouTube ▾ → Re-sync title** |
-| ⬜ **Run the backfill** | `npm run backfill-names` — needs the two dates from Ken |
+| ✅ Games 13 & 14 dated | 2026-07-22, Game 1 and Game 2 |
+| ⬜ **Date games 17, 18, 19** | `cca one` / `cca two` / `lnv one` — still on legacy names |
+| ⬜ **Re-title on YouTube** | blocked on the `yt-auth` scope fix below |
 
 **Two things surfaced during the build that the plan above did not predict.**
 
 1. **`videos.update` is not covered by the upload scope.** `lib/youtube.js`
    asked for `youtube.upload` only, which is correct for `videos.insert` and
-   useless for a rename. The scope now also requests `youtube`, but *adding a
-   scope does not upgrade an existing refresh token* — the current one will
-   keep uploading and fail only on re-title, with an error that says to re-run
-   `npm run yt-auth`. Uploads are unaffected either way.
+   useless for a rename. The scope now also requests `youtube`, and *adding a
+   scope does not upgrade an existing refresh token* — re-consent is required.
+
+   **This was shipped broken and is now fixed.** `scripts/yt-auth.js` had the
+   scope string **hardcoded**, so widening `lib/youtube.js` changed the
+   library but not the consent request. Re-running `yt-auth` therefore
+   produced a fresh token with the *same* old scope, and re-titling kept
+   failing with the same 403 — the most confusing possible symptom, because
+   the advice in the error message was correct but doing it didn't help.
+   `yt-auth.js` now imports `SCOPE` from `lib/youtube.js`, and after the
+   exchange it prints the scopes Google actually **granted** and fails loudly
+   if any requested one is missing. A consent screen lets a user untick
+   scopes, so "asked for" and "got" are different questions and only the
+   second one matters.
 
 2. **Corrections filenames were riding on `games.name`.** The export route
    built `corrections_<stem>.json` from the game name, and the gen-2 ball
@@ -35,6 +47,21 @@ see below.
    `corrections_game2.json` / `corrections_game1.json` exactly as today, and a
    future import gets its real video stem instead of every unnamed game
    colliding on `corrections_game.json`.
+
+3. **OAuth on the droplet can't use a loopback redirect.** `yt-auth` starts a
+   listener on `127.0.0.1:<random>` and tells you to open a consent URL. On a
+   server over SSH the browser is on your laptop, so that address resolves to
+   *your laptop* and the redirect dies with "can't connect".
+
+   The failure is cosmetic — the authorization code is sitting in the browser's
+   address bar. So `yt-auth` now:
+   - detects an SSH session and says so *before* you start the flow,
+   - uses a **fixed** port (42781, override with `YT_OAUTH_PORT`) so
+     `ssh -L 42781:127.0.0.1:42781 root@<host>` can be set up in advance —
+     a random port can't be forwarded ahead of time,
+   - and offers `npm run yt-auth -- --manual`, which skips the listener and
+     takes the redirected URL pasted back. That accepts the full URL, a bare
+     query fragment, or just the code, and rejects a stale `state`.
 
 ## The problem
 
