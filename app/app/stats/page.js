@@ -1,3 +1,4 @@
+import NightTheme from "../theme";
 import { db } from "@/lib/db";
 import { deriveGrades, teamMap } from "@/lib/grades";
 import { displayName } from "@/lib/game-name";
@@ -104,7 +105,12 @@ export default async function Stats({ searchParams }) {
     .filter(p => p.serve + p.receive + p.dig + p.set + p.attack + p.block +
                  p.kill + p.ace + p.stuff > 0);
 
-  return <Boards rows={rows} game={game}
-    nGames={new Set(rallies.map(r => r.game_id)).size}
-    nScored={rallies.filter(r => r.outcome_type).length} />;
+  return (
+    <>
+      <NightTheme />
+      <Boards rows={rows} game={game}
+        nGames={new Set(rallies.map(r => r.game_id)).size}
+        nScored={rallies.filter(r => r.outcome_type).length} />
+    </>
+  );
 }

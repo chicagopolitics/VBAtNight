@@ -425,7 +425,20 @@ export default function Highlights({ games, admin = false }) {
 
   return (
     <div>
-      <h1>Highlights</h1>
+      {/* The hero is decorative, so it carries no <img> and no alt text — the
+          heading inside it is the real content. It sits above the sticky
+          filter bar so it scrolls away and hands the top of the viewport back
+          to the filters, which is what a returning viewer actually wants. */}
+      <div className="hero">
+        <div className="hero-in">
+          <h1>Highlights</h1>
+          <p className="tagline">
+            {total > 0
+              ? `${total} rall${total === 1 ? "y" : "ies"} from ${games.length} game${games.length === 1 ? "" : "s"}`
+              : "Volleyball, after dark"}
+          </p>
+        </div>
+      </div>
       <div className="row card filters">
         <select value={game} onChange={e => setGame(e.target.value)}>
           <option value="all">All games</option>

@@ -4,6 +4,7 @@ import { deriveGrades, teamMap } from "@/lib/grades";
 import { getSessionUser, isOrganizer } from "@/lib/auth";
 import { blockedReason } from "@/lib/shorts";
 import { displayName } from "@/lib/game-name";
+import NightTheme from "../theme";
 import Highlights from "./ui";
 export const dynamic = "force-dynamic";
 
@@ -92,5 +93,10 @@ export default async function Watch() {
           grade: grades.get(t.id) || null })) };
       }) };
   });
-  return <Suspense><Highlights games={data} admin={admin} /></Suspense>;
+  return (
+    <>
+      <NightTheme />
+      <Suspense><Highlights games={data} admin={admin} /></Suspense>
+    </>
+  );
 }

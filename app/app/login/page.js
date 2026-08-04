@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import NightTheme from "../theme";
 
 export default function Login() {
   const [sent, setSent] = useState(false);
@@ -21,6 +22,7 @@ export default function Login() {
 
   return (
     <div className="card" style={{ maxWidth: 420, margin: "60px auto" }}>
+      <NightTheme />
       <h1>Sign in</h1>
       {sent ? (
         <p>Check your email for a sign-in link.{dev &&

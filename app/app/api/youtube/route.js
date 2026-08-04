@@ -169,6 +169,26 @@ export async function DELETE(req) {
         if (!st.isFile())
           return Response.json({ error: `${game.video_file} is not a regular file` },
             { status: 409 });
+
+        // Deleting a file needs write+execute on its DIRECTORY — the file's
+        // own mode is irrelevant. Media folders created by a root CLI import
+        // aren't writable by the service user, so reclaim fails per-game
+        // depending on who imported it. Check before touching anything, so
+        // this is a clean 409 rather than a half-done delete.
+        stage = "access";
+        const dir = path.dirname(abs);
+        try { fs.accessSync(dir, fs.constants.W_OK | fs.constants.X_OK); }
+        catch {
+          const d = fs.statSync(dir);
+          return Response.json({ error:
+            `Can't delete files in ${path.dirname(game.video_file)} — the app ` +
+            `doesn't have write permission on that directory (uid ${d.uid}, ` +
+            `mode ${(d.mode & 0o777).toString(8)}; this process runs as uid ` +
+            `${process.getuid?.() ?? "?"}). Unlinking needs write+execute on the ` +
+            `FOLDER, not the file. Fix with: chown -R <service-user> ` +
+            `public/media`, stage: "access" }, { status: 409 });
+        }
+
         freed = st.size;
         stage = "unlink";
         fs.rmSync(abs, { force: true });
@@ -187,8 +207,14 @@ export async function DELETE(req) {
     return Response.json({
       error: `Reclaim failed while ${{
         resolve: "resolving the video path", stat: "reading the video file",
+        access: "checking directory permissions",
         unlink: "deleting the video file", db: "updating the database",
       }[stage] || stage}: ${e.code ? e.code + " — " : ""}${e.message}` +
+        (e.code === "EACCES" || e.code === "EPERM"
+          ? " — deleting a file needs write permission on its FOLDER, not the " +
+            "file. Likely this game was imported by a different user than the " +
+            "one the app runs as; `chown -R <service-user> public/media` fixes it."
+          : "") +
         (orphaned ? " ⚠ The local file WAS deleted but the game still says " +
           "'both'. Re-run reclaim to correct the record." : ""),
       stage,

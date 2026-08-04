@@ -112,8 +112,16 @@ www.$DOMAIN {
     redir https://$DOMAIN{uri} permanent
 }
 EOF
-# media must be world-readable for the caddy user (it's public content)
-chmod -R a+rX "$APP_DIR/app/public/media" 2>/dev/null || true
+# media must be world-readable for the caddy user (it's public content).
+#
+# u+w is not decoration: reclaiming a game's local mp4 (YouTube ▾ → Reclaim)
+# unlinks a file, and unlink permission comes from the DIRECTORY's write bit,
+# not the file's. A media folder that ends up mode 555 is silently
+# un-reclaimable — the disk saving the whole YouTube migration exists for
+# stops working, and only for the games that happen to be affected. Making
+# the deploy re-assert it means the state self-heals instead of needing to be
+# diagnosed from an EACCES.
+chmod -R u+w,a+rX "$APP_DIR/app/public/media" 2>/dev/null || true
 systemctl reload caddy
 
 echo "=== [7/7] Nightly DB backup (3am, keeps 14 days) ==="

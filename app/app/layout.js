@@ -11,7 +11,11 @@ export default async function RootLayout({ children }) {
     <html lang="en">
       <body>
         <header className="topbar row" style={{ justifyContent: "space-between" }}>
-          <a href="/">🏐 VBAtNight</a>
+          <a href="/" className="brand">
+            {/* the hero's moon-ball, cut out and shrunk (public/brand) */}
+            <img src="/brand/mark-64.png" alt="" width="26" height="26" />
+            VBAtNight
+          </a>
           <nav className="row">
             <a href="/watch">Watch</a>
             <a href="/stats">Stats</a>
