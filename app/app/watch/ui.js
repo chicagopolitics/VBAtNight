@@ -271,6 +271,27 @@ function ShortsPanel({ game, shorts, setShorts }) {
   const pending = shorts.filter(s => ["queued", "rendering"].includes(s.status));
   const ready = shorts.filter(s => s.status === "ready");
 
+  // Poll ONLY while the worker has something to do. A render is a minute or
+  // two, so without this the pill sits on "queued" until you happen to
+  // reload. The dependency on pending.length means the interval is torn down
+  // the moment the queue drains — an idle panel makes no requests at all.
+  useEffect(() => {
+    if (!pending.length) return;
+    let stop = false;
+    const tick = async () => {
+      try {
+        const res = await fetch(`/api/shorts?game_id=${game.id}`);
+        if (!res.ok) return;
+        const j = await res.json();
+        // Re-check `stop`: a response can land after the panel unmounted or
+        // the queue drained, and writing state then would resurrect stale rows.
+        if (!stop && j.shorts) setShorts(j.shorts);
+      } catch { /* transient network blip — the next tick retries */ }
+    };
+    const id = setInterval(tick, 4000);
+    return () => { stop = true; clearInterval(id); };
+  }, [pending.length, game.id]);
+
   async function act(fn, ok) {
     setMsg("…");
     try { const j = await fn(); setMsg(ok(j)); return j; }

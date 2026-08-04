@@ -22,6 +22,21 @@ const SHORT_PRIVACY = () => process.env.YT_SHORTS_PRIVACY || "public";
 
 async function guard() { return isOrganizer(await getSessionUser()); }
 
+// GET /api/shorts?game_id=N — current state of a game's shorts.
+//
+// Exists so the panel can poll while a render is in flight: a render takes a
+// minute or two on the droplet, and without this the pill reads "queued"
+// until you happen to reload. Organizer-only, like everything else here —
+// the public page neither polls nor receives this.
+export async function GET(req) {
+  if (!await guard()) return Response.json({ error: "forbidden" }, { status: 403 });
+  const gameId = new URL(req.url).searchParams.get("game_id");
+  if (!gameId) return Response.json({ error: "game_id required" }, { status: 400 });
+  const shorts = db().prepare(
+    "SELECT * FROM shorts WHERE game_id = ? ORDER BY id").all(gameId).map(s => ({ ...s }));
+  return Response.json({ ok: true, shorts });
+}
+
 export async function POST(req) {
   if (!await guard()) return Response.json({ error: "forbidden" }, { status: 403 });
   const { rally_id, play_id, caption, subcaption, zoom, lead } = await req.json();
