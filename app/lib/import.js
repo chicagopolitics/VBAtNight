@@ -38,10 +38,18 @@ export function importGameFromDir(dir, name) {
   // `g.video` is the Colab path it was processed from. Either beats guessing,
   // and this is what corrections files get keyed to — see lib/export.js.
   const source_file = g.source_file || (g.video ? path.basename(g.video) : null);
+  // `games.name` is NOT NULL, and rewriting the table to relax that on a live
+  // DB (four tables carry foreign keys into games) is not worth it for a
+  // column that's on its way out. So it always gets a value — but a FACTUAL
+  // one, never an invented title: the source filename, which is provenance
+  // rather than a label. Nothing displays it while `played_on` is set; it
+  // only surfaces through the legacy fallback in lib/game-name.js, where
+  // "cca-three.mp4" is a far better prompt than "Game #20".
+  const legacyName = name ?? source_file ?? `import ${new Date().toISOString()}`;
   const gid = Number(d.prepare(
     `INSERT INTO games (name, video_file, recorded_at, played_on, source_file)
      VALUES (?, ?, ?, ?, ?)`)
-    .run(name ?? null, g.video || null, recorded_at, played_on, source_file)
+    .run(legacyName, g.video || null, recorded_at, played_on, source_file)
     .lastInsertRowid);
   resequenceNight(played_on);
   const gdir = path.join(process.cwd(), "public", "media", String(gid));

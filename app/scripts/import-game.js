@@ -33,10 +33,12 @@ if (recordedAt) {
   }
 }
 const sourceFile = g.source_file || (g.video ? path.basename(g.video) : null);
+// games.name is NOT NULL — see the note in lib/import.js.
+const legacyName = sourceFile || `import ${new Date().toISOString()}`;
 const gid = db.prepare(
   `INSERT INTO games (name, video_file, recorded_at, played_on, source_file)
-   VALUES (NULL, ?, ?, ?, ?)`)
-  .run(g.video || null, recordedAt, playedOn, sourceFile).lastInsertRowid;
+   VALUES (?, ?, ?, ?, ?)`)
+  .run(legacyName, g.video || null, recordedAt, playedOn, sourceFile).lastInsertRowid;
 
 // Renumber the night by recording time (see resequenceNight in lib/import.js).
 if (playedOn) {
