@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { db } from "@/lib/db";
 import { deriveGrades, teamMap } from "@/lib/grades";
 import { getSessionUser, isOrganizer } from "@/lib/auth";
-import { blockedReason } from "@/lib/shorts";
+import { blockedReason, publicCaption } from "@/lib/shorts";
 import { displayName } from "@/lib/game-name";
 import NightTheme from "../theme";
 import Highlights from "./ui";
@@ -23,6 +23,27 @@ export default async function Watch() {
     `SELECT * FROM games WHERE published = 1
       ORDER BY played_on IS NULL, played_on DESC, slot DESC, id DESC`)
     .all().map(g => ({ ...g }));
+  // The reel: published Shorts, for everyone.
+  //
+  // These are the only PUBLIC videos this site has — full games are unlisted,
+  // so a Short is how someone finds their way here in the first place, and
+  // until now nothing linked back to them. Note what this selects: the
+  // published status and a real YouTube id, joined to a published game. A
+  // Short whose game was later unpublished drops out of the reel with it.
+  //
+  // Only the two fields a link needs. The admin payload below still carries
+  // the full rows (status, file paths, errors); a visitor gets none of that.
+  const reel = d.prepare(
+    `SELECT s.yt_video_id AS id, s.caption FROM shorts s
+     JOIN games g ON g.id = s.game_id
+     WHERE s.status = 'published' AND s.yt_video_id IS NOT NULL
+       AND g.published = 1
+     ORDER BY s.published_at IS NULL, s.published_at DESC, s.id DESC
+     LIMIT 12`).all()
+    // publicCaption is applied when a caption is persisted, so this is a
+    // second pass over rows that may predate that — surnames must not reach
+    // a public page just because a row is old.
+    .map(s => ({ id: s.id, caption: publicCaption(s.caption) }));
   const data = games.map(g => {
     // per-game name resolution (cluster ids are game-local)
     const idents = d.prepare(
@@ -96,7 +117,7 @@ export default async function Watch() {
   return (
     <>
       <NightTheme />
-      <Suspense><Highlights games={data} admin={admin} /></Suspense>
+      <Suspense><Highlights games={data} reel={reel} admin={admin} /></Suspense>
     </>
   );
 }

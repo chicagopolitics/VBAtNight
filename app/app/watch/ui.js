@@ -140,6 +140,40 @@ function YouTubeClip({ src, label }) {
   );
 }
 
+// The reel of published Shorts.
+//
+// Plain links, not embeds. A dozen warm iframes above the fold would spend
+// the connection budget that watch/ui.js's warming machinery is carefully
+// rationing for the clips people actually came for — and a Short is better
+// watched on YouTube anyway, where it can be shared.
+//
+// The thumbnail is the ordinary hqdefault, which for a vertical video is the
+// frame letterboxed into 480x360 with bars either side. Cropping it to 9:16
+// with object-fit lands almost exactly on the video content, so the bars
+// disappear without needing a Shorts-specific thumbnail endpoint (there
+// isn't a reliable one).
+function Reel({ shorts }) {
+  if (!shorts?.length) return null;
+  return (
+    <section className="reel" aria-label="Shorts">
+      <div className="row" style={{ justifyContent: "space-between", marginBottom: 8 }}>
+        <h2 style={{ margin: 0 }}>Shorts</h2>
+        <span className="muted">plays on YouTube</span>
+      </div>
+      <div className="reel-row">
+        {shorts.map(s => (
+          <a className="reel-card" key={s.id} target="_blank" rel="noreferrer"
+            href={`https://www.youtube.com/shorts/${s.id}`}>
+            <img className="reel-thumb" loading="lazy" alt=""
+              src={`https://i.ytimg.com/vi/${s.id}/hqdefault.jpg`} />
+            {s.caption && <span className="reel-cap">{s.caption}</span>}
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // Filterable stats. Three kinds:
 //   touch    — plain attempt counts (matches touch.type)
 //   +grade   — quality subset of a touch type (derived in lib/grades.js)
@@ -367,7 +401,7 @@ function ShortsPanel({ game, shorts, setShorts }) {
   );
 }
 
-export default function Highlights({ games, admin = false }) {
+export default function Highlights({ games, reel = [], admin = false }) {
   const sp = useSearchParams();
   const [game, setGame] = useState(() =>
     games.some(g => String(g.id) === sp.get("game")) ? sp.get("game") : "all");
@@ -432,13 +466,18 @@ export default function Highlights({ games, admin = false }) {
       <div className="hero">
         <div className="hero-in">
           <h1>Highlights</h1>
+          {/* This line is for the visitor who arrived from a YouTube Short
+              and has no idea what they're looking at. It deliberately isn't
+              the rally count — the filter bar below already shows that, and a
+              count tells a stranger nothing. */}
           <p className="tagline">
-            {total > 0
-              ? `${total} rall${total === 1 ? "y" : "ies"} from ${games.length} game${games.length === 1 ? "" : "s"}`
-              : "Volleyball, after dark"}
+            Every rally from our games, clipped and tagged by player.
           </p>
         </div>
       </div>
+      {/* above the sticky filter bar, so it scrolls away and leaves the top
+          of the viewport to the filters on the way back down */}
+      <Reel shorts={reel} />
       <div className="row card filters">
         <select value={game} onChange={e => setGame(e.target.value)}>
           <option value="all">All games</option>
