@@ -56,9 +56,11 @@ export default function Review({ rallies, idents, plays, video }) {
   async function remove(id) {
     const idx = rallyPlays.findIndex(p => p.id === id);
     setAllPlays(ps => ps.filter(p => p.id !== id));
-    // keep focus on a neighbour so the keyboard flow continues
+    // keep focus on a neighbour so the keyboard flow continues, and snap the
+    // video to it so the view matches the newly selected touch
     const next = rallyPlays[idx + 1] || rallyPlays[idx - 1];
     setFocusedId(next ? next.id : null);
+    if (next) seekTo(next);
     await fetch("/api/plays", { method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, deleted: 1 }) });
@@ -84,24 +86,26 @@ export default function Review({ rallies, idents, plays, video }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, deleted: 1 }) });
   }
-  // set a touch's quality grade; a decisive grade (kill/ace/stuff, or a final
+  // set a touch's quality grade; a decisive grade (kill/ace/stuff, or a
   // serve/attack error) also fills the rally outcome, trims the rally to the
-  // finishing touch + 3s, and clears any trailing junk touches.
+  // finishing touch + 3s, and clears any trailing junk touches. An attack or
+  // serve error always ends the rally — it's only marked when the ball went
+  // into the net / out of bounds — so any touches after it are stale.
   function setGrade(p, gv) {
     save(p.id, { grade: gv });
-    const isLast = rallyPlays[rallyPlays.length - 1]?.id === p.id;
     const ot =
       gv === "kill" && p.play_type === "attack" ? "kill" :
       gv === "stuff" && p.play_type === "block" ? "block" :
       gv === "ace" && p.play_type === "serve" ? "ace" :
-      gv === "error" && p.play_type === "serve" && isLast ? "service_error" :
-      gv === "error" && p.play_type === "attack" && isLast ? "attack_error" :
+      gv === "error" && p.play_type === "serve" ? "service_error" :
+      gv === "error" && p.play_type === "attack" ? "attack_error" :
       null;
     if (ot) {
       saveRally(rally.id, { outcome_type: ot,
         outcome_cluster: p.cluster_id ?? rally.outcome_cluster ?? null,
         end_s: Math.round((p.t + 3) * 10) / 10 });   // auto-trim to touch + 3s
       removeAfter(p, true);
+      setFocusedId(p.id);   // the touches that had focus may be gone now
     }
   }
   // per-type "good" grade for the K hotkey (kill/ace/stuff/assist/success/positive)

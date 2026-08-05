@@ -11,12 +11,59 @@ def _poly_mask(poly, w, h):
     cv2.fillPoly(m, [pts], 255)
     return m > 0
 
+def _duration(video):
+    out = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
+                          "format=duration", "-of", "csv=p=0", video],
+                         capture_output=True, text=True).stdout.strip()
+    try: return float(out)
+    except ValueError: return None
+
+
+def _keyframe_rate(video, window=180.0):
+    """Keyframes per second, measured by demuxing (no decode) a short window.
+
+    The fast motion path assumes ONE KEYFRAME PER SECOND. That is a property
+    of the encoder, not of video in general — it happens to hold for the
+    cameras used so far (measured: exactly 1.00/s on cca-one, and on games 13
+    and 14). A camera that writes a longer GOP silently produces fewer
+    samples than seconds, and since segment() reads sample INDICES AS
+    SECONDS, every rally time then lands early and the tail of the match
+    falls off the end of the signal entirely — the video looks like it simply
+    stops having rallies partway through.
+    """
+    out = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_packets",
+         "-read_intervals", f"%+{window}", "-show_entries", "packet=flags",
+         "-of", "csv=p=0", video], capture_output=True, text=True).stdout
+    kf = sum(1 for line in out.splitlines() if line.startswith("K"))
+    return kf / window if kf else None
+
+
 def motion_signal(video, court_poly, start=0.0, dur=None):
-    """1 Hz motion signal from keyframe-only decode (fast on CPU)."""
-    cmd = ["ffmpeg", "-v", "error", "-skip_frame", "nokey", "-ss", str(start)]
+    """1 Hz motion signal over the court polygon.
+
+    Keyframe-only decode when the source has ~1 keyframe/second (fast, ~20x
+    realtime); otherwise a full decode resampled to exactly 1 fps, which is
+    slower but is the only way to get a real 1 Hz signal out of a long-GOP
+    file. Either way the contract is the same and segment() can keep treating
+    one sample as one second.
+    """
+    kfr = _keyframe_rate(video)
+    fast = kfr is not None and kfr >= 0.8
+    if not fast:
+        print(f"[rally] source has {kfr:.2f} keyframes/s" if kfr else
+              "[rally] could not measure keyframe rate", end="")
+        print(" — using full decode at 1 fps (slower, but the keyframe "
+              "shortcut would misplace every rally on this file)")
+
+    cmd = ["ffmpeg", "-v", "error"]
+    if fast: cmd += ["-skip_frame", "nokey"]
+    cmd += ["-ss", str(start)]
     if dur: cmd += ["-t", str(dur)]
     cmd += ["-i", video, "-vsync", "0",
-            "-vf", f"scale={W}:{H},format=gray", "-f", "rawvideo", "-"]
+            "-vf", f"scale={W}:{H},format=gray" if fast
+                   else f"fps=1,scale={W}:{H},format=gray",
+            "-f", "rawvideo", "-"]
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, bufsize=W*H*4)
     mask = _poly_mask(court_poly, W, H)
     prev, vals = None, []
@@ -29,7 +76,22 @@ def motion_signal(video, court_poly, start=0.0, dur=None):
             vals.append(float((d > 14).mean()))
         prev = f
     p.wait()
-    return np.array(vals, np.float32)   # ~1 sample/sec
+
+    # Guard the contract rather than trusting it. One sample per second is
+    # what makes segment()'s indices mean seconds; if the signal is much
+    # shorter than the video, rally times are wrong and everything past the
+    # end of the signal is invisible. Loud, because the failure is otherwise
+    # indistinguishable from "the second half of the game was quiet".
+    total = _duration(video)
+    span = (dur if dur else (total - start if total else None))
+    if span and span > 30:
+        ratio = len(vals) / span
+        if not 0.75 <= ratio <= 1.35:
+            print(f"[rally] WARNING: motion signal is {len(vals)} samples for "
+                  f"{span:.0f}s of video ({ratio:.2f} samples/s, expected ~1.0). "
+                  f"Rally times will be wrong and roughly the last "
+                  f"{max(0, span - len(vals)):.0f}s will yield no rallies at all.")
+    return np.array(vals, np.float32)   # 1 sample/sec
 
 def audio_signal(video, sr=16000):
     raw = subprocess.run(["ffmpeg", "-v", "error", "-i", video, "-ac", "1",

@@ -55,14 +55,30 @@ def _probe_provenance(video):
     try:
         out = subprocess.run(
             ["ffprobe", "-v", "error", "-show_entries",
-             "format=duration:format_tags=creation_time", "-of", "json", video],
+             "format=duration:format_tags:stream_tags", "-of", "json", video],
             capture_output=True, text=True).stdout
-        fmt = json.loads(out).get("format", {})
+        probe = json.loads(out)
+        fmt = probe.get("format", {})
         if fmt.get("duration"):
             prov["duration_s"] = round(float(fmt["duration"]), 3)
-        ct = (fmt.get("tags") or {}).get("creation_time")
-        if ct:
-            prov["recorded_at"] = ct
+
+        tags = dict(fmt.get("tags") or {})
+        # Stream tags survive some re-encodes that drop the container-level
+        # ones, so fold them in as a second source (without letting them
+        # override a container tag).
+        for s in probe.get("streams", []):
+            for k, v in (s.get("tags") or {}).items():
+                tags.setdefault(k, v)
+
+        # Apple's own tag first: it carries the LOCAL time with a UTC offset
+        # ("2026-07-23T22:07:36-0400"), where `creation_time` is bare UTC.
+        # For an evening sport that difference decides the calendar date —
+        # a 22:07 game on the 23rd is 02:07 on the 24th in UTC.
+        for key in ("com.apple.quicktime.creationdate", "creation_time"):
+            if tags.get(key):
+                prov["recorded_at"] = tags[key]
+                prov["recorded_at_tag"] = key
+                break
     except Exception as e:
         print(f"[meta] WARNING: could not probe {video}: {e}")
 

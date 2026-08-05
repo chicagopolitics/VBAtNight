@@ -5,6 +5,7 @@ import { getSessionUser, isOrganizer } from "@/lib/auth";
 import { blockedReason, publicCaption } from "@/lib/shorts";
 import { displayName } from "@/lib/game-name";
 import NightTheme from "../theme";
+import TrackPageView from "../track";
 import Highlights from "./ui";
 export const dynamic = "force-dynamic";
 
@@ -117,6 +118,7 @@ export default async function Watch() {
   return (
     <>
       <NightTheme />
+      <TrackPageView />
       <Suspense><Highlights games={data} reel={reel} admin={admin} /></Suspense>
     </>
   );

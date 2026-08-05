@@ -84,6 +84,17 @@ CREATE TABLE IF NOT EXISTS shorts (
 CREATE INDEX IF NOT EXISTS shorts_game ON shorts(game_id);
 CREATE INDEX IF NOT EXISTS shorts_status ON shorts(status);
 
+CREATE TABLE IF NOT EXISTS page_views (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  path TEXT NOT NULL,
+  referrer TEXT,
+  user_agent TEXT,
+  ip_hash TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS pv_path ON page_views(path);
+CREATE INDEX IF NOT EXISTS pv_created ON page_views(created_at);
+
 CREATE TABLE IF NOT EXISTS tracklets (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   game_id INTEGER NOT NULL REFERENCES games(id),

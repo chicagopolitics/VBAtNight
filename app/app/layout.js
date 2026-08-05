@@ -23,6 +23,7 @@ export default async function RootLayout({ children }) {
             {org && user && <a href="/players">Players</a>}
             {org && user && <a href="/setup">Camera setup</a>}
             {org && user && <a href="/guide">Guide</a>}
+            {org && user && <a href="/analytics">Analytics</a>}
             {user
               ? <form action="/api/auth/logout" method="POST" style={{ display: "inline" }}>
                   <button type="submit">Sign out</button>

@@ -1,4 +1,5 @@
 import NightTheme from "../theme";
+import TrackPageView from "../track";
 import { db } from "@/lib/db";
 import { deriveGrades, teamMap } from "@/lib/grades";
 import { displayName } from "@/lib/game-name";
@@ -108,6 +109,7 @@ export default async function Stats({ searchParams }) {
   return (
     <>
       <NightTheme />
+      <TrackPageView />
       <Boards rows={rows} game={game}
         nGames={new Set(rallies.map(r => r.game_id)).size}
         nScored={rallies.filter(r => r.outcome_type).length} />

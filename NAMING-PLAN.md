@@ -112,9 +112,28 @@ creation_time : 2026-07-23T02:13:14.000000Z
 encoder       : Lavf62.3.100
 ```
 
-`Lavf` is ffmpeg. That timestamp is when the file was **re-encoded**, not when
-it was filmed — ffmpeg rewrites `creation_time` unless explicitly told to
-carry source metadata. The delivered mp4 has already forgotten.
+`Lavf` is ffmpeg, so the file has been through a re-encode.
+
+**Correction, 2026-08-05.** This was originally written as "that timestamp is
+the re-encode, not the filming" — probably wrong. Testing shows ffmpeg
+*drops* `creation_time` when it can't carry it rather than inventing a new
+one, so a re-encoded file that still *has* the tag most likely preserved it
+from the source. On that reading `2026-07-23T02:13:14Z` is 22:13 local on
+**July 22**, an evening, which looks like a real recording time. Worth
+re-checking the dates assigned to the cca games against this.
+
+Either way the conclusion below is unchanged, and the reason is stronger:
+the tag is inconsistent across cameras and encoders, so the pipeline should
+capture provenance at ingest rather than have every consumer re-derive it
+from a file that may or may not have kept it.
+
+**Prefer Apple's tag where present.** iPhone files carry
+`com.apple.quicktime.creationdate` — local time *with* a UTC offset
+(`2026-07-23T22:07:36-0400`) — alongside the bare-UTC `creation_time`. For an
+evening sport that difference decides the calendar date: a 22:07 game on the
+23rd is 02:07 on the 24th in UTC. `_probe_provenance` reads the Apple tag
+first, then `creation_time`, and checks stream tags as well as container
+tags since a re-encode can drop one but not the other.
 
 So the date must be captured **upstream, at ingest, from the original camera
 file**, and carried in the bundle. `game.json` currently holds only
