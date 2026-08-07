@@ -25,13 +25,18 @@ import { loadGameJson, boxesAt } from "@/lib/gamejson";
 // unambiguous. Position only breaks ties left by an app-side merge.
 // No match (the named player untracked here) => NULL, which is honest;
 // pointing at someone else's body is not.
+// Returns the resolved tracklet_id (or null when the named player has no
+// body here); `undefined` means it could not act and left the row alone. The
+// caller sends this back to the client — without it the browser keeps the
+// PREVIOUS player's tracklet in local state and the overlay goes on drawing
+// their box, flagged as a bogus identity mismatch.
 function relinkTracklet(d, playId, clusterId) {
   const p = d.prepare(
     `SELECT p.t, p.x, p.y, r.game_id FROM plays p
      JOIN rallies r ON r.id = p.rally_id WHERE p.id = ?`).get(playId);
-  if (!p) return;
+  if (!p) return undefined;
   const game = loadGameJson(p.game_id);
-  if (!game) return;              // can't resolve bodies; leave as-is
+  if (!game) return undefined;    // can't resolve bodies; leave as-is
   const mine = d.prepare(
     `SELECT t.id, t.src_id FROM tracklets t
      JOIN identities i ON i.id = t.identity_id
@@ -48,8 +53,9 @@ function relinkTracklet(d, playId, clusterId) {
     }
     if (!best || d2 < best.d2) best = { id: bySrc.get(src_id), d2 };
   }
-  d.prepare("UPDATE plays SET tracklet_id = ? WHERE id = ?")
-    .run(best ? best.id : null, playId);
+  const resolved = best ? best.id : null;
+  d.prepare("UPDATE plays SET tracklet_id = ? WHERE id = ?").run(resolved, playId);
+  return resolved;
 }
 
 export async function PATCH(req) {
@@ -67,9 +73,11 @@ export async function PATCH(req) {
   // typeahead sends only cluster_id, so resolve the body here. Skipped for
   // "unknown player" (cluster_id null): the reviewer is withdrawing a name,
   // not asserting a different body.
+  let relinked;
   if ("cluster_id" in fields && !("tracklet_id" in fields) && fields.cluster_id != null)
-    relinkTracklet(d, id, fields.cluster_id);
-  return Response.json({ ok: true });
+    relinked = relinkTracklet(d, id, fields.cluster_id);
+  return Response.json(relinked === undefined
+    ? { ok: true } : { ok: true, tracklet_id: relinked });
 }
 
 export async function POST(req) {

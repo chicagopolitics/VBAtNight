@@ -92,9 +92,19 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
   async function save(id, body) {
     editsRef.current++;
     setAllPlays(ps => ps.map(p => p.id === id ? { ...p, ...body, corrected: 1 } : p));
-    await fetch("/api/plays", { method: "PATCH",
+    const res = await fetch("/api/plays", { method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, ...body }) });
+    // Naming a player makes the server re-link tracklet_id to THAT player's
+    // body (or null it). Without adopting its answer the local row keeps the
+    // previous player's tracklet, and the overlay goes on drawing their box —
+    // flagged as an identity mismatch that isn't real.
+    try {
+      const j = await res.json();
+      if (j && Object.prototype.hasOwnProperty.call(j, "tracklet_id"))
+        setAllPlays(ps => ps.map(p =>
+          p.id === id ? { ...p, tracklet_id: j.tracklet_id } : p));
+    } catch { /* body already consumed or not JSON — nothing to adopt */ }
   }
   async function remove(id) {
     editsRef.current++;
@@ -570,6 +580,19 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
                     ))}
                   </div>
                 )}
+                {/* A named player with no box means the tracker never saw
+                    them here — a coverage gap, not a broken overlay. Say so,
+                    otherwise "no box" is indistinguishable from "boxes
+                    failed to load". */}
+                {!picker && tracks && focusBoxes.length === 0 && (() => {
+                  const p = rallyPlays.find(x => x.id === focusedId);
+                  if (!p || p.cluster_id == null) return null;
+                  return (
+                    <div className="nobox">
+                      {nameOf(p.cluster_id)} — not tracked at this moment
+                    </div>
+                  );
+                })()}
                 </div>
                 <div className="vidbar">
                   <button onClick={() => {
