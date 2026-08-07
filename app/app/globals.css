@@ -192,6 +192,17 @@ video { width: 100%; max-width: 900px; border-radius: 8px; background: #000; }
 .pbox .tag { position: absolute; top: -19px; left: -2px; white-space: nowrap;
   font-size: 11px; line-height: 1; padding: 3px 6px; border-radius: 4px;
   background: var(--accent); color: var(--on-accent); }
+/* read-only variant: who the FOCUSED touch is attributed to, shown while
+   simply clicking through a rally. Dashed to read as "showing", not
+   "choose me", and pointer-events:none so the video's play/pause click and
+   the wheel-scrub both still work straight through it. */
+.pbox.fbox { pointer-events: none; border-style: dashed;
+  border-color: var(--accent-ink); }
+.pbox.fbox:hover { background: transparent; }
+.pbox.fbox .tag { background: var(--accent-ink); }
+/* the touch's credited player and the tracked body's own identity disagree */
+.pbox.fbox.mism { border-color: var(--warn-edge); }
+.pbox.fbox.mism .tag { background: var(--warn-edge); color: #2f333b; }
 /* touch-list-complete toggle (blind-recall flag) */
 .tcomplete.on { background: var(--good-edge); border-color: var(--good-edge); }
 .tl-seg.tlc { box-shadow: inset 0 -3px 0 var(--accent); }

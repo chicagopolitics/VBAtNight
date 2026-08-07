@@ -60,8 +60,11 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
       body: JSON.stringify({ id, ...body }) });
   }
 
-  // Lazy one-shot fetch of tracklet boxes (guarded by ref so a second picker
-  // open during the request doesn't double-fetch).
+  // One-shot fetch of tracklet boxes (guarded by ref against double-fetch).
+  // Fetched on mount rather than on first picker open: the focused-touch box
+  // needs them during ordinary touch-to-touch navigation, not just while
+  // attributing. A game with no retained game.json 404s and sets null, which
+  // every consumer below treats as "no overlay".
   async function ensureTracks() {
     if (tracksReq.current) return;
     tracksReq.current = true;
@@ -167,11 +170,10 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
     }));
     return m;
   }, [tracks]);
-  // boxes to draw at the playhead — only while the picker is open (D2: the
-  // overlay is a short-lived quasi-modal, not a persistent mode). 0.12s
+  // every tracked player's box at the current playhead. The 0.12s
   // nearest-box tolerance matches the pipeline's own overlay renderer.
-  const overlayBoxes = useMemo(() => {
-    if (!picker || !boxIndex || !rally || now < 0) return [];
+  const boxesNow = useMemo(() => {
+    if (!boxIndex || !rally || now < 0) return [];
     const abs = clipStart(rally) + now;
     const k = Math.round(abs * 10);
     const best = new Map();                       // tracklet idx -> nearest box
@@ -184,7 +186,42 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
     }
     return [...best].map(([ti, b]) => ({ track: tracks[ti], box: b }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [picker, boxIndex, now, rally, tracks]);
+  }, [boxIndex, now, rally, tracks]);
+
+  // Picker open: every player, clickable — "who was it?"
+  const overlayBoxes = picker ? boxesNow : [];
+  // Picker closed: only the focused touch's attributed player, read-only —
+  // "who is this credited to?". Clicking through a rally then shows the
+  // attribution on the video, which is the fastest way to spot a touch
+  // credited to the wrong body (the failure mode the whole identity problem
+  // produces). Prefer tracklet_id: it names one specific tracked body. Fall
+  // back to cluster_id for touches attributed before tracklet capture
+  // existed — that can legitimately match more than one box when an identity
+  // is over-split, and showing both is itself the useful signal.
+  const focusBoxes = useMemo(() => {
+    if (picker) return [];
+    // by id, not focusedIdx — that const is declared further down and would
+    // be in the temporal dead zone when this memo evaluates during render
+    const p = rallyPlays.find(x => x.id === focusedId);
+    if (!p) return [];
+    const tname = t => t.name || (t.cluster_id != null ? `P${t.cluster_id}` : "?");
+    const hits = p.tracklet_id != null
+      ? boxesNow.filter(b => b.track.id === p.tracklet_id)
+      : p.cluster_id != null
+        ? boxesNow.filter(b => b.track.cluster_id === p.cluster_id)
+        : [];
+    return hits.map(b => {
+      // A tracked body carries its own identity, and it can disagree with who
+      // the touch is credited to — "this touch is Julio Sr, but the body at
+      // the ball is clustered as Junyan". That disagreement IS the
+      // misclustering evidence, so show both names rather than silently
+      // picking one and looking like a glitch.
+      const mismatch = p.cluster_id != null && b.track.cluster_id !== p.cluster_id;
+      return { ...b, mismatch,
+        label: mismatch ? `${nameOf(p.cluster_id)} ≠ ${tname(b.track)}` : tname(b.track) };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [picker, boxesNow, rallyPlays, focusedId, idents]);
 
   // Box click = attribution with full provenance: cluster for stats,
   // tracklet for training labels, and — only when the play has no position
@@ -192,7 +229,7 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
   // click point in the 1280x720 reference space.
   function clickBox(e, track) {
     e.stopPropagation();
-    const p = rallyPlays[focusedIdx];
+    const p = rallyPlays.find(x => x.id === focusedId);
     if (!p) { setPicker(null); return; }
     const body = { cluster_id: track.cluster_id ?? null, tracklet_id: track.id ?? null };
     if (p.x == null && wrap.current) {
@@ -252,6 +289,8 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
     const j = selIdx + d;
     if (j >= 0 && j < visible.length) { setSel(visible[j].id); }
   }
+  useEffect(() => { ensureTracks(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+
   // when the rally changes: focus its first touch, reset scrubber to window
   useEffect(() => {
     setFull(false);
@@ -508,7 +547,7 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
                     setMediaDur(e.target.duration);
                     if (video) setVideoDur(e.target.duration);
                   }} />
-                {overlayBoxes.length > 0 && (
+                {(overlayBoxes.length > 0 || focusBoxes.length > 0) && (
                   <div className="boxlayer">
                     {overlayBoxes.map(({ track, box }) => (
                       <div key={track.src_id} className="pbox"
@@ -518,6 +557,15 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
                         <span className="tag">
                           {track.name || (track.cluster_id != null ? `P${track.cluster_id}` : "?")}
                         </span>
+                      </div>
+                    ))}
+                    {focusBoxes.map(({ track, box, label, mismatch }) => (
+                      <div key={`f${track.src_id}`}
+                        className={"pbox fbox" + (mismatch ? " mism" : "")}
+                        title={mismatch ? "this touch is credited to one player but the tracked body is clustered as another — merge/split candidate" : undefined}
+                        style={{ left: `${box[1] / 12.8}%`, top: `${box[2] / 7.2}%`,
+                                 width: `${box[3] / 12.8}%`, height: `${box[4] / 7.2}%` }}>
+                        <span className="tag">{label}</span>
                       </div>
                     ))}
                   </div>
