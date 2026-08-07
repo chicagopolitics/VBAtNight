@@ -3,9 +3,46 @@
   vbpipe full  VIDEO -o OUT   # GPU: + track, embed, cluster
   vbpipe plays VIDEO -o OUT   # GPU: + ball, contacts, play types (needs full's game.json)
 """
-import argparse, json, os, subprocess, sys
+import argparse, datetime, inspect, json, os, subprocess, sys
+from . import __version__
 from .config import Config
 from . import rally as R
+
+
+def _rule_defaults(fn):
+    """The tunables a rule function actually ran with. Several thresholds live
+    as function defaults rather than Config fields (find_contacts' cos_thr,
+    attribute's gate/drop), so without this they would go unrecorded."""
+    return {k: v.default for k, v in inspect.signature(fn).parameters.items()
+            if v.default is not inspect.Parameter.empty
+            and isinstance(v.default, (int, float, bool, str, type(None)))}
+
+
+def _stamp(game, stage, cfg, params):
+    """Record which pipeline produced this stage's output.
+
+    Without this a game.json is untraceable, and so are the review corrections
+    derived from it: those reference cluster ids, tracklet ids and ball
+    positions that only mean anything relative to the exact models and
+    thresholds that ran. Mixing labels across pipeline generations is how a
+    training set silently learns the PREVIOUS generation's failure modes — the
+    deleted-phantom set is the clearest case, since it is by definition the
+    false positives of one specific detector. See ML-PLAN.md.
+
+    Stamped per stage because rally/full/plays run independently and are often
+    re-run apart from each other; a game.json can legitimately carry output
+    from three different pipeline states, and that has to be visible.
+    """
+    from dataclasses import asdict
+    p = game.setdefault("pipeline", {})
+    p["vbpipe_version"] = __version__
+    p.setdefault("stages", {})[stage] = {
+        "at": datetime.datetime.now(datetime.timezone.utc)
+                 .isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "vbpipe_version": __version__,
+        "config": asdict(cfg),
+        "params": params,
+    }
 
 
 def _save(game, gj):
@@ -179,6 +216,7 @@ def main():
         print("[rally] segmentation (CPU)...")
         game["rallies"] = R.segment(R.motion_signal(a.video, cfg.court_poly),
                                     R.audio_signal(a.video), cfg)
+        _stamp(game, "rally", cfg, {"court_file": a.court})
         _save(game, gj)
         print(f"  {len(game['rallies'])} rallies")
     if a.stage == "rally": return
@@ -198,6 +236,7 @@ def main():
             if tr.get("emb"):
                 tr["emb"] = [round(float(v), 4) for v in tr["emb"]]
         game["tracklets"], game["clusters"] = tracklets, clusters
+        _stamp(game, "full", cfg, {"court_file": a.court, "device": a.device})
         _save(game, gj)
         print(f"wrote {gj}")
         return
@@ -265,6 +304,20 @@ def main():
         all_plays += [c.get("play") for c in cs]
     game["ball"] = [[list(map(lambda v: round(float(v),2), p)) for p in pts]
                     for pts in ball]
+    _stamp(game, "plays", cfg, {
+        "court_file": a.court,
+        "ball_source": a.ball_model or "ballcv (motion CV)",
+        "ball_hires": a.ball_hires if a.ball_model else None,
+        "ball_conf": a.ball_conf if a.ball_model else None,
+        "ball_fps": ball_fps,
+        "suppress_static": a.suppress_static,
+        "pose_model": a.pose_model,
+        "wrist_max": a.wrist_max if a.pose_model else None,
+        "game_start": a.game_start,
+        "find_contacts": _rule_defaults(find_contacts),
+        "attribute": _rule_defaults(attribute),
+        "classify": _rule_defaults(classify),
+    })
     _save(game, gj)
     from collections import Counter
     print("  play counts:", dict(Counter(all_plays)))

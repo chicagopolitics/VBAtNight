@@ -47,6 +47,12 @@ export function buildCorrections(gid) {
       outcomes_set: rallies.filter(r => r.outcome).length,
       named_identities: identities.filter(i => i.name).length,
     },
+    // Which pipeline generation these labels describe. Everything in
+    // `plays` that is model-relative — x/y, tracklet_id, cluster_id, and the
+    // whole of removed_plays — is only valid against this exact pipeline, so
+    // a training set must not pool across generations. Null means the game
+    // was imported from a pre-1.0.0 bundle: EVALUATION ONLY. See ML-PLAN.md.
+    pipeline: game.pipeline ? JSON.parse(game.pipeline) : null,
     identities, rallies,
   };
 }

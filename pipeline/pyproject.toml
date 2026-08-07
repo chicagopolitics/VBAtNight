@@ -1,6 +1,6 @@
 [project]
 name = "vbpipe"
-version = "0.1.0"
+version = "1.0.0"   # frozen training baseline — keep in sync with vbpipe/__init__.py
 description = "Volleyball game video -> rallies, player identities, stats-ready JSON"
 requires-python = ">=3.10"
 dependencies = ["numpy", "opencv-python-headless", "scikit-learn"]

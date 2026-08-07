@@ -48,6 +48,13 @@ const MIGRATIONS = [
   // lets one rally yield two Shorts (the dig AND the kill it set up).
   "ALTER TABLE shorts ADD COLUMN play_id INTEGER REFERENCES plays(id)",
   "ALTER TABLE shorts ADD COLUMN lead INTEGER DEFAULT 4",
+  // --- training-label provenance (see ML-PLAN.md) -----------------------
+  // The `pipeline` stamp from game.json (vbpipe >= 1.0.0): version, per-stage
+  // config and thresholds. This game's corrections are only meaningful as
+  // TRAINING data relative to the pipeline that produced them — cluster ids,
+  // tracklet ids and deleted-phantom sets are all model-relative. Null =
+  // imported from a pre-1.0.0 bundle, i.e. evaluation-only labels.
+  "ALTER TABLE games ADD COLUMN pipeline TEXT",
   // --- Naming (see NAMING-PLAN.md) --------------------------------------
   // A name is a RENDERING, not a stored string. These are the facts; the
   // label is derived in lib/game-name.js so the site and the YouTube title

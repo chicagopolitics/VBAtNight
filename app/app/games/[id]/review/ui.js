@@ -6,6 +6,23 @@ const TYPES = ["serve", "receive", "dig", "set", "attack", "block"];
 // number-key -> type (1..6); shown in the row and the legend
 const TYPE_KEY = Object.fromEntries(TYPES.map((t, i) => [String(i + 1), t]));
 
+// decisive touch grades -> rally outcome. An error on ANY touch type ends the
+// rally (it's only marked when the ball went into the net / out of bounds / was
+// shanked away), so flagging one also trims the rally and clears what follows.
+// Only serve and attack have dedicated error outcomes; the rest fold into
+// "other_error", which deriveGrades reads back as an error on the last touch.
+const OUTCOME = {
+  serve:   { ace: "ace", error: "service_error" },
+  attack:  { kill: "kill", error: "attack_error" },
+  block:   { stuff: "block", error: "other_error" },
+  set:     { error: "other_error" },
+  dig:     { error: "other_error" },
+  receive: { error: "other_error" },
+};
+const outcomeFor = (ty, g) => (g && OUTCOME[ty]?.[g]) || null;
+// seconds of tail kept after the deciding touch when auto-trimming the rally
+const PAD_WIN_S = 3, PAD_ERR_S = 4;
+
 export default function Review({ rallies, idents, plays, video }) {
   const [sel, setSel] = useState(rallies[0]?.id);
   const [allPlays, setAllPlays] = useState(plays);
@@ -86,24 +103,17 @@ export default function Review({ rallies, idents, plays, video }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, deleted: 1 }) });
   }
-  // set a touch's quality grade; a decisive grade (kill/ace/stuff, or a
-  // serve/attack error) also fills the rally outcome, trims the rally to the
-  // finishing touch + 3s, and clears any trailing junk touches. An attack or
-  // serve error always ends the rally — it's only marked when the ball went
-  // into the net / out of bounds — so any touches after it are stale.
+  // set a touch's quality grade; a decisive grade (kill/ace/stuff, or an error
+  // on any touch type) also fills the rally outcome, trims the rally to the
+  // finishing touch + a short tail, and clears any trailing junk touches.
   function setGrade(p, gv) {
     save(p.id, { grade: gv });
-    const ot =
-      gv === "kill" && p.play_type === "attack" ? "kill" :
-      gv === "stuff" && p.play_type === "block" ? "block" :
-      gv === "ace" && p.play_type === "serve" ? "ace" :
-      gv === "error" && p.play_type === "serve" ? "service_error" :
-      gv === "error" && p.play_type === "attack" ? "attack_error" :
-      null;
+    const ot = outcomeFor(p.play_type, gv);
     if (ot) {
+      const pad = gv === "error" ? PAD_ERR_S : PAD_WIN_S;
       saveRally(rally.id, { outcome_type: ot,
         outcome_cluster: p.cluster_id ?? rally.outcome_cluster ?? null,
-        end_s: Math.round((p.t + 3) * 10) / 10 });   // auto-trim to touch + 3s
+        end_s: Math.round((p.t + pad) * 10) / 10 });
       removeAfter(p, true);
       setFocusedId(p.id);   // the touches that had focus may be gone now
     }
@@ -186,10 +196,10 @@ export default function Review({ rallies, idents, plays, video }) {
     if (rally && !rally.outcome_type && rallyPlays.length) {
       const last = rallyPlays[rallyPlays.length - 1];
       const g = grades.get(last.id);
-      const ot =
-        last.play_type === "serve" ? (g === "ace" ? "ace" : g === "error" ? "service_error" : null) :
-        last.play_type === "attack" ? (g === "error" ? "attack_error" : g === "blocked" ? "block" : "kill") :
-        last.play_type === "block" ? "block" : null;
+      // an ungraded last attack/block still ends the rally the obvious way
+      const ot = outcomeFor(last.play_type, g) ||
+        (last.play_type === "attack" ? (g === "blocked" ? "block" : "kill") :
+         last.play_type === "block" ? "block" : null);
       if (ot) saveRally(rally.id, { outcome_type: ot,
         outcome_cluster: last.cluster_id ?? rally.outcome_cluster ?? null });
     }

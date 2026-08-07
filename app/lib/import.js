@@ -46,10 +46,15 @@ export function importGameFromDir(dir, name) {
   // only surfaces through the legacy fallback in lib/game-name.js, where
   // "cca-three.mp4" is a far better prompt than "Game #20".
   const legacyName = name ?? source_file ?? `import ${new Date().toISOString()}`;
+  // Which pipeline produced this bundle (vbpipe >= 1.0.0 stamps it; older
+  // bundles carry nothing, which is itself the signal that their labels are
+  // evaluation-only). Stored verbatim so a corrections file can declare its
+  // generation — see ML-PLAN.md.
+  const pipeline = g.pipeline ? JSON.stringify(g.pipeline) : null;
   const gid = Number(d.prepare(
-    `INSERT INTO games (name, video_file, recorded_at, played_on, source_file)
-     VALUES (?, ?, ?, ?, ?)`)
-    .run(legacyName, g.video || null, recorded_at, played_on, source_file)
+    `INSERT INTO games (name, video_file, recorded_at, played_on, source_file, pipeline)
+     VALUES (?, ?, ?, ?, ?, ?)`)
+    .run(legacyName, g.video || null, recorded_at, played_on, source_file, pipeline)
     .lastInsertRowid);
   resequenceNight(played_on);
   const gdir = path.join(process.cwd(), "public", "media", String(gid));
