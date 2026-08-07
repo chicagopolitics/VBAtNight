@@ -301,10 +301,30 @@ same-run game.json recovered from `game_bundle_game2.zip` via
   `cluster_id` + `tracklet_id`, and — only when the play has no position
   (hand-added) — the click point as `x/y` in the 1280x720 ref space.
   Machine-detected ball positions are never overwritten.
-- Typeahead path backfills `tracklet_id` server-side using the pipeline's own
-  attribution geometry (upper-torso anchor, 0.6 y-weight, 220px gate) —
-  verified to reproduce the pipeline's original tracklet choice. A containment
-  test does NOT work (ball at contact is typically >100px above the box).
+- Typeahead path re-links `tracklet_id` to a tracklet **of the named player**,
+  or NULL when that player isn't tracked at the touch.
+
+**The two correction types must not be conflated** (reviewer report,
+2026-08-07 — the dominant error mode in practice is the first):
+
+| | Reviewer means | Correct record |
+|---|---|---|
+| **Geometry** | "I thought Bob touched it, it was actually Steve" — both labelled fine, wrong nearby body picked | cluster=Steve, tracklet=**Steve's** body |
+| **Identity** | "the body I called Bob is really Steve" — a clustering error | fixed on the identities page (merge/split) |
+
+The first implementation linked the *nearest body to the ball regardless of
+cluster*, recording (cluster=Steve, tracklet=Bob's body) — which reads as an
+identity correction and would teach a re-ID fine-tune that Bob looks like
+Steve. Measured on game 14: **51 of 88** linked touches carried that false
+pairing; spot checks confirmed the credited player was often tracked
+separately at the same instant, i.e. pure geometry error. Fixed: no distance
+gate (the reviewer outranks geometry; the clusterer's temporal cannot-link
+means at most one tracklet per cluster at any instant), and NULL rather than
+a link to someone else's body.
+
+**Legacy caveat:** games 13/14 still hold pre-fix pairings. They are
+pre-1.0.0 evaluation-only, so they never reach training — but any future
+consumer of `tracklet_id` must not read them as identity evidence.
 
 ### 0.3 Auto-export — **SHIPPED 2026-08-07**: when every rally is scored, an
 8s-idle debounced `GET /api/export/<id>?dest=auto` ships the corrections file

@@ -2,41 +2,54 @@ import { db } from "@/lib/db";
 import { getSessionUser, isOrganizer } from "@/lib/auth";
 import { loadGameJson, boxesAt } from "@/lib/gamejson";
 
-// D3 (ML-PLAN 0.1): when the reviewer attributes via the typeahead, only a
-// cluster_id arrives — but the training-side label we actually need is the
-// TRACKLET (which tracked body was this). Derive it: the tracked body nearest
-// the play's ball position at its time, using the SAME geometry as the
-// pipeline's own attribution (vbpipe/plays.py attribute): distance to the
-// upper-torso anchor (centre-x, 35% down the box) with the vertical axis
-// weighted 0.6, accepted within the same 220px gate. A containment test does
-// NOT work here — the ball at contact sits at the hands, typically far above
-// the body box (median 129px on cca-one; an attack contact measured ~130px
-// above the nearest box top), so "inside the box" almost never holds.
-// Deliberately NOT filtered to the chosen cluster: a tracklet at the ball
-// whose cluster differs from the name the reviewer picked is exactly the
-// misclustering evidence we want to capture. Best-effort by design — no
-// game.json, no position, or nobody within the gate all silently skip.
-function backfillTracklet(d, playId) {
-  const GATE = 220, Y_W = 0.6;   // vbpipe plays.attribute values
+// D3 (ML-PLAN 0.1): keep `tracklet_id` meaning "the tracked body that made
+// this touch" whenever the reviewer names a player.
+//
+// The two correction types must not be conflated, and in practice almost all
+// of them are the FIRST kind:
+//   (a) GEOMETRY  — "I thought Bob touched it, it was actually Steve."
+//                   Both are labelled correctly; the pipeline picked the
+//                   wrong nearby body. Truth = Steve's tracked body.
+//   (b) IDENTITY  — "the body I called Bob is really Steve."
+//                   A clustering error, fixed on the identities page.
+//
+// So on a cluster change we re-link to a tracklet OF THE NAMED PLAYER. The
+// tempting alternative — nearest body to the ball, regardless of cluster —
+// records (cluster=Steve, tracklet=Bob's body), which downstream reads as
+// exactly (b) and would teach a re-ID fine-tune that Bob looks like Steve.
+// Measured on game 14: 51 of 88 linked touches carried that false pairing.
+//
+// No distance gate: the reviewer's judgement outranks geometry, and the
+// clusterer's temporal cannot-link guarantees at most one tracklet per
+// cluster at any instant, so "which body is this player right now" is
+// unambiguous. Position only breaks ties left by an app-side merge.
+// No match (the named player untracked here) => NULL, which is honest;
+// pointing at someone else's body is not.
+function relinkTracklet(d, playId, clusterId) {
   const p = d.prepare(
     `SELECT p.t, p.x, p.y, r.game_id FROM plays p
      JOIN rallies r ON r.id = p.rally_id WHERE p.id = ?`).get(playId);
-  if (!p || p.x == null || p.y == null) return;
+  if (!p) return;
   const game = loadGameJson(p.game_id);
-  if (!game) return;
+  if (!game) return;              // can't resolve bodies; leave as-is
+  const mine = d.prepare(
+    `SELECT t.id, t.src_id FROM tracklets t
+     JOIN identities i ON i.id = t.identity_id
+     WHERE t.game_id = ? AND i.cluster_id = ? AND i.dismissed = 0`)
+    .all(p.game_id, clusterId);
+  const bySrc = new Map(mine.map(r => [r.src_id, r.id]));
   let best = null;
   for (const { src_id, box } of boxesAt(game, p.t)) {
-    const [, bx, by, bw, bh] = box;
-    const ax = bx + bw / 2, ay = by + bh * 0.35;
-    const dc = Math.hypot(ax - p.x, (ay - p.y) * Y_W);
-    if (dc < GATE && (!best || dc < best.dc)) best = { src_id, dc };
+    if (!bySrc.has(src_id)) continue;
+    let d2 = 0;
+    if (p.x != null && p.y != null) {
+      const [, bx, by, bw, bh] = box;
+      d2 = Math.hypot(bx + bw / 2 - p.x, (by + bh * 0.35 - p.y) * 0.6);
+    }
+    if (!best || d2 < best.d2) best = { id: bySrc.get(src_id), d2 };
   }
-  if (!best) return;
-  const row = d.prepare(
-    "SELECT id FROM tracklets WHERE game_id = ? AND src_id = ?")
-    .get(p.game_id, best.src_id);
-  if (row)
-    d.prepare("UPDATE plays SET tracklet_id = ? WHERE id = ?").run(row.id, playId);
+  d.prepare("UPDATE plays SET tracklet_id = ? WHERE id = ?")
+    .run(best ? best.id : null, playId);
 }
 
 export async function PATCH(req) {
@@ -50,8 +63,12 @@ export async function PATCH(req) {
     if (!allowed.includes(k)) return Response.json({ error: "bad field" }, { status: 400 });
     d.prepare(`UPDATE plays SET ${k} = ?, corrected = 1 WHERE id = ?`).run(fields[k], id);
   }
-  if ("cluster_id" in fields && !("tracklet_id" in fields))
-    backfillTracklet(d, id);
+  // Clicking a player box sends tracklet_id explicitly — that wins. The
+  // typeahead sends only cluster_id, so resolve the body here. Skipped for
+  // "unknown player" (cluster_id null): the reviewer is withdrawing a name,
+  // not asserting a different body.
+  if ("cluster_id" in fields && !("tracklet_id" in fields) && fields.cluster_id != null)
+    relinkTracklet(d, id, fields.cluster_id);
   return Response.json({ ok: true });
 }
 
