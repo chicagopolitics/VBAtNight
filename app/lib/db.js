@@ -55,6 +55,11 @@ const MIGRATIONS = [
   // tracklet ids and deleted-phantom sets are all model-relative. Null =
   // imported from a pre-1.0.0 bundle, i.e. evaluation-only labels.
   "ALTER TABLE games ADD COLUMN pipeline TEXT",
+  // Blind-recall completeness (ML-PLAN 0.4): the reviewer asserts every real
+  // touch in this rally is present. Distinguishes "not reviewed" from
+  // "verified: nothing more happened" — recall metrics and derived training
+  // negatives only count rallies with this set.
+  "ALTER TABLE rallies ADD COLUMN touches_complete INTEGER DEFAULT 0",
   // --- Naming (see NAMING-PLAN.md) --------------------------------------
   // A name is a RENDERING, not a stored string. These are the facts; the
   // label is derived in lib/game-name.js so the site and the YouTube title

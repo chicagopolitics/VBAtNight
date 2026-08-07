@@ -1,5 +1,7 @@
-import { db } from "./db";
-import { displayName, slug } from "./game-name";
+// Explicit .js extensions so plain-node ESM scripts (scripts/*.mjs) can
+// import buildCorrections directly; Next resolves them the same either way.
+import { db } from "./db.js";
+import { displayName, slug } from "./game-name.js";
 
 // Filesystem-safe stem. Shared with the export route so the filename and the
 // `video_stem` field in the payload can't disagree.
@@ -22,6 +24,11 @@ export function buildCorrections(gid) {
         idx: r.idx, start: r.start_s, end: r.end_s, phase: r.phase,
         outcome: r.outcome_type
           ? { type: r.outcome_type, cluster: r.outcome_cluster } : null,
+        // Blind-recall completeness (ML-PLAN 0.4): 1 = the reviewer asserts
+        // every real touch in this rally is present. Recall metrics and
+        // derived negatives are only valid over rallies with this set —
+        // elsewhere "no touch recorded" is ambiguous, not a negative.
+        touches_complete: r.touches_complete ? 1 : 0,
         plays: plays.filter(p => !p.deleted).map(({ deleted, ...p }) => p),
         removed_plays: plays.filter(p => p.deleted).map(({ deleted, ...p }) => p),
       };
@@ -45,6 +52,8 @@ export function buildCorrections(gid) {
     review_stats: {
       corrected_or_removed: nCorr,
       outcomes_set: rallies.filter(r => r.outcome).length,
+      complete_rallies: rallies.filter(r => r.touches_complete
+                                            && r.phase === "game").length,
       named_identities: identities.filter(i => i.name).length,
     },
     // Which pipeline generation these labels describe. Everything in

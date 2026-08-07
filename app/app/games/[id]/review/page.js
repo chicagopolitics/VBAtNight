@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { getSessionUser, isOrganizer } from "@/lib/auth";
+import { driveCanUpload } from "@/lib/drive";
 import { redirect } from "next/navigation";
 import Review from "./ui";
 export const dynamic = "force-dynamic";
@@ -22,5 +23,5 @@ export default async function Page({ params }) {
      WHERE r.game_id = ? AND p.deleted = 0 ORDER BY p.t`).all(id);
   const plain = x => x.map(r => ({ ...r }));
   return <Review rallies={plain(rallies)} idents={plain(idents)} plays={plain(plays)}
-                 video={video} />;
+                 video={video} gameId={+id} driveReady={driveCanUpload()} />;
 }

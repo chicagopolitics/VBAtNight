@@ -180,6 +180,21 @@ video { width: 100%; max-width: 900px; border-radius: 8px; background: #000; }
 .touch .t { color: var(--muted); font-size: 11px; margin-left: auto; }
 .touch .focctl { display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; }
 .touch .focctl select { font-size: 12px; padding: 1px 4px; }
+/* click-attribution overlay: player boxes drawn over the paused video while
+   the picker is open. The wrapper shrink-fits the video (same max-width), so
+   percentage coords in the 1280x720 reference space land on the players. */
+.vidwrap { position: relative; max-width: 900px; }
+.boxlayer { position: absolute; inset: 0; pointer-events: none; }
+.pbox { position: absolute; pointer-events: auto; cursor: pointer;
+  border: 2px solid var(--accent); border-radius: 4px;
+  background: transparent; transition: background .1s; }
+.pbox:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.pbox .tag { position: absolute; top: -19px; left: -2px; white-space: nowrap;
+  font-size: 11px; line-height: 1; padding: 3px 6px; border-radius: 4px;
+  background: var(--accent); color: var(--on-accent); }
+/* touch-list-complete toggle (blind-recall flag) */
+.tcomplete.on { background: var(--good-edge); border-color: var(--good-edge); }
+.tl-seg.tlc { box-shadow: inset 0 -3px 0 var(--accent); }
 .picker { margin-top: 8px; padding: 8px; border: 1px solid var(--accent);
   border-radius: 8px; background: var(--accent-soft); }
 .picker input { width: 100%; margin-bottom: 6px; }

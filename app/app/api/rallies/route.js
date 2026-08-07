@@ -5,7 +5,8 @@ export async function PATCH(req) {
   if (!isOrganizer(await getSessionUser()))
     return Response.json({ error: "forbidden" }, { status: 403 });
   const { id, ...fields } = await req.json();
-  const allowed = ["outcome_type", "outcome_cluster", "phase", "start_s", "end_s"];
+  const allowed = ["outcome_type", "outcome_cluster", "phase", "start_s", "end_s",
+                   "touches_complete"];
   for (const k of Object.keys(fields))
     if (!allowed.includes(k)) return Response.json({ error: "bad field" }, { status: 400 });
   if ("start_s" in fields || "end_s" in fields) {

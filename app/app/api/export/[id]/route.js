@@ -24,7 +24,12 @@ export async function GET(req, { params }) {
   if (!data) return Response.json({ error: "no such game" }, { status: 404 });
   const body = JSON.stringify(data, null, 1);
   const file = `corrections_${data.video_stem}.json`;
-  const dest = new URL(req.url).searchParams.get("dest");
+  let dest = new URL(req.url).searchParams.get("dest");
+  // "auto" = best available: Drive when OAuth is configured, else the app
+  // folder. Used by the review page's auto-export (ML-PLAN 0.3) so the same
+  // request works on any deployment; both destinations upsert by filename,
+  // so repeated fires just refresh the file.
+  if (dest === "auto") dest = driveCanUpload() ? "drive" : null;
 
   if (new URL(req.url).searchParams.get("download"))
     return new Response(body, {

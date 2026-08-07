@@ -285,7 +285,40 @@ Shipped:
 Net effect: every corrections file from here on declares its own generation, so
 pooling across generations becomes a visible mistake rather than a silent one.
 
-### 0.1 Capture `tracklet_id` on corrected attributions — **the high-value one**
+### 0.1 Capture `tracklet_id` on corrected attributions — **SHIPPED 2026-08-07**
+
+Implemented as the click-the-player overlay, live-tested against game 13 (its
+same-run game.json recovered from `game_bundle_game2.zip` via
+`backfill-gamejson`; 100% of positioned touches matched, full src_id→DB join):
+
+- `GET /api/tracklets?game_id=N` serves per-frame boxes from the retained
+  game.json, joined to DB tracklet ids + current identity names
+  (`lib/gamejson.js` caches the parse). 404 when no game.json → the UI
+  degrades to exactly the old typeahead.
+- Review UI: while the picker is open (P, or auto-opened after A), tracked
+  player boxes render over the paused frame; clicking one writes
+  `cluster_id` + `tracklet_id`, and — only when the play has no position
+  (hand-added) — the click point as `x/y` in the 1280x720 ref space.
+  Machine-detected ball positions are never overwritten.
+- Typeahead path backfills `tracklet_id` server-side using the pipeline's own
+  attribution geometry (upper-torso anchor, 0.6 y-weight, 220px gate) —
+  verified to reproduce the pipeline's original tracklet choice. A containment
+  test does NOT work (ball at contact is typically >100px above the box).
+
+### 0.3 Auto-export — **SHIPPED 2026-08-07**: when every rally is scored, an
+8s-idle debounced `GET /api/export/<id>?dest=auto` ships the corrections file
+(Drive when OAuth configured, else app folder; both upsert). Manual
+ExportButton now on the review page. `npm run export` rewired to
+`buildCorrections` (the old script had drifted: wrong filename contract,
+missing pipeline stamp).
+
+### 0.4 Per-rally completeness — **SHIPPED 2026-08-07**:
+`rallies.touches_complete` (migration), `C` key / chip / timeline stripe in
+review, exported per rally + `review_stats.complete_rallies`. Reviewer
+discipline during the six-game pass: mark it on every rally whose touch list
+you've verified complete — that's what makes negatives derivable.
+
+### 0.1 (original spec, for reference)
 
 Today, when a reviewer fixes who made a touch, they pick a name and we store a
 `cluster_id`. That is a *cluster → player* label, which is the thing we already

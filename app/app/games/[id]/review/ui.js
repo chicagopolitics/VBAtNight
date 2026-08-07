@@ -1,6 +1,7 @@
 "use client";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { deriveGrades, teamMap, GRADE_OPTIONS, GOOD, BAD } from "@/lib/grades";
+import { ExportButton } from "@/app/publish-toggle";
 
 const TYPES = ["serve", "receive", "dig", "set", "attack", "block"];
 // number-key -> type (1..6); shown in the row and the legend
@@ -23,7 +24,7 @@ const outcomeFor = (ty, g) => (g && OUTCOME[ty]?.[g]) || null;
 // seconds of tail kept after the deciding touch when auto-trimming the rally
 const PAD_WIN_S = 3, PAD_ERR_S = 4;
 
-export default function Review({ rallies, idents, plays, video }) {
+export default function Review({ rallies, idents, plays, video, gameId, driveReady }) {
   const [sel, setSel] = useState(rallies[0]?.id);
   const [allPlays, setAllPlays] = useState(plays);
   const [focusedId, setFocusedId] = useState(null);   // keyboard-focused touch
@@ -31,6 +32,15 @@ export default function Review({ rallies, idents, plays, video }) {
   const [now, setNow] = useState(-1);
   const vid = useRef(null);
   const pinput = useRef(null);
+  const wrap = useRef(null);       // relative wrapper around the video (box overlay)
+  // Tracklet boxes for click-attribution (ML-PLAN 0.1). undefined = not
+  // fetched yet, null = unavailable (game predates game.json retention),
+  // array = usable. Fetched lazily on first picker open — most sessions that
+  // never attribute never pay the ~400KB.
+  const [tracks, setTracks] = useState(undefined);
+  const tracksReq = useRef(false);
+  const [exportStatus, setExportStatus] = useState("");
+  const editsRef = useRef(0);      // edits since last auto-export (gates refire)
 
   const [rallyState, setRallyState] = useState(rallies);
   const [videoDur, setVideoDur] = useState(0);
@@ -43,10 +53,22 @@ export default function Review({ rallies, idents, plays, video }) {
   const skipped = rallyState.filter(r => r.phase === "skipped");
 
   async function saveRally(id, body) {
+    editsRef.current++;
     setRallyState(rs => rs.map(r => r.id === id ? { ...r, ...body } : r));
     await fetch("/api/rallies", { method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, ...body }) });
+  }
+
+  // Lazy one-shot fetch of tracklet boxes (guarded by ref so a second picker
+  // open during the request doesn't double-fetch).
+  async function ensureTracks() {
+    if (tracksReq.current) return;
+    tracksReq.current = true;
+    try {
+      const res = await fetch(`/api/tracklets?game_id=${gameId}`);
+      setTracks(res.ok ? (await res.json()).tracklets : null);
+    } catch { setTracks(null); }
   }
   const rallyPlays = useMemo(
     () => allPlays.filter(p => p.rally_id === sel).sort((a, b) => a.t - b.t),
@@ -65,12 +87,14 @@ export default function Review({ rallies, idents, plays, video }) {
   };
 
   async function save(id, body) {
+    editsRef.current++;
     setAllPlays(ps => ps.map(p => p.id === id ? { ...p, ...body, corrected: 1 } : p));
     await fetch("/api/plays", { method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, ...body }) });
   }
   async function remove(id) {
+    editsRef.current++;
     const idx = rallyPlays.findIndex(p => p.id === id);
     setAllPlays(ps => ps.filter(p => p.id !== id));
     // keep focus on a neighbour so the keyboard flow continues, and snap the
@@ -84,6 +108,7 @@ export default function Review({ rallies, idents, plays, video }) {
   }
   async function removeAll() {
     if (!confirm(`Delete all ${rallyPlays.length} touches in this rally?`)) return;
+    editsRef.current++;
     const ids = rallyPlays.map(p => p.id);
     setAllPlays(ps => ps.filter(p => p.rally_id !== sel));
     setFocusedId(null);
@@ -96,6 +121,7 @@ export default function Review({ rallies, idents, plays, video }) {
     const after = rallyPlays.filter(x => x.t > p.t);
     if (!after.length) return;
     if (!silent && !confirm(`Delete ${after.length} touch${after.length > 1 ? "es" : ""} after this one?`)) return;
+    editsRef.current++;
     const ids = after.map(x => x.id);
     setAllPlays(ps => ps.filter(x => !ids.includes(x.id)));
     for (const id of ids)
@@ -129,7 +155,58 @@ export default function Review({ rallies, idents, plays, video }) {
     return `${base}#t=${t0.toFixed(1)},${(r.end_s - clipStart(r) + 2).toFixed(1)}`;
   };
 
+  // time-bucket index (0.1s buckets) so the per-frame lookup is O(players)
+  const boxIndex = useMemo(() => {
+    if (!tracks) return null;
+    const m = new Map();
+    tracks.forEach((tr, ti) => tr.boxes.forEach(b => {
+      const k = Math.round(b[0] * 10);
+      let a = m.get(k); if (!a) m.set(k, a = []);
+      a.push([ti, b]);
+    }));
+    return m;
+  }, [tracks]);
+  // boxes to draw at the playhead — only while the picker is open (D2: the
+  // overlay is a short-lived quasi-modal, not a persistent mode). 0.12s
+  // nearest-box tolerance matches the pipeline's own overlay renderer.
+  const overlayBoxes = useMemo(() => {
+    if (!picker || !boxIndex || !rally || now < 0) return [];
+    const abs = clipStart(rally) + now;
+    const k = Math.round(abs * 10);
+    const best = new Map();                       // tracklet idx -> nearest box
+    for (let kk = k - 2; kk <= k + 2; kk++) {
+      for (const [ti, b] of boxIndex.get(kk) || []) {
+        if (Math.abs(b[0] - abs) > 0.12) continue;
+        const cur = best.get(ti);
+        if (!cur || Math.abs(b[0] - abs) < Math.abs(cur[0] - abs)) best.set(ti, b);
+      }
+    }
+    return [...best].map(([ti, b]) => ({ track: tracks[ti], box: b }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [picker, boxIndex, now, rally, tracks]);
+
+  // Box click = attribution with full provenance: cluster for stats,
+  // tracklet for training labels, and — only when the play has no position
+  // (hand-added; the detector's ball x/y must not be overwritten) — the
+  // click point in the 1280x720 reference space.
+  function clickBox(e, track) {
+    e.stopPropagation();
+    const p = rallyPlays[focusedIdx];
+    if (!p) { setPicker(null); return; }
+    const body = { cluster_id: track.cluster_id ?? null, tracklet_id: track.id ?? null };
+    if (p.x == null && wrap.current) {
+      const r = wrap.current.getBoundingClientRect();
+      body.x = Math.round((e.clientX - r.left) * 1280 / r.width * 10) / 10;
+      body.y = Math.round((e.clientY - r.top) * 720 / r.height * 10) / 10;
+    }
+    save(p.id, body);
+    // unknown identity (unjoined tracklet): position+tracklet captured, keep
+    // the picker open so the reviewer can still type the name
+    if (track.cluster_id != null) setPicker(null);
+  }
+
   async function addPlay() {
+    editsRef.current++;
     const t = clipStart(rally) + (vid.current?.currentTime ?? 0);
     const res = await fetch("/api/plays", { method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -138,6 +215,12 @@ export default function Review({ rallies, idents, plays, video }) {
     setAllPlays(ps => [...ps, { id, rally_id: sel, t, play_type: "attack",
       cluster_id: null, corrected: 1 }]);
     setFocusedId(id);
+    // straight into attribution: the overlay (when boxes exist) prompts a
+    // click on the player, which supplies position + tracklet + cluster in
+    // one go — the label a hand-added touch otherwise never gets. Esc bails.
+    ensureTracks();
+    setPicker({ filter: "", sel: 0 });
+    setTimeout(() => pinput.current?.focus(), 0);
   }
   // seek to the EXACT frame of the touch (no lead-in) — the ±1s keys give
   // context on demand. Clicking a touch also focuses it for keyboard edits.
@@ -249,8 +332,12 @@ export default function Review({ rallies, idents, plays, video }) {
         case "x": case "X": case "d": case "D":
           e.preventDefault(); if (f) remove(f.id); break;
         case "p": case "P":
-          e.preventDefault(); if (f) { setPicker({ filter: "", sel: 0 });
+          e.preventDefault(); if (f) { ensureTracks(); setPicker({ filter: "", sel: 0 });
             setTimeout(() => pinput.current?.focus(), 0); } break;
+        case "c": case "C":   // touch list complete (blind-recall flag, ML-PLAN 0.4)
+          e.preventDefault();
+          saveRally(rally.id, { touches_complete: rally.touches_complete ? 0 : 1 });
+          break;
         case "k": case "K": e.preventDefault(); if (f) setGrade(f, winGrade(f.play_type)); break;
         case "e": case "E": e.preventDefault(); if (f) setGrade(f, "error"); break;
         case "w": case "W":   // poor (weak) — only valid for receive/dig
@@ -266,10 +353,13 @@ export default function Review({ rallies, idents, plays, video }) {
   });
 
   // scroll-wheel over the video scrubs ±0.5s per bump (native, non-passive so
-  // it can preventDefault and not scroll the page)
+  // it can preventDefault and not scroll the page). Attached to the WRAPPER,
+  // not the <video>, so scrubbing keeps working over the attribution boxes —
+  // scrubbing with the picker open re-renders boxes at the new time, which is
+  // how the reviewer lands on the exact contact frame before clicking.
   useEffect(() => {
-    const v = vid.current;
-    if (!v || !rally || rally.phase === "skipped") return;
+    const w = wrap.current, v = vid.current;
+    if (!w || !v || !rally || rally.phase === "skipped") return;
     const onWheel = ev => {
       ev.preventDefault();
       const t0 = Math.max(0, rally.start_s - clipStart(rally) - 2);
@@ -278,12 +368,37 @@ export default function Review({ rallies, idents, plays, video }) {
       v.currentTime = Math.max(lo, Math.min(hi, v.currentTime + (ev.deltaY > 0 ? 0.5 : -0.5)));
       v.pause();
     };
-    v.addEventListener("wheel", onWheel, { passive: false });
-    return () => v.removeEventListener("wheel", onWheel);
+    w.addEventListener("wheel", onWheel, { passive: false });
+    return () => w.removeEventListener("wheel", onWheel);
   }, [rally, full, mediaDur]);
 
   const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   const doneCount = visible.filter(r => r.outcome_type).length;
+  const doneAll = visible.length > 0 && doneCount === visible.length;
+
+  // Auto-export (ML-PLAN 0.3): once every rally is scored, ship the
+  // corrections file after 8s of idle. Every edit while done reschedules the
+  // timer (so it never fires mid-flurry); the editsRef gate means opening an
+  // already-done game and touching nothing exports nothing; edits AFTER a
+  // fire re-arm it, which is safe because both destinations upsert by
+  // filename. touches_complete edits flow through saveRally and re-export
+  // too, so late completeness flags reach the corrections file.
+  useEffect(() => {
+    if (!doneAll || editsRef.current === 0) return;
+    const t = setTimeout(async () => {
+      editsRef.current = 0;
+      try {
+        const res = await fetch(`/api/export/${gameId}?dest=auto`);
+        const j = await res.json();
+        setExportStatus(res.ok
+          ? `✓ exported ${j.file}${j.dest === "drive" ? " → Drive" : ""}`
+          : `✗ export: ${j.error || res.status}`);
+      } catch { setExportStatus("✗ export failed"); }
+    }, 8000);
+    return () => clearTimeout(t);
+    // allPlays/rallyState in deps = "reschedule on every edit"
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doneAll, allPlays, rallyState, gameId]);
 
   return (
     <div>
@@ -306,11 +421,13 @@ export default function Review({ rallies, idents, plays, video }) {
               return (
                 <div key={r.id}
                   className={"tl-seg" + (r.id === sel ? " sel" : "") +
-                    (r.outcome_type ? " done" : "") + (n === 0 ? " empty" : "")}
+                    (r.outcome_type ? " done" : "") + (n === 0 ? " empty" : "") +
+                    (r.touches_complete ? " tlc" : "")}
                   style={{ left: `${(r.start_s / total) * 100}%`,
                     width: `${Math.max(((r.end_s - r.start_s) / total) * 100, 0.55)}%` }}
                   title={`#${i + 1} · ${fmt(r.start_s)} · ${n} touch${n === 1 ? "" : "es"}` +
-                    (r.outcome_type ? ` · ✓ ${r.outcome_type}` : "")}
+                    (r.outcome_type ? ` · ✓ ${r.outcome_type}` : "") +
+                    (r.touches_complete ? " · complete" : "")}
                   onClick={() => setSel(r.id)} />
               );
             })}
@@ -330,6 +447,7 @@ export default function Review({ rallies, idents, plays, video }) {
             {" · "}{rallyPlays.length} touch{rallyPlays.length === 1 ? "" : "es"}
           </>}
           {"  ·  "}✓ {doneCount}/{visible.length} scored
+          {exportStatus && <>{"  ·  "}{exportStatus}</>}
         </span>
         <span>
           {video && rally && (
@@ -345,13 +463,14 @@ export default function Review({ rallies, idents, plays, video }) {
                 setSel(j.rally.id);
               }}>+ rally at playhead</button>
           )}{" "}
+          <ExportButton id={gameId} driveReady={driveReady} />{" "}
           <button onClick={() => go(1)} disabled={selIdx >= visible.length - 1}>next ▶</button>
         </span>
       </div>
 
       <div className="keyhint muted">
         <b>↑↓</b> touch · <b>1–6</b> type · <b>P</b> player · <b>K</b> kill · <b>E</b> error · <b>W</b> poor ·
-        {" "}<b>←→</b> ±1s · <b>scroll</b> ±0.5s · <b>A</b> add · <b>X</b> del · <b>space</b> play · <b>[ ]</b> rally · <b>Enter</b> score + next
+        {" "}<b>←→</b> ±1s · <b>scroll</b> ±0.5s · <b>A</b> add · <b>X</b> del · <b>C</b> complete · <b>space</b> play · <b>[ ]</b> rally · <b>Enter</b> score + next
       </div>
 
       {skipped.length > 0 && (
@@ -380,8 +499,10 @@ export default function Review({ rallies, idents, plays, video }) {
               const t1 = rally.end_s - clipStart(rally) + 2;
               const lo = full ? 0 : t0, hi = full ? (mediaDur || t1) : t1;
               return (<>
+                <div ref={wrap} className="vidwrap">
                 <video ref={vid} preload="metadata" src={mediaFor(rally)} muted={muted}
-                  onClick={e => e.target.paused ? e.target.play() : e.target.pause()}
+                  onClick={e => picker ? setPicker(null)
+                    : e.target.paused ? e.target.play() : e.target.pause()}
                   onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
                   onTimeUpdate={e => {
                     setNow(e.target.currentTime);
@@ -392,6 +513,21 @@ export default function Review({ rallies, idents, plays, video }) {
                     setMediaDur(e.target.duration);
                     if (video) setVideoDur(e.target.duration);
                   }} />
+                {overlayBoxes.length > 0 && (
+                  <div className="boxlayer">
+                    {overlayBoxes.map(({ track, box }) => (
+                      <div key={track.src_id} className="pbox"
+                        style={{ left: `${box[1] / 12.8}%`, top: `${box[2] / 7.2}%`,
+                                 width: `${box[3] / 12.8}%`, height: `${box[4] / 7.2}%` }}
+                        onClick={e => clickBox(e, track)}>
+                        <span className="tag">
+                          {track.name || (track.cluster_id != null ? `P${track.cluster_id}` : "?")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                </div>
                 <div className="vidbar">
                   <button onClick={() => {
                     const v = vid.current; if (!v) return;
@@ -465,6 +601,12 @@ export default function Review({ rallies, idents, plays, video }) {
                 Touches{rallyPlays.length > 0 ? ` (${rallyPlays.length})` : ""}
               </h2>
               <span>
+                <button className={"tcomplete" + (rally.touches_complete ? " on" : "")}
+                  title="Every real touch in this rally is recorded — nothing missing (C). Recall metrics only trust rallies marked complete."
+                  onClick={() => saveRally(rally.id,
+                    { touches_complete: rally.touches_complete ? 0 : 1 })}>
+                  {rally.touches_complete ? "✓ complete" : "☐ complete"}
+                </button>{" "}
                 <button title="Add a touch at the current playhead (A)"
                   onClick={addPlay}>+ add</button>{" "}
                 {rallyPlays.length > 0 && (
@@ -514,6 +656,11 @@ export default function Review({ rallies, idents, plays, video }) {
                   </div>
                   {foc && picker && (
                     <div className="picker">
+                      {overlayBoxes.length > 0 && (
+                        <div className="muted" style={{ fontSize: 12, padding: "2px 4px" }}>
+                          click the player in the video, or type a name
+                        </div>
+                      )}
                       <input ref={pinput} placeholder="type a name…" autoComplete="off"
                         value={picker.filter}
                         onChange={e => setPicker(pp => ({ ...pp, filter: e.target.value, sel: 0 }))}
