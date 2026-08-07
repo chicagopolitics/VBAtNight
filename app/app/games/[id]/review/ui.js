@@ -95,6 +95,7 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
   }
   async function remove(id) {
     editsRef.current++;
+    setPicker(null);   // focus is about to move; don't drag the picker along
     const idx = rallyPlays.findIndex(p => p.id === id);
     setAllPlays(ps => ps.filter(p => p.id !== id));
     // keep focus on a neighbour so the keyboard flow continues, and snap the
@@ -215,12 +216,6 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
     setAllPlays(ps => [...ps, { id, rally_id: sel, t, play_type: "attack",
       cluster_id: null, corrected: 1 }]);
     setFocusedId(id);
-    // straight into attribution: the overlay (when boxes exist) prompts a
-    // click on the player, which supplies position + tracklet + cluster in
-    // one go — the label a hand-added touch otherwise never gets. Esc bails.
-    ensureTracks();
-    setPicker({ filter: "", sel: 0 });
-    setTimeout(() => pinput.current?.focus(), 0);
   }
   // seek to the EXACT frame of the touch (no lead-in) — the ±1s keys give
   // context on demand. Clicking a touch also focuses it for keyboard edits.
@@ -630,7 +625,7 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
                     className={"touch" + (foc ? " foc" : "") + (live ? " live" : "") +
                       (p.corrected ? " corrected" : "") +
                       (!p.corrected && p.cluster_id == null ? " noattr" : "")}
-                    onClick={() => { setFocusedId(p.id); seekTo(p); }}>
+                    onClick={() => { setFocusedId(p.id); seekTo(p); setPicker(null); }}>
                     <b className="ty">{p.play_type || "?"}</b>
                     <span className="pl">{nameOf(p.cluster_id)}</span>
                     {g && g !== "in_play" && (

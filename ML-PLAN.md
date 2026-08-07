@@ -295,8 +295,9 @@ same-run game.json recovered from `game_bundle_game2.zip` via
   game.json, joined to DB tracklet ids + current identity names
   (`lib/gamejson.js` caches the parse). 404 when no game.json → the UI
   degrades to exactly the old typeahead.
-- Review UI: while the picker is open (P, or auto-opened after A), tracked
-  player boxes render over the paused frame; clicking one writes
+- Review UI: while the picker is open (**P** — the only way it opens; it never
+  auto-opens, and it closes when focus moves), tracked player boxes render
+  over the paused frame; clicking one writes
   `cluster_id` + `tracklet_id`, and — only when the play has no position
   (hand-added) — the click point as `x/y` in the 1280x720 ref space.
   Machine-detected ball positions are never overwritten.
