@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { deriveGrades, teamMap, GRADE_OPTIONS, GOOD, BAD } from "@/lib/grades";
 import { ExportButton } from "@/app/publish-toggle";
 
@@ -51,6 +51,9 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
   const lastVol = useRef(1);                  // level to restore when unmuting
   const listRef = useRef(null);   // touch-list scrollbox (see keepFocusVisible)
   const paneRef = useRef(null);   // sticky touch column (see the --pane-h effect)
+  const pickerRef = useRef(null);      // player picker, positioned over the pane
+  const picklistRef = useRef(null);    // its scrollable name list
+  const [pickTop, setPickTop] = useState(null);   // px from the pane's top edge
   const rally = rallyState.find(r => r.id === sel);
   const visible = rallyState.filter(r => r.phase !== "skipped");
   const skipped = rallyState.filter(r => r.phase === "skipped");
@@ -479,16 +482,53 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
     if (!el) return;
     const pad = 8;
     const br = box.getBoundingClientRect();
-    // with the picker open, aim for the bottom of the picker panel so the
-    // name list is visible, but never at the cost of hiding the row itself
-    const nx = el.nextElementSibling;
-    const bottom = (nx?.classList.contains("picker") ? nx : el)
-      .getBoundingClientRect().bottom;
-    const top = el.getBoundingClientRect().top;
+    const { top, bottom } = el.getBoundingClientRect();
     if (top < br.top + pad) box.scrollTop += top - br.top - pad;
-    else if (bottom > br.bottom - pad)
-      box.scrollTop += Math.min(bottom - br.bottom + pad, top - br.top - pad);
-  }, [focusedId, picker, rallyPlays.length]);
+    else if (bottom > br.bottom - pad) box.scrollTop += bottom - br.bottom + pad;
+  }, [focusedId, rallyPlays.length]);
+
+  // Place the player picker under the focused row — flipping above it, and
+  // clamping to the viewport, when the space below runs out. Runs as a layout
+  // effect so the panel is measured and moved before the browser paints;
+  // until then it renders hidden (pickTop null) rather than at the wrong spot.
+  const pickerOpen = !!picker;
+  useLayoutEffect(() => {
+    if (!pickerOpen) { setPickTop(null); return; }
+    const pane = paneRef.current, box = listRef.current, el = pickerRef.current;
+    if (!pane || !box || !el) return;
+    const place = () => {
+      const row = box.querySelector(".touch.foc") || box;
+      const rr = row.getBoundingClientRect();
+      const h = el.offsetHeight;
+      const gap = 4, edge = 10;
+      let top = rr.bottom + gap;
+      if (top + h > window.innerHeight - edge) {
+        const above = rr.top - gap - h;
+        top = above >= edge ? above : Math.max(edge, window.innerHeight - edge - h);
+      }
+      setPickTop(top - pane.getBoundingClientRect().top);
+    };
+    place();
+    // the anchor row moves when the list scrolls under it
+    box.addEventListener("scroll", place, { passive: true });
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, { passive: true });
+    return () => {
+      box.removeEventListener("scroll", place);
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place);
+    };
+  }, [pickerOpen, focusedId, pickList.length]);
+
+  // keep the keyboard-selected name inside the picker's own scrollbox
+  useEffect(() => {
+    const box = picklistRef.current;
+    const el = box?.querySelector(".pick.sel");
+    if (!el) return;
+    const br = box.getBoundingClientRect(), er = el.getBoundingClientRect();
+    if (er.top < br.top) box.scrollTop += er.top - br.top;
+    else if (er.bottom > br.bottom) box.scrollTop += er.bottom - br.bottom;
+  }, [picker?.sel, picker?.filter]);
 
   const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   const doneCount = visible.filter(r => r.outcome_type).length;
@@ -777,8 +817,7 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
                   (full ? 0 : Math.max(0, rally.start_s - clipStart(rally) - 2));
                 const g = grades.get(p.id);
                 return (
-                  <Fragment key={p.id}>
-                  <div
+                  <div key={p.id}
                     className={"touch" + (foc ? " foc" : "") + (live ? " live" : "") +
                       (p.corrected ? " corrected" : "") +
                       (!p.corrected && p.cluster_id == null ? " noattr" : "")}
@@ -806,44 +845,50 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
                       </span>
                     )}
                   </div>
-                  {foc && picker && (
-                    <div className="picker">
-                      {overlayBoxes.length > 0 && (
-                        <div className="muted" style={{ fontSize: 12, padding: "2px 4px" }}>
-                          click the player in the video, or type a name
-                        </div>
-                      )}
-                      <input ref={pinput} placeholder="type a name…" autoComplete="off"
-                        value={picker.filter}
-                        onChange={e => setPicker(pp => ({ ...pp, filter: e.target.value, sel: 0 }))}
-                        onKeyDown={e => {
-                          if (e.key === "Enter") {
-                            const pick = pickList[picker.sel];
-                            if (pick && focusedId != null) save(focusedId, { cluster_id: pick.cluster_id });
-                            setPicker(null); e.preventDefault();
-                          } else if (e.key === "Escape") { setPicker(null); e.preventDefault(); }
-                          else if (e.key === "ArrowDown") { setPicker(pp => ({ ...pp, sel: Math.min(pp.sel + 1, pickList.length - 1) })); e.preventDefault(); }
-                          else if (e.key === "ArrowUp") { setPicker(pp => ({ ...pp, sel: Math.max(pp.sel - 1, 0) })); e.preventDefault(); }
-                        }} />
-                      <div className="picklist">
-                        <div className={"pick" + (picker.sel === -1 ? " sel" : "")}
-                          onClick={() => { if (focusedId != null) save(focusedId, { cluster_id: null }); setPicker(null); }}>
-                          unknown player
-                        </div>
-                        {pickList.map((i, k) => (
-                          <div key={i.cluster_id} className={"pick" + (k === picker.sel ? " sel" : "")}
-                            onClick={() => { if (focusedId != null) save(focusedId, { cluster_id: i.cluster_id }); setPicker(null); }}>
-                            {i.name || `P${i.cluster_id}`}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  </Fragment>
                 );
               })}
               {rallyPlays.length === 0 && <p className="muted">No touches — press A to add one from the video.</p>}
             </div>
+
+            {/* Anchored to the focused row but a child of the PANE, not of the
+                scrollbox — inside the list it was clipped to whatever room
+                happened to be left below the row. Out here it can flip above
+                the row and overhang the pane's edge instead. */}
+            {picker && (
+              <div className="picker" ref={pickerRef}
+                style={{ top: pickTop ?? 0,
+                         visibility: pickTop == null ? "hidden" : "visible" }}>
+                {overlayBoxes.length > 0 && (
+                  <div className="muted" style={{ fontSize: 12, padding: "2px 4px" }}>
+                    click the player in the video, or type a name
+                  </div>
+                )}
+                <input ref={pinput} placeholder="type a name…" autoComplete="off"
+                  value={picker.filter}
+                  onChange={e => setPicker(pp => ({ ...pp, filter: e.target.value, sel: 0 }))}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") {
+                      const pick = pickList[picker.sel];
+                      if (pick && focusedId != null) save(focusedId, { cluster_id: pick.cluster_id });
+                      setPicker(null); e.preventDefault();
+                    } else if (e.key === "Escape") { setPicker(null); e.preventDefault(); }
+                    else if (e.key === "ArrowDown") { setPicker(pp => ({ ...pp, sel: Math.min(pp.sel + 1, pickList.length - 1) })); e.preventDefault(); }
+                    else if (e.key === "ArrowUp") { setPicker(pp => ({ ...pp, sel: Math.max(pp.sel - 1, 0) })); e.preventDefault(); }
+                  }} />
+                <div className="picklist" ref={picklistRef}>
+                  <div className={"pick" + (picker.sel === -1 ? " sel" : "")}
+                    onClick={() => { if (focusedId != null) save(focusedId, { cluster_id: null }); setPicker(null); }}>
+                    unknown player
+                  </div>
+                  {pickList.map((i, k) => (
+                    <div key={i.cluster_id} className={"pick" + (k === picker.sel ? " sel" : "")}
+                      onClick={() => { if (focusedId != null) save(focusedId, { cluster_id: i.cluster_id }); setPicker(null); }}>
+                      {i.name || `P${i.cluster_id}`}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

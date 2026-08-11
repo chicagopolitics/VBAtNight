@@ -163,7 +163,7 @@ button.danger { background: var(--bad-bg); border-color: var(--bad-edge); color:
 .chip-edit .t { color: var(--muted); font-size: 11px; }
 .muted { color: var(--muted); font-size: 13px; }
 video { width: 100%; max-width: 900px; border-radius: 8px; background: #000; }
-.playrow { display: grid; grid-template-columns: 1fr 280px; gap: 16px;
+.playrow { display: grid; grid-template-columns: 1fr 320px; gap: 16px;
   align-items: start; }
 @media (max-width: 900px) { .playrow { grid-template-columns: 1fr; } }
 
@@ -179,18 +179,29 @@ video { width: 100%; max-width: 900px; border-radius: 8px; background: #000; }
    pre-measurement fallback. */
 .touchpane { position: sticky; top: 10px; align-self: start;
   display: flex; flex-direction: column; min-height: 0;
-  max-height: var(--pane-h, calc(100vh - 20px)); }
+  max-height: var(--pane-h, calc(100vh - 20px));
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 6px 10px 10px; }
+.touchpane > .row { flex: none; }
 .touchlist { display: flex; flex-direction: column; gap: 5px;
-  overflow-y: auto; overscroll-behavior: contain; min-height: 0;
-  padding: 2px 2px 6px; }
-/* stacked layout: nothing to stick to, but keep the list from running long */
+  overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+  min-height: 0; padding: 2px 2px 4px; }
+/* stacked layout: nothing to stick to, but keep the list from running long.
+   `relative`, never `static` — the picker below is positioned against this
+   box, and a static pane would hand it the page as its containing block. */
 @media (max-width: 900px) {
-  .touchpane { position: static; max-height: none; }
+  .touchpane { position: relative; top: auto; max-height: none; }
   .touchlist { max-height: 55vh; }
 }
+/* wraps rather than overflowing: the focused row carries a grade select and a
+   delete button on top of everything the others show, and a second line is
+   cheaper than a horizontal scrollbar under the whole list */
 .touch { display: flex; align-items: center; gap: 8px; padding: 6px 10px;
-  border: 1px solid var(--border-2); border-radius: 999px; background: var(--surface-2);
+  flex-wrap: wrap; row-gap: 4px;
+  border: 1px solid var(--border-2); border-radius: 14px; background: var(--surface-2);
   font-size: 13px; cursor: pointer; }
+.touch .pl { min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; }
 .touch:hover { border-color: var(--accent-edge); }
 .touch.corrected { border-color: var(--good-edge); }
 .touch.noattr { border-color: var(--bad-edge); border-style: dashed; }
@@ -232,10 +243,17 @@ video { width: 100%; max-width: 900px; border-radius: 8px; background: #000; }
 /* touch-list-complete toggle (blind-recall flag) */
 .tcomplete.on { background: var(--good-edge); border-color: var(--good-edge); }
 .tl-seg.tlc { box-shadow: inset 0 -3px 0 var(--accent); }
-.picker { margin-top: 8px; padding: 8px; border: 1px solid var(--accent);
-  border-radius: 8px; background: var(--accent-soft); }
-.picker input { width: 100%; margin-bottom: 6px; }
-.picklist { display: flex; flex-direction: column; gap: 2px; }
+/* floats over the touch list, anchored to the focused row by ui.js (top is
+   set inline). Absolute rather than in-flow so the list's scrollbox can't
+   clip it — a 20-name roster is taller than the room under a low row. */
+.picker { position: absolute; left: 10px; right: 10px; z-index: 5;
+  display: flex; flex-direction: column; max-height: min(58vh, 420px);
+  padding: 8px; border: 1px solid var(--accent);
+  border-radius: 8px; background: var(--accent-soft);
+  box-shadow: 0 6px 20px var(--shadow); }
+.picker input { width: 100%; margin-bottom: 6px; flex: none; }
+.picklist { display: flex; flex-direction: column; gap: 2px;
+  overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
 .pick { padding: 4px 8px; border-radius: 5px; font-size: 13px; cursor: pointer;
   border: 1px solid transparent; }
 .pick:hover { background: var(--hover); }
