@@ -527,6 +527,48 @@ body:has(.night) .gamecard:hover { box-shadow: 0 0 0 1px var(--accent-edge), 0 6
   .hero h1 { margin: 0; }
   .hero-in { padding: 0 14px 14px; }
 }
+/* --- next session (Luma sign-up) ------------------------------------------
+   Only rendered when lib/luma.js found a future session, so absence is the
+   normal state and no layout reserves space for it. A quiet pill, not a
+   banner: the date does the persuading. */
+.nextsess { display: inline-flex; align-items: stretch; flex: none;
+  border: 1px solid var(--accent-edge); border-radius: 999px;
+  background: var(--accent-soft); overflow: hidden; }
+.nextsess-go { display: inline-flex; align-items: baseline; gap: 7px;
+  padding: 5px 12px; font-size: 13px; color: var(--accent-ink); }
+.nextsess-go:hover { background: var(--hover); }
+.nextsess-k { font-size: 10px; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--muted); }
+.nextsess-d { font-weight: 600; white-space: nowrap; }
+.nextsess-arrow { font-size: 11px; }
+.nextsess-x { border: 0; border-left: 1px solid var(--accent-edge);
+  border-radius: 0; background: transparent; color: var(--muted);
+  padding: 0 9px; font-size: 10px; line-height: 1; }
+.nextsess-x:hover { background: var(--hover); color: var(--ink); }
+/* On the hero it's a lit surface against the night photo rather than a
+   themed chip — the palette vars are tuned for the page, not for sitting on
+   top of an image. z-index clears .hero::after's gradient. */
+.hero .nextsess { position: absolute; top: 12px; right: 14px; z-index: 2;
+  background: rgba(10, 18, 32, .6); border-color: rgba(242, 227, 189, .38);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.hero .nextsess-go { color: var(--moon); }
+.hero .nextsess-k, .hero .nextsess-x { color: #c3d2ea; }
+.hero .nextsess-x { border-left-color: rgba(242, 227, 189, .26); }
+.hero .nextsess-go:hover, .hero .nextsess-x:hover { background: rgba(255, 255, 255, .12); }
+/* /stats: shares the heading line with the h1 */
+.headrow { justify-content: space-between; align-items: center; gap: 12px; }
+.headrow h1 { margin: 12px 0; }
+/* /r/<id>: shares the header line with the outcome */
+.rp-headtop { display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 12px; flex-wrap: wrap; }
+@media (max-width: 640px) {
+  /* the global mobile rule bumps every button to 16px — far too heavy for a
+     6mm dismiss cross sitting on a photo */
+  .nextsess-x { font-size: 10px; padding: 0 10px; }
+  .nextsess-go { font-size: 12px; padding: 5px 10px; }
+  .hero .nextsess { top: 8px; right: 10px; }
+}
+
 /* --- share ----------------------------------------------------------------
    The one control on a clip card that ACTS, so it has to read as pressable
    without shouting over the outcome pill beside it: quiet until hovered. */

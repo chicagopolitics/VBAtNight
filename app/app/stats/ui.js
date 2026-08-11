@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import NextSession from "../next-session";
 
 // VNL-style leaderboards. Points/faults come from rally outcomes; attempts
 // and quality (assists, digs kept, positive receptions, blocked) from the
@@ -159,7 +160,7 @@ const leaderOf = (m, players) => {
 };
 
 export default function Boards({ rows, nGames, nScored, game, day, days = [],
-                                 initialPlayers = [] }) {
+                                 initialPlayers = [], session = null }) {
   const router = useRouter();
   const [tab, setTab] = useState("scorers");
   const [picked, setPicked] = useState(() => new Set(initialPlayers));
@@ -221,7 +222,10 @@ export default function Boards({ rows, nGames, nScored, game, day, days = [],
 
   return (
     <div>
-      <h1>Leaderboards{scopeName && <> · {scopeName}</>}</h1>
+      <div className="row headrow">
+        <h1>Leaderboards{scopeName && <> · {scopeName}</>}</h1>
+        <NextSession session={session} />
+      </div>
       {days.length > 0 && (
         <div className="row" style={{ margin: "8px 0" }}>
           <label className="muted" htmlFor="session">Session</label>

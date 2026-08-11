@@ -7,6 +7,8 @@ import NightTheme from "../../theme";
 import TrackPageView from "../../track";
 import { Clip } from "../../clip";
 import ShareButton from "../../share";
+import NextSession from "../../next-session";
+import { nextSession } from "@/lib/luma";
 export const dynamic = "force-dynamic";
 
 // The share unit.
@@ -112,7 +114,13 @@ export default async function RallyPermalink({ params }) {
       <TrackPageView />
       <article className="rp">
         <header className={`rp-head${tone ? ` ${tone}` : ""}`}>
-          <h1>{title}</h1>
+          {/* A stranger who just followed a shared highlight is the most
+              likely person on this site to want the next session — so the
+              prompt belongs here as much as anywhere. */}
+          <div className="rp-headtop">
+            <h1>{title}</h1>
+            <NextSession session={await nextSession()} />
+          </div>
           <p className="muted rp-meta">
             {[displayName(game), `Rally ${pos.upto} of ${pos.total}`, `${dur}s`]
               .filter(Boolean).join(" · ")}

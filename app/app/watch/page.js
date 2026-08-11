@@ -4,6 +4,7 @@ import { deriveGrades, teamMap, scoreFrom } from "@/lib/grades";
 import { getSessionUser, isOrganizer } from "@/lib/auth";
 import { blockedReason, publicCaption } from "@/lib/shorts";
 import { displayName } from "@/lib/game-name";
+import { nextSession } from "@/lib/luma";
 import NightTheme from "../theme";
 import TrackPageView from "../track";
 import Highlights from "./ui";
@@ -111,7 +112,8 @@ export default async function Watch() {
     <>
       <NightTheme />
       <TrackPageView />
-      <Suspense><Highlights games={data} reel={reel} admin={admin} /></Suspense>
+      <Suspense><Highlights games={data} reel={reel} admin={admin}
+        session={await nextSession()} /></Suspense>
     </>
   );
 }

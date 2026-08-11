@@ -3,6 +3,7 @@ import TrackPageView from "../track";
 import { db } from "@/lib/db";
 import { deriveGrades, teamMap } from "@/lib/grades";
 import { displayName, dayLabel } from "@/lib/game-name";
+import { nextSession } from "@/lib/luma";
 import Boards from "./ui";
 export const dynamic = "force-dynamic";
 
@@ -137,7 +138,7 @@ export default async function Stats({ searchParams }) {
       <NightTheme />
       <TrackPageView />
       <Boards rows={rows} game={game} day={day} days={days}
-        initialPlayers={initialPlayers}
+        initialPlayers={initialPlayers} session={await nextSession()}
         nGames={new Set(rallies.map(r => r.game_id)).size}
         nScored={rallies.filter(r => r.outcome_type).length} />
     </>

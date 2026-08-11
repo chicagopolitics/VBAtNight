@@ -5,6 +5,7 @@ import { sourceFor } from "@/lib/video-source";
 import { outcomeLabel } from "@/lib/grades";
 import { Clip } from "../clip";
 import ShareButton from "../share";
+import NextSession from "../next-session";
 
 // The reel of published Shorts.
 //
@@ -260,7 +261,7 @@ function ShortsPanel({ game, shorts, setShorts }) {
   );
 }
 
-export default function Highlights({ games, reel = [], admin = false }) {
+export default function Highlights({ games, reel = [], admin = false, session = null }) {
   const sp = useSearchParams();
   // One control, two kinds of scope: a game id, or "day:<YYYY-MM-DD>" for a
   // whole session. /stats links carry whichever scope its boards were counting,
@@ -344,6 +345,10 @@ export default function Highlights({ games, reel = [], admin = false }) {
           filter bar so it scrolls away and hands the top of the viewport back
           to the filters, which is what a returning viewer actually wants. */}
       <div className="hero">
+        {/* the photo's top-right is empty sky, and the hero is already
+            position:relative — the one place a prompt can sit without
+            displacing anything */}
+        <NextSession session={session} />
         <div className="hero-in">
           <h1>Highlights</h1>
           {/* This line is for the visitor who arrived from a YouTube Short
