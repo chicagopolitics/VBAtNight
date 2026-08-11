@@ -42,7 +42,39 @@ def _stamp(game, stage, cfg, params):
         "vbpipe_version": __version__,
         "config": asdict(cfg),
         "params": params,
+        "env": _env(),
     }
+
+
+def _env():
+    """Library and hardware versions — the part of "which pipeline ran" that
+    Config cannot express.
+
+    Added after a local-vs-Colab comparison of g1 at 1.1.0: identical config,
+    identical weights file and byte-identical frame sampling still produced
+    12.06 person-detections per frame locally against 8.99 on Colab. Config
+    alone could not distinguish the runs, because what differed was outside it
+    — the notebook installs ultralytics UNPINNED, and a T4 (sm_75) has no TF32
+    path that an Ampere card does. Neither was recoverable after the fact.
+
+    Cheap to record, and it makes "why does this game.json disagree with that
+    one" answerable instead of archaeological.
+    """
+    env = {}
+    try:
+        import torch
+        env["torch"] = torch.__version__
+        if torch.cuda.is_available():
+            env["gpu"] = torch.cuda.get_device_name(0)
+            env["sm"] = "sm_%d%d" % torch.cuda.get_device_capability(0)
+    except Exception:
+        pass
+    try:
+        import ultralytics
+        env["ultralytics"] = ultralytics.__version__
+    except Exception:
+        pass
+    return env
 
 
 def _save(game, gj):
@@ -299,7 +331,9 @@ def main():
     for ri, (r, cs) in enumerate(zip(game["rallies"], contacts_per_rally)):
         if r.get("phase") == "warmup":
             r["contacts"] = []; continue
-        cs = classify(attribute(cs, game["tracklets"], ri))
+        cs = classify(attribute(cs, game["tracklets"], ri,
+                                cfg.attr_gate_px, cfg.attr_drop_px,
+                                cfg.attr_y_weight))
         r["contacts"] = cs
         all_plays += [c.get("play") for c in cs]
     game["ball"] = [[list(map(lambda v: round(float(v),2), p)) for p in pts]

@@ -155,18 +155,39 @@ button.danger { background: var(--bad-bg); border-color: var(--bad-edge); color:
   max-width: 720px; }
 .vidbar input[type=range] { flex: 1; accent-color: var(--accent); }
 .vidbar .t { color: var(--muted); font-size: 12px; white-space: nowrap; min-width: 90px; }
+/* volume: mute button + its own short slider (must not take the scrubber's flex) */
+.vidbar .vol { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.vidbar .vol input[type=range] { flex: 0 0 66px; width: 66px; }
 .chip-edit { display: inline-flex; align-items: center; gap: 8px; margin: 3px;
   padding: 5px 10px; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 16px; }
 .chip-edit .t { color: var(--muted); font-size: 11px; }
 .muted { color: var(--muted); font-size: 13px; }
 video { width: 100%; max-width: 900px; border-radius: 8px; background: #000; }
-.playrow { display: grid; grid-template-columns: 1fr 280px; gap: 16px; }
+.playrow { display: grid; grid-template-columns: 1fr 280px; gap: 16px;
+  align-items: start; }
 @media (max-width: 900px) { .playrow { grid-template-columns: 1fr; } }
 
 /* keyboard-first review: touch rows, focus, player picker */
 .keyhint { font-size: 12px; margin: 0 0 10px; }
 .keyhint b { color: var(--ink); font-weight: 600; }
-.touchlist { display: flex; flex-direction: column; gap: 5px; }
+/* The touch column sticks to the viewport and scrolls INSIDE itself, so a
+   36-touch rally never pushes the reviewer down the page and away from the
+   video they're grading.
+   --pane-h is measured in ui.js: the pane sits partway down the page, so the
+   height it may use is "viewport minus whatever is above it right now", and
+   that grows as the page scrolls and the pane sticks. The calc() is only the
+   pre-measurement fallback. */
+.touchpane { position: sticky; top: 10px; align-self: start;
+  display: flex; flex-direction: column; min-height: 0;
+  max-height: var(--pane-h, calc(100vh - 20px)); }
+.touchlist { display: flex; flex-direction: column; gap: 5px;
+  overflow-y: auto; overscroll-behavior: contain; min-height: 0;
+  padding: 2px 2px 6px; }
+/* stacked layout: nothing to stick to, but keep the list from running long */
+@media (max-width: 900px) {
+  .touchpane { position: static; max-height: none; }
+  .touchlist { max-height: 55vh; }
+}
 .touch { display: flex; align-items: center; gap: 8px; padding: 6px 10px;
   border: 1px solid var(--border-2); border-radius: 999px; background: var(--surface-2);
   font-size: 13px; cursor: pointer; }

@@ -61,16 +61,25 @@ def find_contacts(ball_pts, min_gap=0.35, cos_thr=0.55, dv_thr=260, vel_win=0.1)
     for e in ev: e.pop("_m", None)
     return ev
 
-def attribute(contacts, tracklets, rally_idx, gate=220, drop=340):
+def attribute(contacts, tracklets, rally_idx, gate=90, drop=150, y_weight=0.25):
     """Nearest player; contacts with nobody within `drop` px are dropped as
     spurious; nearest player closer than `gate` px gets the attribution.
     Court side comes from the player's feet (geometrically unambiguous).
 
-    Gates re-tuned 2026-07-23 on cca-one (elevated side camera, 60fps):
-    old 120/260 declined 69 of 263 GT touches; 220/340 declines 7, and a
-    spatial audit showed the wrong-neighbor risk is small (8/95) — when the
-    right player isn't tracked at the contact, declining just loses the
-    touch, it doesn't prevent errors."""
+    All three tunables are CAMERA properties, so they live in Config
+    (attr_gate_px / attr_drop_px / attr_y_weight) and travel with the venue
+    calibration; these defaults mirror the Config defaults for direct callers
+    (pose_smoketest, notebooks) and must be kept in sync with config.py.
+
+    `y_weight` discounts vertical distance: at contact the ball sits above the
+    player's torso anchor, which is expected rather than evidence of the wrong
+    player. How hard to discount depends entirely on camera height — see the
+    measurements in config.py.
+
+    History: 120/260 declined 69 of 263 GT touches on cca-one; 220/340 @0.6
+    declined 7. Those numbers are specific to that side camera — on the
+    elevated LNV camera 220px exceeds half the median inter-player spacing,
+    which makes attribution a coin flip between neighbours."""
     trs = [tr for tr in tracklets if tr["rally"] == rally_idx]
     out = []
     for c in contacts:
@@ -79,7 +88,7 @@ def attribute(contacts, tracklets, rally_idx, gate=220, drop=340):
             for b in tr["boxes"]:
                 if abs(b[0] - c["t"]) > 0.3: continue
                 bx, by = b[1]+b[3]/2, b[2]+b[4]*0.35
-                d = np.hypot(bx - c["x"], (by - c["y"])*0.6)
+                d = np.hypot(bx - c["x"], (by - c["y"])*y_weight)
                 if d < bd: bd, best, bbox = d, tr, b
         if best is None or bd > drop:
             continue

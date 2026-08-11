@@ -125,6 +125,30 @@ Revised order:
 4. Bump to **1.1.0**, rebuild the bundle, then process the remaining five.
 5. Only then review.
 
+### The six games are 30fps (recording error, 2026-08-07)
+
+Intended 60fps, camera was set to 30. All future recordings: **60fps** (1080p60
+beats 4K30 — the pipeline decodes at 1080p anyway). Consequences:
+
+- Ball detection suffers twice on this batch: half the samples, and a slower
+  auto shutter smears the fast ball into streaks. Measured on g1 at 1.1.0:
+  only 4% of detected ball points exceed 1000 px/s, coverage 20% vs 58% on
+  the old 60fps footage. Mitigations: lower ball_conf (probe at 0.10),
+  pooled multi-video bootstrap retrain, ballistic gap-bridging.
+- **The labels survive.** True touch times/types, attributions, identity
+  crops, rotation data, outcomes, completeness flags are all fps-independent
+  — the record-reality discipline makes this batch's review fully valid
+  training data for the 60fps era. Only the detector's view of these six
+  videos is degraded.
+- **Re-bootstrap the ball model on the first 60fps night** (rename
+  ball_model.pt in Drive): a model trained on 30fps blur-streaks is wrong
+  for sharp 60fps frames. The per-game stamp records fps, so ball-model
+  generations stay separable.
+- The 1.1.0 geometry retune (y-weight, gates, cluster_thresh) is about
+  camera POSITION, not frame rate — it carries over to 60fps unchanged.
+- Expectation for this batch: "reviewable with reasonable effort" (~70%
+  capture = a few touch-adds per rally), not parity with 60fps footage.
+
 ### Consequence for the legacy evaluation set
 
 Weaker than previously planned. `corrections_cca_one/two.json` describe a
@@ -515,6 +539,32 @@ move on. Do not iterate more than twice.
 **Target:** the identity wall. Base OSNet embeddings score AUC 0.57–0.61 where
 clustering needs ~0.85, and 96% of attribution failures are "a tracked body is
 at the ball but carries the wrong cluster label."
+
+> **Correction (2026-08-10): the baseline was never a re-ID model.**
+> `torchreid.models.build_model(..., pretrained=True)` loads
+> `osnet_x1_0_IMAGENET.pth` — an ImageNet classification backbone, never
+> trained on a person re-ID objective. The 0.57 AUC was measured on that.
+> Corroborating: PLAN-75 records a colour histogram scoring 0.59, i.e. beating
+> "OSNet", which is the anomaly that should have flagged this.
+>
+> Label-free A/B on g1 (584 tracklets, 3,141 provably-different pairs — the
+> temporal-overlap proxy `config.py` already uses; harness reproduced its
+> recorded 0.139 median / ~24% risk at 0.134 / 21.8%):
+>
+> | weights | different-person median | false-merge risk @ 0.10 |
+> |---|---|---|
+> | imagenet (in use) | 0.134 | 21.8% |
+> | market1501 | 0.215 | 5.5% |
+> | msmt17 | 0.318 | 0.4% |
+>
+> Same-person distance stays flat (0.050 → 0.050), so this is real separation,
+> not rescaling. NOT validated against review labels, and `cluster_thresh: 0.10`
+> is tuned to the ImageNet distance scale so it must be re-tuned before any
+> swap. Checkpoints are cached locally; `cfg.reid_weights` selects one.
+>
+> **Deliberately not adopted** — it changes model output, and the local
+> migration was scoped to parity with Colab. Decide before the review pass,
+> not after: reviewing six games is the expensive irreversible step.
 
 **Why this is a different lever than the hi-res crop probe:** that experiment
 tested *is the information present* (more pixels: 0.57 → 0.61, a real but tiny

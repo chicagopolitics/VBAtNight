@@ -13,7 +13,7 @@ Draws, per frame:
 Coordinates in game.json are the 1280x720 reference space; scaled to the
 render size automatically.
 """
-import subprocess, json, numpy as np
+import subprocess, json, os, numpy as np
 
 REF_W, REF_H = 1280, 720
 
@@ -97,5 +97,9 @@ def render_overlay(video, game, out, t0=0.0, t1=None, fps=15.0,
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", tmp,
                     "-c:v", "libx264", "-pix_fmt", "yuv420p",
                     "-movflags", "+faststart", out])
-    subprocess.run(["rm", "-f", tmp])
+    # os.remove, not `rm` — there is no rm on Windows unless Git's usr/bin
+    # happens to be on PATH, and the failure mode is a stray multi-GB temp file.
+    # Same idiom as annotate.py.
+    try: os.remove(tmp)
+    except OSError: pass
     return out

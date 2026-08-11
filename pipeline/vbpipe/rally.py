@@ -19,6 +19,30 @@ def _duration(video):
     except ValueError: return None
 
 
+_PASSTHROUGH = None
+
+def _passthrough():
+    """Flag telling ffmpeg NOT to resample output to a constant frame rate.
+
+    Load-bearing for the keyframe path below: `-skip_frame nokey` piped to
+    rawvideo under CFR would duplicate each keyframe back up to the source
+    rate, so we would read far more samples than seconds and segment() — which
+    reads sample indices as seconds — would place every rally wrong.
+
+    The flag was renamed underneath us: `-vsync 0` through ffmpeg 4.x,
+    `-fps_mode passthrough` from 5.0, and 9.0 dropped `-vsync` entirely (local
+    Windows builds are already on 9.0; Colab's Ubuntu image is still on 4.4).
+    Ask the binary which spelling it accepts instead of pinning a version.
+    """
+    global _PASSTHROUGH
+    if _PASSTHROUGH is None:
+        h = subprocess.run(["ffmpeg", "-hide_banner", "-h", "full"],
+                           capture_output=True, text=True).stdout
+        _PASSTHROUGH = (["-fps_mode", "passthrough"] if "-fps_mode" in h
+                        else ["-vsync", "0"])
+    return _PASSTHROUGH
+
+
 def _keyframe_rate(video, window=180.0):
     """Keyframes per second, measured by demuxing (no decode) a short window.
 
@@ -60,7 +84,7 @@ def motion_signal(video, court_poly, start=0.0, dur=None):
     if fast: cmd += ["-skip_frame", "nokey"]
     cmd += ["-ss", str(start)]
     if dur: cmd += ["-t", str(dur)]
-    cmd += ["-i", video, "-vsync", "0",
+    cmd += ["-i", video] + _passthrough() + [
             "-vf", f"scale={W}:{H},format=gray" if fast
                    else f"fps=1,scale={W}:{H},format=gray",
             "-f", "rawvideo", "-"]

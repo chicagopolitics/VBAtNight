@@ -154,6 +154,130 @@ export async function uploadFile(name, content, mimeType = "application/json") {
   return { id: j.id, name: j.name || name, updated: !!existing };
 }
 
+// the `bundles` subfolder if the shared folder has one, else the shared
+// folder itself. Mirrors listBundles(), which searches both — so an upload
+// lands where the app already looks, and where the Colab notebook put them.
+export async function bundlesFolderId() {
+  const token = await accessToken();
+  const root = process.env.DRIVE_FOLDER_ID;
+  const u = new URL("https://www.googleapis.com/drive/v3/files");
+  u.searchParams.set("q", `'${root}' in parents and trashed = false and ` +
+    `mimeType = 'application/vnd.google-apps.folder' and name = 'bundles'`);
+  u.searchParams.set("fields", "files(id)");
+  u.searchParams.set("supportsAllDrives", "true");
+  u.searchParams.set("includeItemsFromAllDrives", "true");
+  const j = await (await fetch(u,
+    { headers: { authorization: `Bearer ${token}` } })).json();
+  return j.files?.[0]?.id || root;
+}
+
+// upload a LARGE file (a multi-GB game bundle) via Drive's resumable protocol.
+//
+// Not uploadFile(): that builds the whole request body as a JS string, which
+// is correct for a corrections JSON and impossible for 4 GB — the same trap
+// downloadFile() already documents on the read side. Here the file is sent in
+// fixed chunks read straight from disk, so peak memory is one chunk no matter
+// how big the bundle is.
+//
+// Chunked rather than one long PUT because this now runs from a HOME
+// connection: with Colab the bytes never left Google's network, but a local
+// pipeline uploading ~4 GB upstream will meet a dropped connection sooner or
+// later. On failure we ask the session how many bytes it actually holds and
+// carry on from there instead of restarting the upload.
+const CHUNK = 16 * 1024 * 1024;   // must be a multiple of 256 KB
+
+export async function uploadLargeFile(localPath, name,
+                                      mimeType = "application/zip",
+                                      onProgress = null) {
+  const folder = await bundlesFolderId();
+  const total = fs.statSync(localPath).size;
+
+  // upsert by name, like uploadFile — re-processing a game replaces its
+  // bundle rather than leaving two that the ball notebook would glob twice.
+  let token = await accessToken();
+  const q = new URL("https://www.googleapis.com/drive/v3/files");
+  q.searchParams.set("q", `name = '${name.replace(/'/g, "\\'")}' and ` +
+    `'${folder}' in parents and trashed = false`);
+  q.searchParams.set("fields", "files(id)");
+  q.searchParams.set("supportsAllDrives", "true");
+  q.searchParams.set("includeItemsFromAllDrives", "true");
+  const found = await (await fetch(q,
+    { headers: { authorization: `Bearer ${token}` } })).json();
+  const existing = found.files?.[0]?.id;
+
+  const startUrl = existing
+    ? `https://www.googleapis.com/upload/drive/v3/files/${existing}?uploadType=resumable&supportsAllDrives=true`
+    : `https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true`;
+  const start = await fetch(startUrl, {
+    method: existing ? "PATCH" : "POST",
+    headers: { authorization: `Bearer ${token}`,
+      "content-type": "application/json; charset=UTF-8",
+      "X-Upload-Content-Type": mimeType,
+      "X-Upload-Content-Length": String(total) },
+    body: JSON.stringify(existing ? {} : { name, parents: [folder] }),
+  });
+  if (!start.ok) {
+    const j = await start.json().catch(() => ({}));
+    throw new Error(j.error?.message || "Drive upload session failed: HTTP " + start.status);
+  }
+  const session = start.headers.get("location");
+  if (!session) throw new Error("Drive gave no resumable session URI");
+
+  const fd = fs.openSync(localPath, "r");
+  const buf = Buffer.allocUnsafe(CHUNK);
+  try {
+    let sent = 0;
+    let attempt = 0;
+    while (sent < total) {
+      const len = fs.readSync(fd, buf, 0, Math.min(CHUNK, total - sent), sent);
+      token = await accessToken();          // a 4 GB upload outlives one token
+      let res;
+      try {
+        res = await fetch(session, {
+          method: "PUT",
+          headers: { authorization: `Bearer ${token}`,
+            "content-range": `bytes ${sent}-${sent + len - 1}/${total}` },
+          body: buf.subarray(0, len),
+        });
+      } catch (e) {
+        res = null;                          // network dropped mid-chunk
+        if (++attempt > 5) throw e;
+      }
+      if (res && (res.status === 200 || res.status === 201)) {
+        const j = await res.json().catch(() => ({}));
+        return { id: j.id, name: j.name || name, updated: !!existing, bytes: total };
+      }
+      if (res && res.status === 308) {
+        const range = res.headers.get("range");           // "bytes=0-N"
+        sent = range ? Number(range.split("-")[1]) + 1 : sent + len;
+        attempt = 0;
+        if (onProgress) onProgress(sent, total);
+        continue;
+      }
+      // Anything else: ask the session what it actually holds, then resume.
+      if (++attempt > 5) {
+        const detail = res ? `HTTP ${res.status}` : "network error";
+        throw new Error(`Drive upload failed after ${attempt} attempts (${detail})`);
+      }
+      await new Promise(r => setTimeout(r, 1000 * attempt));
+      const probe = await fetch(session, {
+        method: "PUT",
+        headers: { authorization: `Bearer ${await accessToken()}`,
+          "content-range": `bytes */${total}` },
+      });
+      if (probe.status === 200 || probe.status === 201) {
+        const j = await probe.json().catch(() => ({}));
+        return { id: j.id, name: j.name || name, updated: !!existing, bytes: total };
+      }
+      const r = probe.headers.get("range");
+      sent = r ? Number(r.split("-")[1]) + 1 : sent;
+    }
+  } finally {
+    fs.closeSync(fd);
+  }
+  throw new Error("Drive upload ended without a completion response");
+}
+
 // stream a Drive file to a local path.
 // Uses node:https directly instead of fetch: with multi-GB bundles the
 // fetch-based version buffered the whole body in process memory (~3.6GB

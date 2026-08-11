@@ -20,6 +20,34 @@ Open `notebooks/colab_run.ipynb`, Runtime -> T4 GPU, Run all.
 It installs deps, takes the pipeline zip + a video from Google Drive,
 runs `vbpipe full`, and zips results for download.
 
+## Run (local GPU, Windows)
+
+One-time setup. **Python 3.12 specifically** — 3.13/3.14 have wheels but 3.12 is
+the best-tested target for this stack, and it leaves the system default Python
+alone:
+
+    winget install --id Python.Python.3.12 --exact --scope user
+    py -3.12 -m venv C:\vb\venv
+    C:\vb\venv\Scripts\python -m pip install torch==2.9.1 torchvision==0.24.1 --index-url https://download.pytorch.org/whl/cu128
+    C:\vb\venv\Scripts\python -m pip install -e "path\to\pipeline[gpu]"
+
+**Install torch first, from that index URL.** This is the one detail that a pip
+extra cannot express and the one that silently ruins the install: the default
+PyPI `torch` is CPU-only, so letting the `[gpu]` extra pull it gives you a
+working pipeline that never touches the GPU. Installing it explicitly first
+means the extra sees the requirement already satisfied and leaves it alone.
+`cu128` matches driver 591.86 / CUDA 13.1; the 3080 is sm_86 and needs nothing
+newer. Version pairing is fixed: torch 2.9.1 <-> torchvision 0.24.1.
+
+Keep the venv **outside OneDrive** — it is 3-5 GB and syncing it is pure churn.
+Same reason to write pipeline output to `C:\vb\work\` rather than into the repo:
+crops and model-view mp4s are large, regenerable, and sync-hostile. This is the
+hazard `make_bundle.ps1` already documents for large archive writes.
+
+Check it took:
+
+    C:\vb\venv\Scripts\python -c "import torch; print(torch.cuda.get_device_name(0))"
+
 ## Run (local, CPU rally-only)
     pip install -e .
     vbpipe rally game.mp4 -o out/

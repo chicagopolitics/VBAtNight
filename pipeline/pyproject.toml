@@ -1,12 +1,15 @@
 [project]
 name = "vbpipe"
-version = "1.0.0"   # frozen training baseline — keep in sync with vbpipe/__init__.py
+version = "1.1.0"   # keep in sync with vbpipe/__init__.py
 description = "Volleyball game video -> rallies, player identities, stats-ready JSON"
 requires-python = ">=3.10"
 dependencies = ["numpy", "opencv-python-headless", "scikit-learn"]
 
 [project.optional-dependencies]
-gpu = ["ultralytics", "torch", "torchvision"]
+# lap is ByteTrack's assignment solver — ultralytics needs it for tracking but
+# does not declare it. The Colab notebook installs it by hand; declaring it here
+# is what lets a local install be a single command.
+gpu = ["ultralytics", "lap", "torch", "torchvision"]
 
 [project.scripts]
 vbpipe = "vbpipe.cli:main"
@@ -14,3 +17,11 @@ vbpipe = "vbpipe.cli:main"
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
+
+# Declared explicitly, not auto-discovered. Installing from the repo directory
+# offers setuptools three candidate top-level packages (vbpipe, notebooks,
+# rally_clips) and flat-layout discovery refuses to guess. It only ever worked
+# on Colab because make_bundle.ps1 ships vbpipe/ alone, leaving one candidate —
+# i.e. the install depended on what the bundle happened to omit.
+[tool.setuptools]
+packages = ["vbpipe"]

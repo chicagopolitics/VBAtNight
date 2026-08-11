@@ -54,7 +54,34 @@ class Config:
     crop_hires: bool = True            # save player crops from native 1080p for
                                        # the re-ID embed stage (identity probe);
                                        # detection still runs on the 720p view
+    # attribution geometry (plays.attribute) — PER CAMERA, not universal.
+    # Retuned 2026-08-07 for the elevated LNV camera, measured on g1:
+    # the old side camera put the ball a median 129px from the nearest player
+    # with dy/dx ~= 1.0; the elevated view compresses horizontal separation
+    # (dx 22px) while vertical offset stays (dy 75px), so dy/dx jumped to 3.4.
+    # Vertical offset at contact is mostly "ball above the player" — expected,
+    # not a discriminator — so it gets discounted harder, and the gate comes
+    # down to match the much tighter distance distribution.
+    #   at y-weight 0.6: p95 contact distance 131px vs 135px half-spacing -> no margin
+    #   at y-weight 0.25: p95 87px vs 134px                               -> usable margin
+    # The gate MUST stay well under half the median inter-player spacing
+    # (~268px here), or nearest-player attribution is guessing between two
+    # candidates. pipeline/camera_check.py reports all three numbers.
+    attr_y_weight: float = 0.25   # was 0.6 (old side camera)
+    attr_gate_px: float = 90      # was 220; ~p95 of observed contact distances
+    attr_drop_px: float = 150     # was 340; beyond this, nobody plausible -> spurious
     # embedding / clustering
     reid_model: str = "osnet_x1_0"
+    # Checkpoint for reid_model. None = the ImageNet-pretrained OSNet weights
+    # that torchreid's pretrained=True fetched, cached under ~/.cache/torch.
+    # Set to a path to use a fine-tuned checkpoint (ML-PLAN Phase 2); the value
+    # lands in the pipeline stamp, so which weights produced a game.json is
+    # always recoverable.
+    reid_weights: str = None
     min_tracklet_len: int = 3
-    cluster_thresh: float = 0.12  # lowered: over-split beats under-split (merges are 1 click, splits are surgery)       # cosine distance on tracklet means
+    # Lowered 0.12 -> 0.10 (2026-08-07): over-split beats under-split (merges
+    # are 1 click, splits are surgery), and on the elevated camera the OSNet
+    # distances between provably-different tracklets shrank ~0.85x (median
+    # 0.164 -> 0.139), pushing the false-merge risk from 24% to 35% of pairs
+    # at the old threshold. 0.10 restores roughly the previous risk level.
+    cluster_thresh: float = 0.10  # cosine distance on tracklet means

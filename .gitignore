@@ -22,12 +22,17 @@ app/public/media/
 *.mp4
 *.zip
 pipeline/rally_clips/
+# model weights: ultralytics downloads yolo*.pt into the working directory on
+# first use, and the bootstrapped ball_model.pt is regenerable from the video.
+*.pt
 
 # python
 __pycache__/
 *.pyc
 .venv/
 .ipynb_checkpoints/
+# written by `pip install -e pipeline` (local GPU setup, see pipeline/README.md)
+*.egg-info/
 
 # OS
 .DS_Store

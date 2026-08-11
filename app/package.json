@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "import": "node scripts/import-game.js",
+    "upload-bundle": "node scripts/upload-bundle.mjs",
     "export": "node scripts/export-corrections.mjs",
     "drive-auth": "node scripts/drive-auth.js",
     "yt-auth": "node scripts/yt-auth.js",

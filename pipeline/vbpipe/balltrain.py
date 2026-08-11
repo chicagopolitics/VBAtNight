@@ -5,25 +5,26 @@ import json, os, subprocess, numpy as np
 W, H = 1920, 1080
 SC = 1.5   # ball_v3 points are in 1280x720 coords
 
-def build_dataset(video, ball_json, out="dataset", neg_per_pos=0.3):
-    """Extract frames at verified ball times; YOLO labels with ~16px boxes."""
-    import cv2
+def _add_source(tag, video, ball_json, out, neg_per_pos):
+    """Append one video's auto-labelled frames to a dataset dir. Returns the
+    positive count. `tag` prefixes every filename so pooled sources can't
+    collide (frame times overlap across videos)."""
     ball = json.load(open(ball_json))
-    os.makedirs(f"{out}/images/train", exist_ok=True)
-    os.makedirs(f"{out}/labels/train", exist_ok=True)
     items = []   # (t, x, y) in 1080p coords
     for ri, pts in ball.items():
         for p in pts:
             items.append((p[0], p[1]*SC, p[2]*SC))
+    if not items:
+        print(f"  [{tag}] no arcs — skipped")
+        return 0
     items.sort()
     # dedupe to ~2 per second to limit near-duplicate frames
     sel, last = [], -1
     for t, x, y in items:
         if t - last >= 0.45: sel.append((t, x, y)); last = t
-    print(f"{len(items)} labeled points -> {len(sel)} training frames")
     n = 0
     for t, x, y in sel:
-        fn = f"{out}/images/train/f{int(t*100):07d}.jpg"
+        fn = f"{out}/images/train/{tag}_f{int(t*100):07d}.jpg"
         subprocess.run(["ffmpeg","-v","error","-ss",str(t),"-i",video,
                         "-frames:v","1","-q:v","3",fn,"-y"])
         if not os.path.exists(fn): continue
@@ -36,21 +37,70 @@ def build_dataset(video, ball_json, out="dataset", neg_per_pos=0.3):
     tmax = max(t for t,_,_ in items)
     for t in rng.uniform(0, tmax, int(n*neg_per_pos)):
         if any(abs(t-s[0]) < 0.5 for s in sel[::5]): continue
-        fn = f"{out}/images/train/neg{int(t*100):07d}.jpg"
+        fn = f"{out}/images/train/{tag}_neg{int(t*100):07d}.jpg"
         subprocess.run(["ffmpeg","-v","error","-ss",str(t),"-i",video,
                         "-frames:v","1","-q:v","3",fn,"-y"])
         open(fn.replace("/images/","/labels/").replace(".jpg",".txt"),"w").close()
+    print(f"  [{tag}] {len(items)} points -> {len(sel)} frames -> {n} positives")
+    return n
+
+
+def build_dataset_multi(sources, out="dataset", neg_per_pos=0.3):
+    """Pool auto-labelled frames from SEVERAL videos into one dataset.
+
+    sources: [(tag, video_path, arcs_json), ...]
+
+    Why pool: these are pick-up games with no standard ball. A detector
+    fine-tuned on one video learns that video's ball, and a different ball the
+    following week is a domain shift it has never been asked to handle. The
+    labels cost nothing to produce (ballcv finds arcs by motion + parabolic
+    physics, never by appearance), so covering every ball you've filmed is
+    just a matter of pointing this at more videos. Combined with the hue
+    augmentation in train(), that is what makes an UNSEEN ball plausible.
+    """
+    os.makedirs(f"{out}/images/train", exist_ok=True)
+    os.makedirs(f"{out}/labels/train", exist_ok=True)
+    total = 0
+    for tag, video, arcs in sources:
+        total += _add_source(tag, video, arcs, out, neg_per_pos)
     with open(f"{out}/data.yaml","w") as f:
         f.write(f"path: {os.path.abspath(out)}\ntrain: images/train\n"
                 f"val: images/train\nnames: {{0: ball}}\n")
-    print(f"dataset ready: {n} positives")
+    print(f"dataset ready: {total} positives from {len(sources)} source(s)")
     return f"{out}/data.yaml"
 
-def train(data_yaml, epochs=60):
+
+def build_dataset(video, ball_json, out="dataset", neg_per_pos=0.3):
+    """Single-video dataset (thin wrapper over build_dataset_multi)."""
+    return build_dataset_multi([("v0", video, ball_json)], out, neg_per_pos)
+
+def train(data_yaml, epochs=60, base="yolo11n.pt", hsv_h=0.5):
+    """Fine-tune a ball detector on auto-labelled frames.
+
+    HUE AUGMENTATION IS THE POINT (hsv_h). These are pick-up games with no
+    standard ball — a yellow/blue Mikasa one week, a white/red/blue Molten the
+    next, something unseen after that. At the scale this model works (26-40px
+    boxes; anything over 70px is rejected as not-the-ball) panel design and
+    logos are gone, so colour is most of what a detector can key on. Under
+    motion blur the streak is a spatial average of the ball's colours, which
+    differs even more between ball types.
+
+    Ultralytics defaults hsv_h to 0.015 — i.e. hue is effectively NOT
+    augmented, while saturation (0.7) and value (0.4) are. That default bakes
+    the training ball's colour into the model. Randomising hue across the full
+    wheel instead forces it onto shape, size and motion context, which are the
+    ball-invariant cues.
+
+    Trade-off to watch: less colour specificity also means less power to reject
+    coloured clutter, so precision may dip. Global static suppression already
+    covers the fixed offenders (lights, signs, scoreboards); measure the rest
+    with camera_check.py rather than assuming.
+    """
     from ultralytics import YOLO
-    m = YOLO("yolo11n.pt")
+    m = YOLO(base)
     m.train(data=data_yaml, epochs=epochs, imgsz=1088, batch=8, patience=20,
-            mosaic=0.3, scale=0.2, degrees=0, fliplr=0.5, plots=False)
+            mosaic=0.3, scale=0.2, degrees=0, fliplr=0.5, plots=False,
+            hsv_h=hsv_h, hsv_s=0.9, hsv_v=0.5)
     return m
 
 def _pick_moving(raw, cell=40, static_frac=0.15, also_static=None):

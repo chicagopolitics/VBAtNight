@@ -47,7 +47,10 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
   const [mediaDur, setMediaDur] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [full, setFull] = useState(false);
-  const [muted, setMuted] = useState(false);
+  const [vol, setVol] = useState(1);          // 0 = muted; slider in the vidbar
+  const lastVol = useRef(1);                  // level to restore when unmuting
+  const listRef = useRef(null);   // touch-list scrollbox (see keepFocusVisible)
+  const paneRef = useRef(null);   // sticky touch column (see the --pane-h effect)
   const rally = rallyState.find(r => r.id === sel);
   const visible = rallyState.filter(r => r.phase !== "skipped");
   const skipped = rallyState.filter(r => r.phase === "skipped");
@@ -416,6 +419,77 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
     return () => w.removeEventListener("wheel", onWheel);
   }, [rally, full, mediaDur]);
 
+  // volume lives on the element, not in markup — keep it in sync with the
+  // slider (and re-apply per rally, since each one swaps the video's src)
+  useEffect(() => { if (vid.current) vid.current.volume = vol; }, [vol, sel]);
+  const toggleMute = () => setVol(v => {
+    if (v > 0) { lastVol.current = v; return 0; }
+    return lastVol.current || 1;
+  });
+
+  // The touch pane can only use the viewport height BELOW wherever it
+  // currently sits — that's the page header at scroll 0, and just its sticky
+  // offset once the page has scrolled past it. Written straight to a CSS var
+  // rather than state: this runs on every scroll frame.
+  //
+  // Capped by the video column's height for two reasons that are really one:
+  // a taller pane would grow the page (feeding scroll back into this very
+  // measurement), and `position: sticky` can only shift an element within its
+  // grid track — a pane taller than the track cannot stick at all, and its
+  // header scrolls away exactly when it's needed.
+  useEffect(() => {
+    const el = paneRef.current;
+    if (!el) return;
+    let raf = 0, last = 0;
+    const measure = () => {
+      raf = 0;
+      // never measure from above the sticky offset (.touchpane { top: 10px }):
+      // a pane that has run out of track sits higher than that, and believing
+      // it would hand back room it can't keep — the height then creeps up a
+      // few px per scroll frame instead of settling
+      const top = Math.max(10, el.getBoundingClientRect().top);
+      const room = window.innerHeight - top - 12;
+      // a rally with no video leaves a stub of a left column; the cap only
+      // has to hold when that column is the taller side, so floor it rather
+      // than squeezing the list down to the height of a "no video" line
+      const col = el.previousElementSibling?.getBoundingClientRect().height ?? Infinity;
+      const h = Math.max(180, Math.round(Math.min(room, Math.max(col, 320))));
+      if (Math.abs(h - last) < 2) return;   // no-op writes can feed back into layout
+      last = h;
+      el.style.setProperty("--pane-h", `${h}px`);
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(measure); };
+    measure();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [sel]);
+
+  // Keep the focused touch inside the touch pane's OWN scrollbox. Deliberately
+  // not scrollIntoView: that scrolls ancestors too, which on a long rally
+  // walks the page down and pushes the video out of sight — exactly what the
+  // scrollbox exists to prevent. Only box.scrollTop moves here.
+  useEffect(() => {
+    const box = listRef.current;
+    const el = box?.querySelector(".touch.foc");
+    if (!el) return;
+    const pad = 8;
+    const br = box.getBoundingClientRect();
+    // with the picker open, aim for the bottom of the picker panel so the
+    // name list is visible, but never at the cost of hiding the row itself
+    const nx = el.nextElementSibling;
+    const bottom = (nx?.classList.contains("picker") ? nx : el)
+      .getBoundingClientRect().bottom;
+    const top = el.getBoundingClientRect().top;
+    if (top < br.top + pad) box.scrollTop += top - br.top - pad;
+    else if (bottom > br.bottom - pad)
+      box.scrollTop += Math.min(bottom - br.bottom + pad, top - br.top - pad);
+  }, [focusedId, picker, rallyPlays.length]);
+
   const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   const doneCount = visible.filter(r => r.outcome_type).length;
   const doneAll = visible.length > 0 && doneCount === visible.length;
@@ -544,7 +618,7 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
               const lo = full ? 0 : t0, hi = full ? (mediaDur || t1) : t1;
               return (<>
                 <div ref={wrap} className="vidwrap">
-                <video ref={vid} preload="metadata" src={mediaFor(rally)} muted={muted}
+                <video ref={vid} preload="metadata" src={mediaFor(rally)} muted={vol === 0}
                   onClick={e => picker ? setPicker(null)
                     : e.target.paused ? e.target.play() : e.target.pause()}
                   onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
@@ -554,6 +628,7 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
                       e.target.pause();
                   }}
                   onLoadedMetadata={e => {
+                    e.target.volume = vol;
                     setMediaDur(e.target.duration);
                     if (video) setVideoDur(e.target.duration);
                   }} />
@@ -602,8 +677,19 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
                   }}>{playing ? "⏸" : "▶"}</button>
                   <button title="back 1s (←)" onClick={() => nudge(-1)}>-1s</button>
                   <button title="forward 1s (→)" onClick={() => nudge(1)}>+1s</button>
-                  <button title={muted ? "unmute" : "mute"}
-                    onClick={() => setMuted(m => !m)}>{muted ? "🔇" : "🔊"}</button>
+                  <span className="vol">
+                    <button title={vol === 0 ? "unmute" : "mute"} onClick={toggleMute}>
+                      {vol === 0 ? "🔇" : vol < 0.5 ? "🔉" : "🔊"}
+                    </button>
+                    <input type="range" min={0} max={1} step={0.05} value={vol}
+                      title={`volume ${Math.round(vol * 100)}%`}
+                      aria-label="volume"
+                      onChange={e => {
+                        const v = +e.target.value;
+                        if (v > 0) lastVol.current = v;
+                        setVol(v);
+                      }} />
+                  </span>
                   <span className="t">
                     {(Math.max(0, Math.min(now, hi) - lo)).toFixed(1)}s / {(hi - lo).toFixed(1)}s
                   </span>
@@ -661,7 +747,7 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
             </div>
           </div>
 
-          <div>
+          <div className="touchpane" ref={paneRef}>
             <div className="row" style={{ justifyContent: "space-between" }}>
               <h2 style={{ margin: "4px 0" }}>
                 Touches{rallyPlays.length > 0 ? ` (${rallyPlays.length})` : ""}
@@ -682,7 +768,7 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
               </span>
             </div>
 
-            <div className="touchlist">
+            <div className="touchlist" ref={listRef}>
               {rallyPlays.map(p => {
                 const abs = clipStart(rally) + now;
                 const live = now >= 0 && Math.abs(abs - p.t) <= 0.3;
