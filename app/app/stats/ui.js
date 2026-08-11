@@ -81,12 +81,50 @@ const linkFor = (p, scope) => (v, stat) => v > 0
   : v;
 
 const points = p => p.kill + p.stuff + p.ace;
+const touches = p => p.serve + p.receive + p.dig + p.set + p.attack + p.block;
+const errors = p => p.atkErr + p.srvErr + p.setErr + p.digErr + p.recErr;
+
+// The comparison pane. Deliberately NOT the boards' raw counts: 7 kills across
+// four nights and 7 kills in one are the same number and not the same player,
+// so everything here is a rate — per game, or per attempt.
+//
+// `hint` is the fraction underneath, and it isn't decoration: a percentage with
+// no denominator invites nonsense (100% off two receptions is not a great
+// receiver). `stat` links the numerator to its clips, as the boards do.
+// pct/avg already render "–" on a zero denominator; a player who never served
+// should read "–", not 0%.
+const SUMMARY = [
+  { label: "games", value: p => p.games },
+  { label: "points / game", value: p => avg(points(p), p.games),
+    hint: p => `${points(p)} in ${p.games}` },
+  { label: "attack efficiency", value: p => pct(p.kill - p.atkErr - p.blocked, p.attack),
+    hint: p => `${p.kill}k − ${p.atkErr}e − ${p.blocked}b / ${p.attack}` },
+  { label: "kill %", value: p => pct(p.kill, p.attack),
+    num: p => p.kill, den: p => p.attack, stat: "kill" },
+  { label: "ace %", value: p => pct(p.ace, p.serve),
+    num: p => p.ace, den: p => p.serve, stat: "ace" },
+  { label: "serve error %", value: p => pct(p.srvErr, p.serve),
+    num: p => p.srvErr, den: p => p.serve, stat: "service_error" },
+  { label: "reception efficiency", value: p => pct(p.recPos - p.recErr, p.receive),
+    hint: p => `${p.recPos}+ − ${p.recErr}e / ${p.receive}` },
+  { label: "dig success %", value: p => pct(p.digOk, p.dig),
+    num: p => p.digOk, den: p => p.dig, stat: "dig_kept" },
+  { label: "assist %", value: p => pct(p.assist, p.set),
+    num: p => p.assist, den: p => p.set, stat: "assist" },
+  { label: "errors / game", value: p => avg(errors(p), p.games),
+    hint: p => `${errors(p)} in ${p.games}` },
+  { label: "touches / game", value: p => avg(touches(p), p.games),
+    hint: p => `${touches(p)} in ${p.games}` },
+];
 
 export default function Boards({ rows, nGames, nScored, game, day, days = [],
                                  initialPlayers = [] }) {
   const router = useRouter();
   const [tab, setTab] = useState("scorers");
   const [picked, setPicked] = useState(() => new Set(initialPlayers));
+  // folded by default; a shared ?players= link arrives with it open, since the
+  // reader's first question is "who is in this comparison?"
+  const [openPick, setOpenPick] = useState(initialPlayers.length > 0);
   const b = BOARDS[tab];
   const ranked = [...rows]
     .filter(p => b.sort(p) > 0 || tab === "scorers")
@@ -167,61 +205,68 @@ export default function Boards({ rows, nGames, nScored, game, day, days = [],
         {" · "}quality stats derived from touch order + rally outcomes
         (override per-touch in review)
       </p>
+      {/* The comparison is a side feature, so its roster stays folded away —
+          one muted line unless you go looking. Clicking a name in the board
+          below is the everyday way in; this is for reaching someone who isn't
+          on the board you happen to be looking at. */}
       {names.length > 0 && (
-        <div className="card compare-pick">
-          <div className="row">
-            <span className="muted">Compare players</span>
-            {picked.size > 0 && (
-              <button className="fchip" onClick={() => setPicked(new Set())}>
-                clear ✕</button>
-            )}
-          </div>
-          <div className="row" style={{ gap: 4, marginTop: 6 }}>
+        <details className="compare" open={openPick}
+          onToggle={e => setOpenPick(e.currentTarget.open)}>
+          <summary className="muted">Compare players</summary>
+          <div className="row" style={{ gap: 4, marginTop: 8 }}>
             {names.map(n => (
               <button key={n} onClick={() => toggle(n)}
                 className={"chip" + (picked.has(n) ? " on" : "")}
                 aria-pressed={picked.has(n)}>{n}</button>
             ))}
           </div>
+        </details>
+      )}
+
+      {(compare.length > 0 || absent.length > 0) && (
+        <div className="card summary">
+          <div className="row" style={{ justifyContent: "space-between" }}>
+            <h2 style={{ margin: "2px 0 8px" }}>
+              {compare.length === 1 ? compare[0].name : "Comparison"}
+            </h2>
+            <button className="fchip" onClick={() => setPicked(new Set())}>clear ✕</button>
+          </div>
           {absent.length > 0 && (
-            <p className="muted" style={{ margin: "8px 0 0", fontSize: 12 }}>
+            <p className="muted" style={{ margin: "0 0 8px", fontSize: 12 }}>
               {absent.join(", ")} didn&apos;t play {scopeName ?? "in any published game"}.
             </p>
+          )}
+          {compare.length > 0 && (
+            <div className="tablewrap">
+              <table className="leader summary-t">
+                <thead><tr>
+                  <th style={{ textAlign: "left" }}>&nbsp;</th>
+                  {compare.map(p => <th key={p.key ?? p.name}>{p.name}</th>)}
+                </tr></thead>
+                <tbody>
+                  {SUMMARY.map(m => (
+                    <tr key={m.label}>
+                      <th scope="row">{m.label}</th>
+                      {compare.map(p => {
+                        const L = linkFor(p, scopeQS);
+                        const hint = m.hint ? m.hint(p)
+                          : m.num ? <>{L(m.num(p), m.stat)} of {m.den(p)}</> : null;
+                        return (
+                          <td key={p.key ?? p.name}>
+                            <b>{m.value(p)}</b>
+                            {hint && <span className="sub">{hint}</span>}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
 
-      {/* Compare mode shows every skill at once, so a tab — which picks WHICH
-          skill — has nothing left to choose. Same BOARDS definitions either
-          way, so the columns, percentages and clip links can't drift apart. */}
-      {compare.length > 0 ? (
-        <div className="statgrid">
-          {Object.entries(BOARDS).map(([k, v]) => (
-            <div className="card" key={k}>
-              <h2 style={{ margin: "2px 0 8px" }}>{v.label}</h2>
-              {v.note && <p className="muted" style={{ marginTop: 0, fontSize: 12 }}>{v.note}</p>}
-              <div className="tablewrap">
-                <table className="leader">
-                  <thead><tr>
-                    <th style={{ textAlign: "left" }}>Player</th>
-                    {v.cols.map(c => <th key={c}>{c}</th>)}
-                    <th>games</th>
-                  </tr></thead>
-                  <tbody>
-                    {compare.map(p => (
-                      <tr key={p.key ?? p.name}>
-                        <td style={{ textAlign: "left" }}>{p.name}</td>
-                        {v.row(p, linkFor(p, scopeQS)).map((x, j) => <td key={j}>{x}</td>)}
-                        <td className="muted">{p.games}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (<>
       <div className="tabs">
         {Object.entries(BOARDS).map(([k, v]) => (
           <button key={k} onClick={() => setTab(k)}
@@ -245,7 +290,14 @@ export default function Boards({ rows, nGames, nScored, game, day, days = [],
             {ranked.map((p, i) => (
               <tr key={p.key ?? p.name} style={i < 3 ? { fontWeight: 600 } : undefined}>
                 <td style={{ color: i < 3 ? "#c9a227" : undefined }}>{i + 1}</td>
-                <td style={{ textAlign: "left" }}>{p.name}</td>
+                <td style={{ textAlign: "left" }}>
+                  {/* the everyday way into the comparison — no extra chrome on
+                      the page, just the name you were already reading */}
+                  <button className={"pickname" + (picked.has(p.name) ? " on" : "")}
+                    aria-pressed={picked.has(p.name)}
+                    title={picked.has(p.name) ? "remove from comparison" : "compare this player"}
+                    onClick={() => toggle(p.name)}>{p.name}</button>
+                </td>
                 {b.row(p, linkFor(p, scopeQS)).map((v, j) => <td key={j}>{v}</td>)}
                 <td className="muted">{p.games}</td>
               </tr>
@@ -256,7 +308,6 @@ export default function Boards({ rows, nGames, nScored, game, day, days = [],
         {ranked.length === 0 && <p className="muted">
           No {b.metric} recorded yet — review and publish a game first.</p>}
       </div>
-      </>)}
     </div>
   );
 }
