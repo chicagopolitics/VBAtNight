@@ -258,6 +258,12 @@ video { width: 100%; max-width: 900px; border-radius: 8px; background: #000; }
   border: 1px solid transparent; }
 .pick:hover { background: var(--hover); }
 .pick.sel { background: var(--surface); border-color: var(--accent); }
+/* compare mode on /stats: every skill at once, one card each */
+.statgrid { display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.statgrid .card { margin: 0; }
+.compare-pick .chip.on { background: var(--accent); border-color: var(--accent);
+  color: var(--on-accent); }
 .grid-clips { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; }
 .grid-clips video { width: 100%; }
 /* YouTube clip: a 16:9 box with the player underneath and the thumbnail

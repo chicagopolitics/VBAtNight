@@ -2,7 +2,7 @@ import NightTheme from "../theme";
 import TrackPageView from "../track";
 import { db } from "@/lib/db";
 import { deriveGrades, teamMap } from "@/lib/grades";
-import { displayName } from "@/lib/game-name";
+import { displayName, dayLabel } from "@/lib/game-name";
 import Boards from "./ui";
 export const dynamic = "force-dynamic";
 
@@ -16,8 +16,27 @@ export default async function Stats({ searchParams }) {
   const gameRow = reqId ? d.prepare(
     "SELECT * FROM games WHERE id = ? AND published = 1").get(reqId) : null;
   const game = gameRow ? { id: gameRow.id, name: displayName(gameRow) } : null;
-  const gf = game ? " AND g.id = ?" : "";
-  const args = game ? [game.id] : [];
+
+  // The sessions a visitor can scope to: one row per evening that has
+  // published games. Undated games (played_on null) belong to no session and
+  // are only reachable through the all-games view or a ?game= link.
+  const days = d.prepare(
+    `SELECT played_on AS day, COUNT(*) AS games FROM games
+     WHERE published = 1 AND played_on IS NOT NULL
+     GROUP BY played_on ORDER BY played_on DESC`).all()
+    .map(r => ({ day: r.day, games: r.games, label: dayLabel(r.day) }));
+
+  // ?day=YYYY-MM-DD scopes every board to one session — all of that night's
+  // games, which is how a night is counted everywhere else (resequenceNight
+  // in lib/import.js). A ?game= wins when both are present: it's the narrower
+  // ask, and it's the one /watch links carry.
+  const reqDay = /^\d{4}-\d{2}-\d{2}$/.test(sp?.day ?? "") ? sp.day : null;
+  const day = game ? null : days.find(x => x.day === reqDay) || null;
+
+  // one seam, three queries: whatever scope is active becomes a predicate on
+  // the games row every board already joins through
+  const gf = game ? " AND g.id = ?" : day ? " AND g.played_on = ?" : "";
+  const args = game ? [game.id] : day ? [day.day] : [];
 
   // published games, game-phase rallies, with per-game identity resolution
   const rallies = d.prepare(`
@@ -106,11 +125,19 @@ export default async function Stats({ searchParams }) {
     .filter(p => p.serve + p.receive + p.dig + p.set + p.attack + p.block +
                  p.kill + p.ace + p.stuff > 0);
 
+  // ?players=A,B — the compare selection, read here rather than from a client
+  // hook so the first paint already has it (no flash of the plain boards, no
+  // hydration mismatch). Names, not keys: they're what a shared link should
+  // read like, and what /watch already takes.
+  const initialPlayers = String(sp?.players ?? "")
+    .split(",").map(s => s.trim()).filter(Boolean);
+
   return (
     <>
       <NightTheme />
       <TrackPageView />
-      <Boards rows={rows} game={game}
+      <Boards rows={rows} game={game} day={day} days={days}
+        initialPlayers={initialPlayers}
         nGames={new Set(rallies.map(r => r.game_id)).size}
         nScored={rallies.filter(r => r.outcome_type).length} />
     </>

@@ -41,6 +41,20 @@ const gameNo = g => (Number.isInteger(g?.slot) && g.slot > 0)
 const legacy = g => (g?.name || "").trim() || (g?.id ? `Game #${g.id}` : "Untitled");
 
 /**
+ * Label for a SESSION — one evening of volleyball, which is several games
+ * (see resequenceNight in lib/import.js; /stats scopes its boards to one).
+ * Date only, no game number, no `label` override: an override names one game,
+ * and a night can hold several of them.
+ *   -> "Tue, Jul 21 2026"
+ * Null for anything that isn't a real 'YYYY-MM-DD', so callers can tell a
+ * missing date from a formatted one rather than rendering "Invalid Date".
+ */
+export function dayLabel(played_on) {
+  const p = parseDay(played_on);
+  return p ? `${dow(p)}, ${MON[p.mo - 1]} ${p.d} ${p.y}` : null;
+}
+
+/**
  * Label for inside the app — games list, /watch, page titles.
  * Context is free here (the user is already on vbatnight), so no channel
  * prefix, and a human date format because a person is scanning a list.
@@ -48,9 +62,8 @@ const legacy = g => (g?.name || "").trim() || (g?.id ? `Game #${g.id}` : "Untitl
  */
 export function displayName(g) {
   if (override(g)) return override(g);
-  const p = parseDay(g?.played_on);
-  if (!p) return legacy(g);
-  const date = `${dow(p)}, ${MON[p.mo - 1]} ${p.d} ${p.y}`;
+  const date = dayLabel(g?.played_on);
+  if (!date) return legacy(g);
   const n = gameNo(g);
   return n ? `${date} · ${n}` : date;
 }

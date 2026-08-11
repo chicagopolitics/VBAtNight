@@ -403,8 +403,28 @@ function ShortsPanel({ game, shorts, setShorts }) {
 
 export default function Highlights({ games, reel = [], admin = false }) {
   const sp = useSearchParams();
-  const [game, setGame] = useState(() =>
-    games.some(g => String(g.id) === sp.get("game")) ? sp.get("game") : "all");
+  // One control, two kinds of scope: a game id, or "day:<YYYY-MM-DD>" for a
+  // whole session. /stats links carry whichever scope its boards were counting,
+  // so the clips here are exactly the ones behind the number that was clicked.
+  const [game, setGame] = useState(() => {
+    const g = sp.get("game"), d = sp.get("day");
+    if (games.some(x => String(x.id) === g)) return g;
+    if (d && games.some(x => x.date === d)) return `day:${d}`;
+    return "all";
+  });
+  const scopeDay = game.startsWith("day:") ? game.slice(4) : null;
+  // sessions with published games — the selector's optgroups. `games` already
+  // arrives newest night first, so insertion order is the order to show.
+  const sessions = useMemo(() => {
+    const by = new Map();
+    for (const g of games) {
+      if (!g.date) continue;
+      if (!by.has(g.date)) by.set(g.date, []);
+      by.get(g.date).push(g);
+    }
+    return [...by.entries()];
+  }, [games]);
+  const undated = useMemo(() => games.filter(g => !g.date), [games]);
   const [player, setPlayer] = useState(sp.get("player") || "all");
   const [stat, setStat] = useState(STATS[sp.get("stat")] ? sp.get("stat") : "all");
   const [open, setOpen] = useState(() => new Set());
@@ -437,7 +457,8 @@ export default function Highlights({ games, reel = [], admin = false }) {
     (!s || (t.type === s.touch && (!s.grade || t.grade === s.grade)));
 
   const shown = games
-    .filter(g => game === "all" || g.id === +game)
+    .filter(g => game === "all" ||
+      (scopeDay ? g.date === scopeDay : g.id === +game))
     .map(g => ({ ...g, rallies: g.rallies
       .map((r, i) => {
         // outcome stats live on the rally, not a touch: match the rally
@@ -481,7 +502,19 @@ export default function Highlights({ games, reel = [], admin = false }) {
       <div className="row card filters">
         <select value={game} onChange={e => setGame(e.target.value)}>
           <option value="all">All games</option>
-          {games.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+          {sessions.map(([date, gs]) => (
+            <optgroup key={date} label={fmtDate(date)}>
+              <option value={`day:${date}`}>
+                Whole session ({gs.length} game{gs.length === 1 ? "" : "s"})
+              </option>
+              {gs.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+            </optgroup>
+          ))}
+          {undated.length > 0 && (
+            <optgroup label="No date">
+              {undated.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+            </optgroup>
+          )}
         </select>
         <select value={player} onChange={e => setPlayer(e.target.value)}>
           <option value="all">All players</option>
@@ -500,7 +533,8 @@ export default function Highlights({ games, reel = [], admin = false }) {
           <div className="row" style={{ width: "100%", gap: 6 }}>
             {game !== "all" && (
               <button className="fchip" onClick={() => setGame("all")}>
-                {games.find(x => String(x.id) === game)?.name ?? "game"} ✕</button>
+                {scopeDay ? fmtDate(scopeDay)
+                  : games.find(x => String(x.id) === game)?.name ?? "game"} ✕</button>
             )}
             {player !== "all" && (
               <button className="fchip" onClick={() => setPlayer("all")}>{player} ✕</button>
