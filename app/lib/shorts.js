@@ -6,30 +6,10 @@ import path from "path";
 
 export const STATUSES = ["queued", "rendering", "ready", "published", "failed"];
 
-// First name only, for anything that leaves the building.
-//
-// Rosters carry full names because organisers need to tell two Mikes apart.
-// A Short does not: it gets burned into the video AND becomes the YouTube
-// title, on a public channel, for a rec-league player who never agreed to
-// have their surname indexed by a search engine. "KILL - Dana" reads better
-// than "KILL - Dana Whitfield" anyway.
-//
-// Applied server-side, where the caption is persisted, so it can't be
-// bypassed by a stale page or a hand-crafted request.
-export function publicName(name) {
-  if (!name) return null;
-  const first = String(name).trim().split(/\s+/)[0];
-  return first || null;
-}
-
-// Shorten every "- Full Name" tail in a caption to "- First".
-// Captions are built as "KILL - Dana Whitfield"; this rewrites the part
-// after the separator and leaves the rest alone.
-export function publicCaption(caption) {
-  if (!caption) return caption;
-  return String(caption).replace(/(\s[-–—]\s)(.+)$/,
-    (_, sep, name) => sep + (publicName(name) ?? ""));
-}
+// The name rule now lives in lib/public-name.js — this module imports fs, and
+// the share sheet needs the same rule from the browser. Re-exported so every
+// existing `from "@/lib/shorts"` import keeps working.
+export { publicName, publicCaption } from "./public-name.js";
 
 export function mediaDir(gameId) {
   return path.join(process.cwd(), "public", "media", String(gameId));

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { db } from "@/lib/db";
-import { deriveGrades, teamMap } from "@/lib/grades";
+import { deriveGrades, teamMap, scoreFrom } from "@/lib/grades";
 import { getSessionUser, isOrganizer } from "@/lib/auth";
 import { blockedReason, publicCaption } from "@/lib/shorts";
 import { displayName } from "@/lib/game-name";
@@ -58,7 +58,9 @@ export default async function Watch() {
        LEFT JOIN identities i ON i.game_id = r.game_id AND i.cluster_id = r.outcome_cluster
          AND i.dismissed = 0 AND i.merged_into IS NULL
        WHERE r.game_id = ? AND r.phase = 'game'
-       ORDER BY r.start_s`).all(g.id).map(r => ({ ...r }));
+       -- id breaks the tie a split rally creates (two rows, one start_s), so
+       -- the numbering here is deterministic and matches /r/<id>'s ordinal
+       ORDER BY r.start_s, r.id`).all(g.id).map(r => ({ ...r }));
     const touches = d.prepare(
       `SELECT p.id, p.rally_id, p.t, p.play_type, p.cluster_id, p.grade FROM plays p
        JOIN rallies r ON r.id = p.rally_id
@@ -72,19 +74,9 @@ export default async function Watch() {
     // named players per team for the collapsed game card (unnamed
     // auto-detected clusters are noise, so they're left off the roster)
     const roster = t => idents.filter(i => i.named && i.team === t).map(i => i.name);
-    // derived score: kill/ace/block = point for that player's team, errors
-    // hand the point to the opponent. Approximate when an outcome belongs to
-    // a player with no team assignment (that rally can't be counted).
-    let ptsA = 0, ptsB = 0, uncounted = 0;
-    for (const r of rallies) {
-      if (!r.outcome_type) continue;
-      const t = teams?.get(r.outcome_cluster);
-      if (!t) { uncounted++; continue; }
-      const wins = ["kill", "ace", "block"].includes(r.outcome_type);
-      if ((wins ? t : t === "A" ? "B" : "A") === "A") ptsA++; else ptsB++;
-    }
-    const score = teams && ptsA + ptsB > 0
-      ? { A: ptsA, B: ptsB, approx: uncounted > 0 } : null;
+    // derived score (lib/grades.js) — shared with the rally permalink, which
+    // runs the same arithmetic over the rallies up to one moment
+    const score = scoreFrom(rallies, teams);
     // Shorts state, admin only — a public visitor gets none of this in their
     // payload, not merely a hidden button.
     const shorts = admin

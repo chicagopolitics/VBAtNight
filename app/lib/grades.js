@@ -123,3 +123,40 @@ export function teamMap(idents) {
     if (i.team === "A" || i.team === "B") m.set(i.cluster_id, i.team);
   return m.size ? m : null;
 }
+
+// How a rally outcome READS: label + pill tone. Presentation, but it belongs
+// with the vocabulary rather than inside one page — a clip card on /watch and
+// a rally permalink must not name the same outcome two different ways.
+export const OUTCOME = {
+  kill: ["Kill", "good"], block: ["Stuff block", "good"], ace: ["Ace", "info"],
+  attack_error: ["Attack error", "bad"], service_error: ["Serve error", "bad"],
+  other_error: ["Error", "bad"],
+};
+
+// [label, tone] for any outcome_type, including ones the table doesn't name.
+// [null, ""] for a rally that never resolved to an outcome at all.
+export const outcomeLabel = t =>
+  OUTCOME[t] ?? (t ? [String(t).replace(/_/g, " "), ""] : [null, ""]);
+
+// Derived score from rally outcomes.
+//
+// kill/ace/block win the point for that player's team; every error hands it
+// to the opponent. A rally whose outcome belongs to a player with no team
+// assignment can't be counted either way, so the result carries `approx`
+// rather than silently reading low.
+//
+// Shared so the game card on /watch and a rally permalink can't drift: the
+// permalink passes only the rallies UP TO one moment and gets the score as it
+// stood then, which is this same arithmetic stopped early.
+export function scoreFrom(rallies, teamOf) {
+  if (!teamOf) return null;
+  let A = 0, B = 0, uncounted = 0;
+  for (const r of rallies || []) {
+    if (!r.outcome_type) continue;
+    const t = teamOf.get(r.outcome_cluster);
+    if (!t) { uncounted++; continue; }
+    const wins = ["kill", "ace", "block"].includes(r.outcome_type);
+    if ((wins ? t : t === "A" ? "B" : "A") === "A") A++; else B++;
+  }
+  return A + B > 0 ? { A, B, approx: uncounted > 0 } : null;
+}

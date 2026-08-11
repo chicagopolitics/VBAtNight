@@ -1,144 +1,10 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { sourceFor, embedUrl } from "@/lib/video-source";
-
-// --- player warming --------------------------------------------------------
-//
-// THE PROBLEM. Clicking a rally card used to start a chain of work that all
-// happened AFTER the click: download the player, boot it, fetch metadata,
-// seek 8 minutes into a 17-minute video, guess a starting quality with no
-// bandwidth information (so: a low one), then ramp up while measuring. On a
-// long video you never notice the ramp. On a 15-second rally the ramp IS the
-// clip — the point is over before the picture sharpens.
-//
-// THE FIX. Do all of that before the click. When a card scrolls into view we
-// mount its iframe paused, so by the time the viewer presses play the player
-// is loaded, seeked, buffered and has a real read on the connection.
-//
-// WHY IT'S BOUNDED. Warming isn't free — each player is its own buffer and
-// its own share of the connection. Forty at once would be worse than the
-// problem: they'd all measure a connection they were themselves saturating
-// and all conclude it was terrible. So we warm what's actually on screen,
-// which the CSS grid already sizes correctly (≈9 on a desktop grid, ≈2 on a
-// phone's single column). MAX_WARM is only a runaway guard for very large
-// displays, not the intended limit.
-const MAX_WARM = 12;
-const STAGGER_MS = 120;     // don't let a scroll stop boot 9 players at once
-const NEAR_PX = 200;        // start warming just before a card is visible
-
-const warm = new Set();     // tokens currently allowed to be warm
-const pending = [];         // tokens waiting for a slot
-let pump = null;
-
-function admit() {
-  if (pump) return;
-  pump = setInterval(() => {
-    if (!pending.length) { clearInterval(pump); pump = null; return; }
-    if (warm.size >= MAX_WARM) return;
-    const tok = pending.shift();
-    warm.add(tok);
-    tok.set(true);
-  }, STAGGER_MS);
-}
-
-function requestWarm(tok) {
-  if (warm.has(tok) || pending.includes(tok)) return;
-  pending.push(tok);
-  admit();
-}
-
-function releaseWarm(tok) {
-  const i = pending.indexOf(tok);
-  if (i >= 0) pending.splice(i, 1);
-  if (warm.delete(tok)) tok.set(false);
-}
-
-// Viewers on metered or slow connections get the old click-to-load behaviour:
-// they should not spend data on clips they never play. This page is mostly
-// read on phones, so it's not a hypothetical.
-function warmingAllowed() {
-  if (typeof navigator === "undefined") return false;
-  const c = navigator.connection;
-  if (!c) return true;                       // Safari/Firefox: no signal, assume ok
-  return !c.saveData && !["slow-2g", "2g"].includes(c.effectiveType);
-}
-
-// true once this card is near the viewport and has been given a warm slot
-function useWarm(ref, enabled) {
-  const [on, setOn] = useState(false);
-  useEffect(() => {
-    if (!enabled || !ref.current || !warmingAllowed()) return;
-    const tok = { set: setOn };
-    const io = new IntersectionObserver(
-      ([e]) => (e.isIntersecting ? requestWarm(tok) : releaseWarm(tok)),
-      { rootMargin: `${NEAR_PX}px` });
-    io.observe(ref.current);
-    return () => { io.disconnect(); releaseWarm(tok); };
-  }, [enabled]);
-  return on;
-}
-
-// A YouTube clip card. Three states:
-//   cold  — a thumbnail, nothing loaded
-//   warm  — player mounted and paused, thumbnail still covering it
-//   live  — playing, native YouTube controls exposed
-//
-// A live card never gets released when it scrolls off screen; unmounting a
-// player mid-rally would be a bizarre thing to do to someone.
-function YouTubeClip({ src, label }) {
-  const box = useRef(null);
-  const frame = useRef(null);
-  const [live, setLive] = useState(false);
-  const isWarm = useWarm(box, !live);
-  const mounted = live || isWarm;
-
-  function play() {
-    setLive(true);
-    const el = frame.current;
-    if (!el) return;                          // cold click: src carries autoplay
-    // Drive the EXISTING player rather than re-pointing the iframe. Setting
-    // src to add autoplay=1 would reload it and discard the load, seek and
-    // buffer that warming just bought — the whole point of this machinery.
-    const cmd = () => el.contentWindow?.postMessage(JSON.stringify(
-      { event: "command", func: "playVideo", args: [] }), "*");
-    cmd();
-    // The player ignores commands sent before it's ready, and a browser may
-    // refuse programmatic playback. Retry briefly, then fall back to the
-    // reload we were trying to avoid — a slow start beats a dead card.
-    let tries = 0;
-    const t = setInterval(() => {
-      if (++tries > 6) {
-        clearInterval(t);
-        if (el.isConnected) el.src = embedUrl(src, { autoplay: true });
-        return;
-      }
-      cmd();
-    }, 180);
-    setTimeout(() => clearInterval(t), 1400);
-  }
-
-  return (
-    <div className="ytwrap" ref={box}>
-      {mounted && (
-        <iframe ref={frame} title={label}
-          src={embedUrl(src, { autoplay: false, jsapi: true })}
-          allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
-          allowFullScreen />
-      )}
-      {!live && (
-        <button className="ytfacade" onClick={play} aria-label={`Play ${label}`}>
-          {/* hqdefault exists for every video, unlisted included; a
-              background-image degrades to the wrapper's colour if it ever
-              404s, where an <img> would show a broken-image icon */}
-          <span className="ytthumb" style={{ backgroundImage:
-            `url(https://i.ytimg.com/vi/${src.id}/hqdefault.jpg)` }} />
-          <span className="ytplay" aria-hidden="true">▶</span>
-        </button>
-      )}
-    </div>
-  );
-}
+import { sourceFor } from "@/lib/video-source";
+import { outcomeLabel } from "@/lib/grades";
+import { Clip } from "../clip";
+import ShareButton from "../share";
 
 // The reel of published Shorts.
 //
@@ -204,13 +70,6 @@ const GROUPS = [
   ["Points & faults", ["kill", "ace", "stuff", "attack_error", "service_error"]],
   ["Quality", ["assist", "rec_pos", "dig_kept", "blocked", "set_error", "dig_error", "rec_error"]],
 ];
-
-// outcome pill label + tone for clip cards
-const OUT = {
-  kill: ["Kill", "good"], block: ["Stuff block", "good"], ace: ["Ace", "info"],
-  attack_error: ["Attack error", "bad"], service_error: ["Serve error", "bad"],
-  other_error: ["Error", "bad"],
-};
 
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -621,15 +480,15 @@ export default function Highlights({ games, reel = [], admin = false }) {
               if (!src) return null;
               // first clips warm up with metadata; the rest wait until played
               // so opening a long game doesn't hammer a phone connection
-              const [label, tone] = OUT[r.outcome_type] ??
-                (r.outcome_type ? [r.outcome_type.replace("_", " "), ""] : [null, ""]);
+              const [label, tone] = outcomeLabel(r.outcome_type);
               return (
                 <div className="card" key={r.id}>
-                  {src.kind === "youtube"
-                    ? <YouTubeClip src={src} label={label ? `${label}${r.outcome_name ? " · " + r.outcome_name : ""}` : `Rally ${r.num}`} />
-                    : <video src={src.src} controls playsInline
-                        preload={idx < 6 ? "metadata" : "none"} />}
-                  <div className="row" style={{ justifyContent: "space-between", marginTop: 6 }}>
+                  <Clip src={src} preload={idx < 6 ? "metadata" : "none"}
+                    label={label ? `${label}${r.outcome_name ? " · " + r.outcome_name : ""}` : `Rally ${r.num}`} />
+                  {/* pill and duration read as one label, so they stay
+                      together on the left and the share sits at the far
+                      right — the one thing on the card that ACTS */}
+                  <div className="row cliprow">
                     {label
                       ? <span className={`pill ${tone}`}>
                           {label}{r.outcome_name ? ` · ${r.outcome_name}` : ""}
@@ -638,6 +497,8 @@ export default function Highlights({ games, reel = [], admin = false }) {
                     <span className="muted">
                       {label ? `Rally ${r.num} · ` : ""}{Math.round(r.end_s - r.start_s)}s
                     </span>
+                    <ShareButton path={`/r/${r.id}`} name={r.outcome_name}
+                      title={label || `Rally ${r.num}`} />
                   </div>
                   {r.matched.length > 0 && (
                     <div className="muted" style={{ marginTop: 4, fontSize: 12 }}>
