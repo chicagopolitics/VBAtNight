@@ -88,34 +88,75 @@ const errors = p => p.atkErr + p.srvErr + p.setErr + p.digErr + p.recErr;
 // four nights and 7 kills in one are the same number and not the same player,
 // so everything here is a rate — per game, or per attempt.
 //
-// `hint` is the fraction underneath, and it isn't decoration: a percentage with
-// no denominator invites nonsense (100% off two receptions is not a great
-// receiver). `stat` links the numerator to its clips, as the boards do.
-// pct/avg already render "–" on a zero denominator; a player who never served
-// should read "–", not 0%.
+// Every row is num/den, which serves three purposes at once: the value (pct or
+// avg of the pair), the fraction underneath, and the number the leader mark
+// ranks on. One expression, not three that can drift.
+//
+// That fraction isn't decoration: a percentage with no denominator invites
+// nonsense (100% off two receptions is not a great receiver). `hint` overrides
+// it where the pair isn't self-explanatory; `stat` links the numerator to its
+// clips, as the boards do. pct/avg already render "–" on a zero denominator, so
+// a player who never served reads "–", not 0%.
+//
+// `dir` is which way is better: 1 = higher, -1 = LOWER (the two error rows —
+// starring the biggest number there would crown the worst server in the room),
+// absent = not a contest. `games` is context and `touches / game` is
+// involvement rather than quality, so neither competes.
 const SUMMARY = [
-  { label: "games", value: p => p.games },
-  { label: "points / game", value: p => avg(points(p), p.games),
+  { label: "games", kind: "raw", num: p => p.games },
+  { label: "points / game", kind: "avg", dir: 1,
+    num: p => points(p), den: p => p.games,
     hint: p => `${points(p)} in ${p.games}` },
-  { label: "attack efficiency", value: p => pct(p.kill - p.atkErr - p.blocked, p.attack),
+  { label: "attack efficiency", kind: "pct", dir: 1,
+    num: p => p.kill - p.atkErr - p.blocked, den: p => p.attack,
     hint: p => `${p.kill}k − ${p.atkErr}e − ${p.blocked}b / ${p.attack}` },
-  { label: "kill %", value: p => pct(p.kill, p.attack),
+  { label: "kill %", kind: "pct", dir: 1,
     num: p => p.kill, den: p => p.attack, stat: "kill" },
-  { label: "ace %", value: p => pct(p.ace, p.serve),
+  { label: "ace %", kind: "pct", dir: 1,
     num: p => p.ace, den: p => p.serve, stat: "ace" },
-  { label: "serve error %", value: p => pct(p.srvErr, p.serve),
+  { label: "serve error %", kind: "pct", dir: -1,
     num: p => p.srvErr, den: p => p.serve, stat: "service_error" },
-  { label: "reception efficiency", value: p => pct(p.recPos - p.recErr, p.receive),
+  { label: "reception efficiency", kind: "pct", dir: 1,
+    num: p => p.recPos - p.recErr, den: p => p.receive,
     hint: p => `${p.recPos}+ − ${p.recErr}e / ${p.receive}` },
-  { label: "dig success %", value: p => pct(p.digOk, p.dig),
+  { label: "dig success %", kind: "pct", dir: 1,
     num: p => p.digOk, den: p => p.dig, stat: "dig_kept" },
-  { label: "assist %", value: p => pct(p.assist, p.set),
+  { label: "assist %", kind: "pct", dir: 1,
     num: p => p.assist, den: p => p.set, stat: "assist" },
-  { label: "errors / game", value: p => avg(errors(p), p.games),
+  { label: "errors / game", kind: "avg", dir: -1,
+    num: p => errors(p), den: p => p.games,
     hint: p => `${errors(p)} in ${p.games}` },
-  { label: "touches / game", value: p => avg(touches(p), p.games),
+  { label: "touches / game", kind: "avg",
+    num: p => touches(p), den: p => p.games,
     hint: p => `${touches(p)} in ${p.games}` },
 ];
+
+const shownValue = (m, p) => m.kind === "raw" ? m.num(p)
+  : m.kind === "avg" ? avg(m.num(p), m.den(p)) : pct(m.num(p), m.den(p));
+
+// Rank on the number the reader can SEE, not the underlying float: two cells
+// both showing "33%" must both be starred, and raw floats would star one of
+// them and look like a bug. Null = not in the running ("–" never wins).
+const shownScore = (m, p) => {
+  if (!m.dir) return null;
+  const d = m.den(p);
+  if (!(d > 0)) return null;
+  const r = m.num(p) / d;
+  return m.kind === "avg" ? Math.round(r * 10) / 10 : Math.round(r * 100);
+};
+
+// The value that leads a row, or null when there's no contest: fewer than two
+// players in the running makes a "winner" meaningless, not informative.
+const leaderOf = (m, players) => {
+  const scores = players.map(p => shownScore(m, p)).filter(s => s !== null);
+  if (scores.length < 2) return null;
+  const best = m.dir > 0 ? Math.max(...scores) : Math.min(...scores);
+  // A field where the best anyone managed is zero has no winner to crown —
+  // three stars on "0% assists" celebrates nobody setting. The error rows are
+  // the opposite: zero of them IS the achievement, so those keep their star.
+  if (best === 0 && m.dir > 0) return null;
+  return best;
+};
 
 export default function Boards({ rows, nGames, nScored, game, day, days = [],
                                  initialPlayers = [] }) {
@@ -125,6 +166,7 @@ export default function Boards({ rows, nGames, nScored, game, day, days = [],
   // folded by default; a shared ?players= link arrives with it open, since the
   // reader's first question is "who is in this comparison?"
   const [openPick, setOpenPick] = useState(initialPlayers.length > 0);
+  const [filter, setFilter] = useState("");
   const b = BOARDS[tab];
   const ranked = [...rows]
     .filter(p => b.sort(p) > 0 || tab === "scorers")
@@ -134,9 +176,14 @@ export default function Boards({ rows, nGames, nScored, game, day, days = [],
   const scopeName = game ? game.name : day ? day.label : null;
   const scopeQS = game ? `&game=${game.id}` : day ? `&day=${day.day}` : "";
 
-  // everyone who appears in the current scope, for the compare chips
+  // everyone who appears in the current scope, for the compare menu
   const names = [...rows].map(p => p.name)
     .sort((a, z) => a.localeCompare(z, undefined, { sensitivity: "base" }));
+  // what the menu shows: matches the filter, chosen names first. Array#sort is
+  // stable, so alphabetical order survives inside each group.
+  const f = filter.trim().toLowerCase();
+  const menu = names.filter(n => !f || n.toLowerCase().includes(f))
+    .sort((a, z) => (picked.has(z) ? 1 : 0) - (picked.has(a) ? 1 : 0));
   // One order for every section. Sorting each card by its own metric would
   // shuffle the same people between cards, which is the one thing a
   // side-by-side comparison must not do.
@@ -212,13 +259,39 @@ export default function Boards({ rows, nGames, nScored, game, day, days = [],
       {names.length > 0 && (
         <details className="compare" open={openPick}
           onToggle={e => setOpenPick(e.currentTarget.open)}>
-          <summary className="muted">Compare players</summary>
-          <div className="row" style={{ gap: 4, marginTop: 8 }}>
-            {names.map(n => (
-              <button key={n} onClick={() => toggle(n)}
-                className={"chip" + (picked.has(n) ? " on" : "")}
-                aria-pressed={picked.has(n)}>{n}</button>
-            ))}
+          <summary className="muted">
+            Compare players{picked.size > 0 ? ` (${picked.size})` : ""}
+          </summary>
+          {/* A roster this long is a menu, not a row of buttons — 40 chips is
+              the clutter this replaces. Same shape as the review page's player
+              picker: type to narrow, tap a full-width row. Chosen names float
+              to the top so the current selection is always the first thing in
+              view, however far you've scrolled or filtered. */}
+          <div className="pickmenu">
+            {names.length > 8 && (
+              <input type="text" value={filter} placeholder="type a name…"
+                autoComplete="off" aria-label="filter players"
+                onChange={e => setFilter(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && menu.length) {
+                    toggle(menu[0]); setFilter(""); e.preventDefault();
+                  } else if (e.key === "Escape") { setFilter(""); e.preventDefault(); }
+                }} />
+            )}
+            <div className="picklist">
+              {menu.map(n => (
+                <button key={n} onClick={() => toggle(n)}
+                  className={"pick" + (picked.has(n) ? " on" : "")}
+                  aria-pressed={picked.has(n)}>
+                  <span className="tick">{picked.has(n) ? "✓" : ""}</span>{n}
+                </button>
+              ))}
+              {menu.length === 0 && <p className="muted" style={{ margin: 4 }}>No match.</p>}
+            </div>
+            {picked.size > 0 && (
+              <button className="fchip" style={{ marginTop: 8 }}
+                onClick={() => setPicked(new Set())}>clear {picked.size} ✕</button>
+            )}
           </div>
         </details>
       )}
@@ -244,22 +317,31 @@ export default function Boards({ rows, nGames, nScored, game, day, days = [],
                   {compare.map(p => <th key={p.key ?? p.name}>{p.name}</th>)}
                 </tr></thead>
                 <tbody>
-                  {SUMMARY.map(m => (
-                    <tr key={m.label}>
-                      <th scope="row">{m.label}</th>
-                      {compare.map(p => {
-                        const L = linkFor(p, scopeQS);
-                        const hint = m.hint ? m.hint(p)
-                          : m.num ? <>{L(m.num(p), m.stat)} of {m.den(p)}</> : null;
-                        return (
-                          <td key={p.key ?? p.name}>
-                            <b>{m.value(p)}</b>
-                            {hint && <span className="sub">{hint}</span>}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
+                  {SUMMARY.map(m => {
+                    // only a field of two or more is a contest worth calling
+                    const best = compare.length > 1 ? leaderOf(m, compare) : null;
+                    return (
+                      <tr key={m.label}>
+                        <th scope="row">{m.label}</th>
+                        {compare.map(p => {
+                          const L = linkFor(p, scopeQS);
+                          const hint = m.hint ? m.hint(p)
+                            : m.kind !== "raw" ? <>{L(m.num(p), m.stat)} of {m.den(p)}</> : null;
+                          const lead = best !== null && shownScore(m, p) === best;
+                          return (
+                            <td key={p.key ?? p.name}>
+                              <b className={lead ? "best" : undefined}>{shownValue(m, p)}</b>
+                              {lead && <span className="beststar" role="img"
+                                title={m.dir > 0 ? "best of the selected players"
+                                  : "lowest of the selected players"}
+                                aria-label="best">★</span>}
+                              {hint && <span className="sub">{hint}</span>}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -289,7 +371,7 @@ export default function Boards({ rows, nGames, nScored, game, day, days = [],
           <tbody>
             {ranked.map((p, i) => (
               <tr key={p.key ?? p.name} style={i < 3 ? { fontWeight: 600 } : undefined}>
-                <td style={{ color: i < 3 ? "#c9a227" : undefined }}>{i + 1}</td>
+                <td style={{ color: i < 3 ? "var(--gold)" : undefined }}>{i + 1}</td>
                 <td style={{ textAlign: "left" }}>
                   {/* the everyday way into the comparison — no extra chrome on
                       the page, just the name you were already reading */}

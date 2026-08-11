@@ -38,6 +38,7 @@
   --info-bg: #dce8f5; --info-fg: #4a72a8;
   --neutral-bg: #e9edf3; --neutral-fg: #5c6270;
   --live-bg: #fdf3dc; --live-edge: #e0a72a; --live-fg: #a3780f;
+  --gold: #c9a227;              /* podium rank, and the best-of mark on /stats */
   --shadow: rgba(60, 65, 80, .18);
   --scrim: rgba(255, 255, 255, .86);   /* sticky filter bar backdrop */
   --thumb: #eef1f5;
@@ -75,6 +76,7 @@ body:has(.night) {
   --info-bg: #182948; --info-fg: #a8c6f2;
   --neutral-bg: #1e2b42; --neutral-fg: #a6b4cb;
   --live-bg: #3a2b10; --live-edge: #e0a72a; --live-fg: #f3d48d;
+  --gold: #eec95c;              /* daylight gold goes muddy on navy — lift it */
   --shadow: rgba(0, 0, 0, .5);
   --scrim: rgba(12, 20, 35, .8);
   --thumb: #1b2941;
@@ -262,8 +264,22 @@ video { width: 100%; max-width: 900px; border-radius: 8px; background: #000; }
    leaderboards, and this is a side feature that shouldn't announce itself. */
 .compare { margin: 10px 0; }
 .compare > summary { cursor: pointer; font-size: 13px; width: fit-content; }
-.compare .chip.on { background: var(--accent); border-color: var(--accent);
-  color: var(--on-accent); }
+/* The roster is a menu rather than a wall of chips: it only grows as more
+   people play, and 40 bubbles is clutter on any screen. Narrow, scrollable,
+   and every row is a full-width tap target — which is the bit the chips were
+   actually good at on a phone. */
+.pickmenu { margin-top: 8px; padding: 8px; width: min(100%, 320px);
+  border: 1px solid var(--border-2); border-radius: 8px; background: var(--surface); }
+.pickmenu > input { width: 100%; margin-bottom: 6px; }
+.pickmenu .picklist { max-height: 260px; overflow-y: auto;
+  overscroll-behavior: contain; }
+.pickmenu .pick { display: flex; align-items: center; gap: 6px; width: 100%;
+  padding: 7px 8px; text-align: left; background: none; font: inherit;
+  color: inherit; border: 1px solid transparent; }
+.pickmenu .pick:hover { background: var(--hover); }
+.pickmenu .pick.on { background: var(--accent-soft); border-color: var(--accent);
+  color: var(--accent-ink); font-weight: 600; }
+.pickmenu .tick { width: 12px; flex: none; color: var(--accent); font-size: 12px; }
 /* clicking a name in a board is the everyday way into the comparison, so it
    has to look pressable without turning the column into a wall of buttons */
 .pickname { background: none; border: 0; padding: 0; font: inherit; color: inherit;
@@ -280,6 +296,12 @@ video { width: 100%; max-width: 900px; border-radius: 8px; background: #000; }
   white-space: nowrap; width: 1%; }
 .summary-t td { vertical-align: top; }
 .summary-t td b { font-variant-numeric: tabular-nums; }
+/* who leads each row. The star does the work — colour alone would be lost on a
+   colour-blind reader, and gold on gold is exactly the kind of thing the light
+   admin theme would swallow. Ties are all marked, by design. */
+.summary-t .best { color: var(--gold); }
+.summary-t .beststar { color: var(--gold); font-size: 10px; margin-left: 3px;
+  vertical-align: 1px; }
 .summary-t .sub { display: block; font-size: 11px; color: var(--muted); margin-top: 1px; }
 .grid-clips { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; }
 .grid-clips video { width: 100%; }
