@@ -345,6 +345,18 @@ export default function Highlights({ games, reel = [], admin = false, session = 
           filter bar so it scrolls away and hands the top of the viewport back
           to the filters, which is what a returning viewer actually wants. */}
       <div className="hero">
+        {/* Same scene as the still, in motion. aria-hidden and tabIndex -1 for
+            the same reason there's no alt text: it's a backdrop, and a
+            keyboard user tabbing into a controls-less video learns nothing.
+            muted + playsInline + autoPlay is the complete set mobile autoplay
+            policy requires — drop any one and iOS quietly shows the poster
+            forever. The poster IS frame 1, and .hero's background-image is the
+            same frame again, so the paint → poster → playback handoff has
+            nothing to flash between; it's also the whole reduced-motion
+            fallback (see globals.css). */}
+        <video className="hero-vid" src="/brand/hero.mp4"
+          poster="/brand/hero-1600.jpg" autoPlay loop muted playsInline
+          preload="auto" aria-hidden="true" tabIndex={-1} />
         {/* the photo's top-right is empty sky, and the hero is already
             position:relative — the one place a prompt can sit without
             displacing anything */}

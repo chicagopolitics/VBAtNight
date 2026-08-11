@@ -20,6 +20,10 @@ app/public/media/
 
 # large artifacts
 *.mp4
+# ...but the hero plate is brand content, not game media. It's baked into the
+# page rather than imported at runtime, so a fresh clone that lacks it renders
+# a still hero and no one notices the asset is missing.
+!app/public/brand/hero.mp4
 *.zip
 pipeline/rally_clips/
 # model weights: ultralytics downloads yolo*.pt into the working directory on

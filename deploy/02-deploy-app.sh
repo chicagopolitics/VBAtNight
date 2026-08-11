@@ -106,6 +106,17 @@ $DOMAIN {
         root * $APP_DIR/app/public
         file_server
     }
+    # Brand assets, here for the same two reasons as /media: the hero is an
+    # autoplaying <video> now, and iOS Safari won't play one at all unless the
+    # server answers Range requests. Next also serves public/ with max-age=0,
+    # which means re-fetching 1.4 MB of hero on every cold load. Caddy fixes
+    # both. immutable is safe only because these names never change contents —
+    # a new hero needs a NEW FILENAME (hero-v2.mp4), not an overwrite.
+    handle /brand/* {
+        root * $APP_DIR/app/public
+        file_server
+        header Cache-Control "public, max-age=31536000, immutable"
+    }
     reverse_proxy localhost:3000
 }
 www.$DOMAIN {

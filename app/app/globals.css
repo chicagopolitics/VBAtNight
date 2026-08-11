@@ -424,6 +424,20 @@ nav a { margin-right: 14px; }
   background-size: cover; background-position: center 38%; background-repeat: no-repeat;
   display: flex; align-items: flex-end; }
 @media (max-width: 900px) { .hero { background-image: url(/brand/hero-900.jpg); } }
+/* The moving version of the same photo, laid over the still rather than
+   replacing it. That ordering is the entire fallback story: the background
+   paints on the first frame, the video covers it once decoded, and anything
+   that can't or shouldn't play — reduced motion, a failed fetch, autoplay
+   refused — simply leaves the still showing. object-position must match the
+   background's, or the handoff jumps. The three overrides undo the global
+   `video` rule up at the clip player: its 900px cap would pillarbox a 1100px
+   hero, its radius would round the full-bleed corners, and its #000 fill
+   would black out the still until the poster decodes — exactly the flash this
+   layering exists to avoid. */
+.hero-vid { position: absolute; inset: 0; width: 100%; height: 100%;
+  max-width: none; border-radius: 0; background: transparent;
+  object-fit: cover; object-position: center 38%; z-index: 0; }
+@media (prefers-reduced-motion: reduce) { .hero-vid { display: none; } }
 .hero::after { content: ""; position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(to bottom, rgba(10,18,32,0) 40%, rgba(10,18,32,.55) 72%, var(--bg) 100%); }
 .hero-in { position: relative; z-index: 1; padding: 0 20px 16px; }
