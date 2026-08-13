@@ -513,6 +513,8 @@ body:has(.night) .gamecard:hover { box-shadow: 0 0 0 1px var(--accent-edge), 0 6
 .abtn { display: inline-block; background: var(--surface); color: var(--ink); border: 1px solid var(--border-2);
   border-radius: 6px; padding: 4px 10px; font-size: 13px; }
 .abtn:hover { background: var(--hover); }
+/* the selected one in a row of link-tabs — matches button.primary */
+.abtn.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 /* stats: leaderboard tabs + horizontally scrollable table w/ pinned rank+player */
 .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
 .tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
