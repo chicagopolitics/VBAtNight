@@ -39,6 +39,50 @@ export const GRADE_OPTIONS = {
 export const GOOD = new Set(["ace", "kill", "stuff", "assist", "success", "positive"]);
 export const BAD = new Set(["error", "blocked"]);
 
+// Filterable stats — the one vocabulary for "show me the X". Three kinds:
+//   touch    — plain attempt counts (matches touch.type)
+//   +grade   — quality subset of a touch type (derived below)
+//   outcome  — rally-ending points/faults (matches rally.outcome_*)
+//
+// `field` names the counter in lib/player-stats.js, so a filter chip can show
+// its own count without a second definition of what "an assist" is.
+//
+// Lived in app/watch/ui.js until the recap page needed the same words. It sits
+// here rather than there because a `"use client"` module can't be imported by
+// a server component, and because these keys are already a contract: /stats
+// deep-links as ?stat=<key>, and now /p/<slug>/<date> reads the same param.
+export const STATS = {
+  serve: { label: "serves", touch: "serve", field: "serve" },
+  receive: { label: "receives", touch: "receive", field: "receive" },
+  dig: { label: "digs", touch: "dig", field: "dig" },
+  set: { label: "sets", touch: "set", field: "set" },
+  attack: { label: "attacks", touch: "attack", field: "attack" },
+  block: { label: "block touches", touch: "block", field: "block" },
+  kill: { label: "kills", outcome: "kill", field: "kill" },
+  ace: { label: "aces", outcome: "ace", field: "ace" },
+  stuff: { label: "stuff blocks", outcome: "block", field: "stuff" },
+  attack_error: { label: "attack errors", outcome: "attack_error", field: "atkErr" },
+  service_error: { label: "serve errors", outcome: "service_error", field: "srvErr" },
+  assist: { label: "assists", touch: "set", grade: "assist", field: "assist" },
+  set_error: { label: "set errors", touch: "set", grade: "error", field: "setErr" },
+  dig_kept: { label: "digs kept in play", touch: "dig", grade: "success", field: "digOk" },
+  dig_error: { label: "dig errors", touch: "dig", grade: "error", field: "digErr" },
+  rec_pos: { label: "positive receptions", touch: "receive", grade: "positive", field: "recPos" },
+  rec_error: { label: "reception errors", touch: "receive", grade: "error", field: "recErr" },
+  blocked: { label: "blocked attacks", touch: "attack", grade: "blocked", field: "blocked" },
+};
+
+export const GROUPS = [
+  ["Touches", ["serve", "receive", "dig", "set", "attack", "block"]],
+  ["Points & faults", ["kill", "ace", "stuff", "attack_error", "service_error"]],
+  ["Quality", ["assist", "rec_pos", "dig_kept", "blocked", "set_error", "dig_error", "rec_error"]],
+];
+
+/** The stats that cost the team a point — kept apart so a recap can offer
+ *  them without leading with them. */
+export const FAULTS = new Set(["attack_error", "service_error", "set_error",
+  "dig_error", "rec_error", "blocked"]);
+
 // touches: rally's plays sorted by t, deleted excluded.
 // rally: { outcome_type, outcome_cluster }
 // teamOf: optional Map(cluster_id -> 'A'|'B') from identities.team

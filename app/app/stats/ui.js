@@ -11,7 +11,7 @@ const pct = (num, den) => den > 0 ? `${Math.round((num / den) * 100)}%` : "–";
 const avg = (n, g) => g > 0 ? (n / g).toFixed(1) : "–";
 
 // Each countable cell deep-links to the watch page filtered to exactly the
-// rallies behind that number (stat keys defined in watch/ui.js STATS).
+// rallies behind that number (stat keys defined in lib/grades.js STATS).
 // Derived cells (%, avg) aren't linked.
 const BOARDS = {
   scorers: {

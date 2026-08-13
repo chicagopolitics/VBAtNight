@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { sourceFor } from "@/lib/video-source";
-import { outcomeLabel } from "@/lib/grades";
+import { outcomeLabel, STATS, GROUPS } from "@/lib/grades";
 import { Clip } from "../clip";
 import ShareButton from "../share";
 import NextSession from "../next-session";
@@ -41,36 +41,9 @@ function Reel({ shorts }) {
   );
 }
 
-// Filterable stats. Three kinds:
-//   touch    — plain attempt counts (matches touch.type)
-//   +grade   — quality subset of a touch type (derived in lib/grades.js)
-//   outcome  — rally-ending points/faults (matches rally.outcome_*)
-// Stats-page cells deep-link here as /watch?player=<name>&stat=<key>.
-export const STATS = {
-  serve: { label: "serves", touch: "serve" },
-  receive: { label: "receives", touch: "receive" },
-  dig: { label: "digs", touch: "dig" },
-  set: { label: "sets", touch: "set" },
-  attack: { label: "attacks", touch: "attack" },
-  block: { label: "block touches", touch: "block" },
-  kill: { label: "kills", outcome: "kill" },
-  ace: { label: "aces", outcome: "ace" },
-  stuff: { label: "stuff blocks", outcome: "block" },
-  attack_error: { label: "attack errors", outcome: "attack_error" },
-  service_error: { label: "serve errors", outcome: "service_error" },
-  assist: { label: "assists", touch: "set", grade: "assist" },
-  set_error: { label: "set errors", touch: "set", grade: "error" },
-  dig_kept: { label: "digs kept in play", touch: "dig", grade: "success" },
-  dig_error: { label: "dig errors", touch: "dig", grade: "error" },
-  rec_pos: { label: "positive receptions", touch: "receive", grade: "positive" },
-  rec_error: { label: "reception errors", touch: "receive", grade: "error" },
-  blocked: { label: "blocked attacks", touch: "attack", grade: "blocked" },
-};
-const GROUPS = [
-  ["Touches", ["serve", "receive", "dig", "set", "attack", "block"]],
-  ["Points & faults", ["kill", "ace", "stuff", "attack_error", "service_error"]],
-  ["Quality", ["assist", "rec_pos", "dig_kept", "blocked", "set_error", "dig_error", "rec_error"]],
-];
+// The filter vocabulary (STATS/GROUPS) moved to lib/grades.js when the recap
+// page needed the same words — a "use client" module can't be imported by a
+// server component. Imported above; nothing outside this file uses it.
 
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
