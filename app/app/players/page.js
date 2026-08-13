@@ -2,26 +2,10 @@ import { db } from "@/lib/db";
 import { getSessionUser, isOrganizer } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import PlayersAdmin from "./ui";
+// same name-shape helpers the roster importer matches with — one definition,
+// so "is this the same person?" can't mean two different things here
+import { norm, lev } from "@/lib/roster";
 export const dynamic = "force-dynamic";
-
-// normalized name for duplicate detection: lowercase, trimmed, trailing count
-// suffix stripped ("Julio 2" -> "julio") so hand-disambiguated dupes surface.
-const norm = s => s.toLowerCase().trim().replace(/\s+\d+$/, "").replace(/\s+/g, " ");
-function lev(a, b) {
-  const m = a.length, n = b.length;
-  if (Math.abs(m - n) > 1) return 2;          // we only care about <= 1
-  const dp = Array.from({ length: m + 1 }, (_, i) => i);
-  for (let j = 1; j <= n; j++) {
-    let prev = dp[0]; dp[0] = j;
-    for (let i = 1; i <= m; i++) {
-      const t = dp[i];
-      dp[i] = Math.min(dp[i] + 1, dp[i - 1] + 1,
-        prev + (a[i - 1] === b[j - 1] ? 0 : 1));
-      prev = t;
-    }
-  }
-  return dp[m];
-}
 
 export default async function Page() {
   if (!isOrganizer(await getSessionUser())) redirect("/login");

@@ -78,6 +78,19 @@ const MIGRATIONS = [
   // ride on games.name. Deriving the name broke that link, so the stem now
   // has its own column instead of being a side effect of the label.
   "ALTER TABLE games ADD COLUMN source_file TEXT",
+  // --- player accounts --------------------------------------------------
+  // The edge everything else hangs off: which durable player this email IS.
+  // A row here with no session is inert (getSessionUser only resolves a user
+  // THROUGH a session), so importing the Luma roster can create users freely
+  // — it changes what `users` means from "people who signed in" to "people we
+  // know of", which is exactly the table a claim link has to address.
+  "ALTER TABLE users ADD COLUMN player_id INTEGER REFERENCES players(id)",
+  // One email per player. Partial because player_id is null for almost every
+  // row and a plain UNIQUE would allow only one of those. Must live here
+  // rather than schema.sql: that file is exec'd before these run, and un-
+  // caught, so an index over a column the ALTER hasn't added yet would throw.
+  `CREATE UNIQUE INDEX IF NOT EXISTS users_player ON users(player_id)
+     WHERE player_id IS NOT NULL`,
 ];
 
 export function db() {
