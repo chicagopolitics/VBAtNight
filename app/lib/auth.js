@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { db } from "./db";
+import { sendMail } from "./mail";
 import crypto from "crypto";
 
 const DAY = 24 * 3600 * 1000;
@@ -49,21 +50,11 @@ export function redeemLoginToken(token) {
 }
 
 export async function sendMagicLink(email, url) {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    console.log(`\n*** MAGIC LINK (no RESEND_API_KEY set) for ${email}:\n*** ${url}\n`);
-    return { dev: true };
-  }
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: process.env.MAIL_FROM || "VBAtNight <onboarding@resend.dev>",
-      to: [email],
-      subject: "Your VBAtNight sign-in link",
-      text: `Click to sign in: ${url}\n\nThis link expires in 15 minutes.`,
-    }),
+  // transport lives in lib/mail.js now that recaps send too — including the
+  // no-API-key behaviour, which still logs the link instead of mailing it
+  return sendMail({
+    to: email,
+    subject: "Your VBAtNight sign-in link",
+    text: `Click to sign in: ${url}\n\nThis link expires in 15 minutes.`,
   });
-  if (!res.ok) throw new Error(`resend: ${res.status} ${await res.text()}`);
-  return { sent: true };
 }

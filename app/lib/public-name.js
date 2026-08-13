@@ -22,6 +22,33 @@ export function publicName(name) {
   return first || null;
 }
 
+// The path segment for a player's recap page: first name, then the id.
+//
+// FIRST NAME because a URL travels further than almost anything else on the
+// site — it gets pasted into group chats and lands in inboxes — so the rule
+// above applies with full force.
+//
+// AND THE ID, always, even when the first name looks unique today. These links
+// are meant to survive in old email, and a bare `sasha` silently stops being
+// unambiguous the week a second Sasha signs up. The id also makes resolution
+// exact, so the name part is free to be a nicety: a renamed player's old link
+// still finds them (the page redirects to the canonical spelling) rather than
+// 404ing at someone who did nothing wrong.
+export function playerSlug(player) {
+  if (!player?.id) return null;
+  const first = (publicName(player.display_name) || "")
+    .toLowerCase().normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")   // strip accents; keep the letter
+    .replace(/[^a-z0-9]+/g, "");
+  return first ? `${first}-${player.id}` : String(player.id);
+}
+
+/** id from a slug — the trailing digits, or a bare id. Null if neither. */
+export function parsePlayerSlug(slug) {
+  const m = /^(?:.*-)?(\d+)$/.exec(String(slug ?? "").trim());
+  return m ? +m[1] : null;
+}
+
 // Shorten every "- Full Name" tail in a caption to "- First".
 // Captions are built as "KILL - Dana Whitfield"; this rewrites the part
 // after the separator and leaves the rest alone.

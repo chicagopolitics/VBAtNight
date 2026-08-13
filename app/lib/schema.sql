@@ -51,6 +51,23 @@ CREATE TABLE IF NOT EXISTS users (
   role TEXT DEFAULT 'viewer',
   created_at TEXT DEFAULT (datetime('now'))
 );
+-- One row per recap email we tried to send: which player, for which night.
+-- The unique index below IS the double-send guard — nothing re-reads this to
+-- decide, the INSERT simply can't happen twice. Same "table as ledger" shape
+-- as `shorts`, and re-sending is then a deliberate delete, not an accident.
+-- Failures are recorded too (status='failed', error holds why), because the
+-- interesting question after a send is which ones didn't land.
+CREATE TABLE IF NOT EXISTS recaps (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  player_id INTEGER NOT NULL REFERENCES players(id),
+  played_on TEXT NOT NULL,
+  email TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'sent',   -- sent | failed
+  error TEXT,
+  sent_at TEXT DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS recaps_once ON recaps(player_id, played_on);
+
 CREATE TABLE IF NOT EXISTS auth_tokens (
   token TEXT PRIMARY KEY,
   email TEXT NOT NULL,
