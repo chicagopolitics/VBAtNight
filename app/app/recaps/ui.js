@@ -15,10 +15,12 @@ export default function RecapSender({ days }) {
   const [err, setErr] = useState(null);
   const [done, setDone] = useState(null);
   const [confirm, setConfirm] = useState(false);
+  const [confirmRow, setConfirmRow] = useState(null);   // player_id mid-confirm
 
   useEffect(() => {
     if (!day) return;
-    setList(null); setPreview(null); setDone(null); setConfirm(false);
+    setList(null); setPreview(null); setDone(null);
+    setConfirm(false); setConfirmRow(null);
     fetch(`/api/recaps?day=${day}`)
       .then(r => r.json())
       .then(j => { setList(j.recipients || []); setErr(j.error ?? null); })
@@ -40,6 +42,25 @@ export default function RecapSender({ days }) {
 
   const refresh = () => fetch(`/api/recaps?day=${day}`).then(r => r.json())
     .then(j => setList(j.recipients || []));
+
+  const showPreview = async (player_id) => {
+    const j = await post({ action: "preview", player_id });
+    if (j) setPreview(j);
+  };
+
+  // One player, one email. The pilot case — and the safe way to try a real
+  // send on someone who'll tell you if it reads wrong. Same send path as the
+  // bulk button, narrowed by player_ids, so it can't drift from it.
+  const sendOne = async (r) => {
+    const j = await post({ action: "send", player_ids: [r.player_id] });
+    setConfirmRow(null);
+    if (!j) return;
+    const res = (j.sent || [])[0];
+    setDone(!res ? "Nothing sent — already sent, or no stats that night."
+      : res.status === "sent" ? `Sent to ${res.email}.`
+      : `Failed for ${res.email}: ${res.error}`);
+    refresh();
+  };
 
   const pending = (list || []).filter(r => !r.sent);
   const already = (list || []).filter(r => r.sent);
@@ -76,11 +97,8 @@ export default function RecapSender({ days }) {
           <span className="muted">
             {pending.length} to send · {already.length} already sent
           </span>
-          <button disabled={busy || !pending.length}
-            onClick={async () => {
-              const j = await post({ action: "preview", player_id: pending[0]?.player_id });
-              if (j) setPreview(j);
-            }}>Preview one</button>
+          {/* per-row Preview replaced the "preview any one" button — choosing
+              whose email you're reading is strictly more useful */}
           <button disabled={busy || !pending.length}
             onClick={async () => {
               const j = await post({ action: "send", test: true,
@@ -109,7 +127,7 @@ export default function RecapSender({ days }) {
               <th style={{ textAlign: "left" }}>Email</th>
               <th>Touches</th>
               <th style={{ textAlign: "left" }}>Recap</th>
-              <th style={{ textAlign: "left" }}>Status</th>
+              <th style={{ textAlign: "left" }}>Send</th>
             </tr></thead>
             <tbody>
               {list.map(r => (
@@ -121,19 +139,34 @@ export default function RecapSender({ days }) {
                     <a href={r.url} target="_blank" rel="noreferrer">/p/{r.slug}/{day}</a>
                   </td>
                   <td style={{ textAlign: "left" }}>
-                    {r.sent
-                      ? <>
-                          <span className={`pill ${r.sent.status === "sent" ? "good" : "bad"}`}>
-                            {r.sent.status}
-                          </span>{" "}
-                          <button disabled={busy} onClick={async () => {
-                            await fetch(
-                              `/api/recaps?day=${day}&player_id=${r.player_id}`,
-                              { method: "DELETE" });
-                            refresh();
-                          }}>allow resend</button>
-                        </>
-                      : <span className="muted">not sent</span>}
+                    {r.sent ? <>
+                        <span className={`pill ${r.sent.status === "sent" ? "good" : "bad"}`}>
+                          {r.sent.status}
+                        </span>{" "}
+                        <button disabled={busy} onClick={async () => {
+                          await fetch(
+                            `/api/recaps?day=${day}&player_id=${r.player_id}`,
+                            { method: "DELETE" });
+                          refresh();
+                        }}>allow resend</button>
+                      </>
+                    : confirmRow === r.player_id ? <span className="row" style={{ gap: 6 }}>
+                        {/* the name, not "this one" — the whole point of a
+                            single send is knowing exactly who it reaches */}
+                        <span>Email {r.display_name}?</span>
+                        <button className="primary" disabled={busy}
+                          onClick={() => sendOne(r)}>Yes</button>
+                        <button disabled={busy}
+                          onClick={() => setConfirmRow(null)}>Cancel</button>
+                      </span>
+                    : <span className="row" style={{ gap: 6 }}>
+                        <button disabled={busy}
+                          onClick={() => showPreview(r.player_id)}>Preview</button>
+                        <button disabled={busy}
+                          onClick={() => { setConfirmRow(r.player_id); setDone(null); }}>
+                          Send just this one
+                        </button>
+                      </span>}
                   </td>
                 </tr>
               ))}
