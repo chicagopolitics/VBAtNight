@@ -24,6 +24,7 @@ import argparse, glob, json, os, shutil, subprocess, sys, time, zipfile
 
 VIDEO_EXT = (".mp4", ".mov", ".mkv")
 APP_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app"))
+VENV = os.environ.get("VBPIPE_VENV", r"C:\vb\venv")
 UPLOAD_FAILED = []
 
 
@@ -250,7 +251,26 @@ def main():
                          "(default: %(default)s)")
     a = ap.parse_args()
 
-    import torch
+    # Wrong-interpreter guard. `python process_games.py` picks whatever is
+    # first on PATH — on this machine a system 3.14 with no torch — and the
+    # bare ImportError points at torch rather than at the actual mistake.
+    # sys.prefix == sys.base_prefix means we are not inside a venv at all.
+    try:
+        import torch
+    except ImportError:
+        venv = os.path.join(VENV, "Scripts", "python.exe")
+        hint = (f'  "{venv}" "{os.path.abspath(__file__)}" --videos <dir>\n'
+                if os.path.exists(venv) else
+                "  (see pipeline/README.md, 'Run (local GPU, Windows)')\n")
+        sys.exit(
+            f"torch is not installed in this interpreter:\n"
+            f"  {sys.executable}  (python {sys.version.split()[0]})\n"
+            + ("\nThat is not a virtualenv. The pipeline lives in one — run it with:\n"
+               if sys.prefix == sys.base_prefix else
+               "\nThat virtualenv lacks torch. The pipeline's venv is:\n")
+            + hint
+            + f'\nOr activate it first:  {os.path.join(VENV, "Scripts", "Activate.ps1")}')
+
     if not torch.cuda.is_available():
         sys.exit("No CUDA device. See pipeline/README.md 'Run (local GPU, Windows)'.")
     print(f"GPU: {torch.cuda.get_device_name(0)}")

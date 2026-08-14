@@ -392,6 +392,23 @@ nav a { margin-right: 14px; }
   border-radius: 10px; padding: 10px 16px; box-shadow: 0 8px 24px var(--shadow); }
 .clean-row { display: flex; align-items: center; gap: 10px; padding: 6px 12px; opacity: .75; }
 .clean-row img { height: 34px; border-radius: 5px; }
+/* Players marked done on the identities page. Finished work should be a
+   receipt, not a wall: name + a way back in, and nothing else. auto-fill at a
+   150px floor puts a full court of 12 into two rows of six on desktop and
+   folds to two columns on a phone. */
+.done-grid { display: grid; gap: 6px; margin: 8px 0 14px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.done-chip { display: flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  font-size: 13px; }
+.done-chip b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; }
+@media (max-width: 640px) {
+  /* the global mobile rule bumps every button to 16px/8px, which would undo
+     the point of the chip — keep it tappable but small */
+  .done-chip { font-size: 14px; }
+  .done-chip .mini { font-size: 13px; padding: 5px 10px; }
+}
 .timeline { position: relative; height: 30px; margin: 12px 0 8px;
   background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
 .tl-seg { position: absolute; top: 3px; bottom: 3px; background: var(--accent-edge); border-radius: 3px;

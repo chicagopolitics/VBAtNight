@@ -85,6 +85,11 @@ const MIGRATIONS = [
   // — it changes what `users` means from "people who signed in" to "people we
   // know of", which is exactly the table a claim link has to address.
   "ALTER TABLE users ADD COLUMN player_id INTEGER REFERENCES players(id)",
+  // Which plays a dismissal un-credited (JSON array of plays.id). Dismissing
+  // sets their cluster_id to NULL, and NULL is also what a never-attributed
+  // touch looks like — so without this list "undo" could not tell the two
+  // apart and would silently hand the identity touches it never had.
+  "ALTER TABLE identities ADD COLUMN dismissed_plays TEXT",
   // One email per player. Partial because player_id is null for almost every
   // row and a plain UNIQUE would allow only one of those. Must live here
   // rather than schema.sql: that file is exec'd before these run, and un-

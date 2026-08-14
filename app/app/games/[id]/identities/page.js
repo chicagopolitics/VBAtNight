@@ -22,6 +22,11 @@ export default async function Page({ params }) {
   const idents = d.prepare(
     `SELECT * FROM identities WHERE game_id = ? AND dismissed = 0
      AND merged_into IS NULL ORDER BY n_boxes DESC`).all(id);
+  // "Not a player" is a hide, not a delete — every dismissal stays listed so a
+  // misclick is recoverable on any later visit, not just before a reload.
+  const dismissed = d.prepare(
+    `SELECT * FROM identities WHERE game_id = ? AND dismissed = 1
+     AND merged_into IS NULL ORDER BY n_boxes DESC`).all(id);
   const trs = d.prepare(
     `SELECT id, identity_id, rally_idx, t0, crops, typicality FROM tracklets
      WHERE game_id = ? ORDER BY COALESCE(typicality, -1) DESC, t0`).all(id);
@@ -66,6 +71,15 @@ export default async function Page({ params }) {
     rep_crops: JSON.parse(i.rep_crops),
     embedding: undefined,
     play_count: pc[i.cluster_id] || 0,
+    tracklets: (byIdent[i.id] || []).filter(t => t.crops.length),
+  }));
+  const dismissedRows = dismissed.map(i => ({
+    ...i,
+    rep_crops: JSON.parse(i.rep_crops),
+    embedding: undefined,
+    // what restoring would hand back; unknown for pre-undo dismissals, which
+    // the API recovers from the tracklet link at restore time.
+    play_count: JSON.parse(i.dismissed_plays || "null")?.length ?? null,
     tracklets: (byIdent[i.id] || []).filter(t => t.crops.length),
   }));
 
@@ -113,7 +127,7 @@ export default async function Page({ params }) {
       </p>
       <IdentityGrid idents={rows} gameId={id} nameSuggestions={nameSuggestions}
         players={players} teamSuggest={teamSuggest} courtVideo={courtVideo}
-        rallyStarts={rallyStarts} />
+        rallyStarts={rallyStarts} dismissed={dismissedRows} />
     </div>
   );
 }
