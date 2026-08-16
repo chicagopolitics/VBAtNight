@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { getSessionUser, isOrganizer } from "@/lib/auth";
 import { sendMail } from "@/lib/mail";
 import { nightRows, rowFor, recipientsFor, recapMail, recapUrl } from "@/lib/recap";
+import { nightSummary, summaryText } from "@/lib/night-summary";
 
 // Sending a night's recaps.
 //
@@ -34,7 +35,13 @@ export async function GET(req) {
   if (!DAY.test(day)) return bad("bad day");
   const people = recipientsFor(d, day).map(r => ({ ...r,
     url: recapUrl(origin(req), r.slug, day) }));
-  return Response.json({ day, recipients: people });
+  // The group blurb rides along on the same request the picker already makes,
+  // so it can't fall out of step with the night selected below it. Same
+  // nightRows() the sends use — one answer to "what happened", as ever.
+  const summary = nightSummary(nightRows(d, day),
+    { date: day, origin: origin(req) });
+  return Response.json({ day, recipients: people,
+    summary, summaryText: summaryText(summary) });
 }
 
 export async function POST(req) {

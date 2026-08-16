@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { copyText } from "@/app/share";
 
 // Pick a night, see exactly who gets mail and why, read one of them, send.
 //
@@ -16,16 +17,38 @@ export default function RecapSender({ days }) {
   const [done, setDone] = useState(null);
   const [confirm, setConfirm] = useState(false);
   const [confirmRow, setConfirmRow] = useState(null);   // player_id mid-confirm
+  // The group blurb. Editable: it's going out under his name into a chat, so
+  // the generator's job is to get him 95% of the way, not to have the last
+  // word. Reset on every night change — a leftover edit describing Tuesday
+  // pasted under Thursday's heading is the one failure that matters.
+  const [blurb, setBlurb] = useState("");
+  const [copied, setCopied] = useState(null);   // 'ok' | 'fail' | null
+  const copyTimer = useRef(null);
+  useEffect(() => () => clearTimeout(copyTimer.current), []);
 
   useEffect(() => {
     if (!day) return;
     setList(null); setPreview(null); setDone(null);
     setConfirm(false); setConfirmRow(null);
+    setBlurb(""); setCopied(null);
     fetch(`/api/recaps?day=${day}`)
       .then(r => r.json())
-      .then(j => { setList(j.recipients || []); setErr(j.error ?? null); })
+      .then(j => {
+        setList(j.recipients || []);
+        setBlurb(j.summaryText || "");
+        setErr(j.error ?? null);
+      })
       .catch(e => setErr(e.message));
   }, [day]);
+
+  // Copying IS the interaction here, so the button has to say it worked —
+  // a silent success reads as a dead button (same reasoning as ShareButton).
+  const copyBlurb = async () => {
+    const ok = await copyText(blurb);
+    setCopied(ok ? "ok" : "fail");
+    clearTimeout(copyTimer.current);
+    copyTimer.current = setTimeout(() => setCopied(null), 2000);
+  };
 
   const post = async (payload) => {
     setBusy(true); setErr(null);
@@ -85,6 +108,28 @@ export default function RecapSender({ days }) {
           ))}
         </select>
       </div>
+
+      {/* The group post. Above the recipient list because it's what goes out
+          first — the chat notification is what makes people open the mail. */}
+      {blurb && (
+        <div className="card">
+          <div className="row" style={{ justifyContent: "space-between" }}>
+            <b>Night summary</b>
+            <span className="row" style={{ gap: 6 }}>
+              <span className="muted">for the group chat — edit before you post</span>
+              <button onClick={copyBlurb} aria-live="polite">
+                {copied === "ok" ? "✓ Copied"
+                  : copied === "fail" ? "Copy failed" : "Copy summary"}
+              </button>
+            </span>
+          </div>
+          <textarea value={blurb} onChange={e => setBlurb(e.target.value)}
+            rows={Math.min(24, blurb.split("\n").length + 1)} spellCheck={false}
+            style={{ width: "100%", marginTop: 8, resize: "vertical",
+              fontFamily: "ui-monospace, monospace", fontSize: 13,
+              lineHeight: 1.5 }} />
+        </div>
+      )}
 
       {err && <p className="pill bad" style={{ display: "inline-block" }}>{err}</p>}
       {list === null && <p className="muted">Loading…</p>}

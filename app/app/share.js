@@ -16,7 +16,9 @@ import { publicName } from "@/lib/public-name";
 // hydrate against a different string — the same trap the eager player hit in
 // app/clip.js.
 
-async function copyText(text) {
+// Exported for the night summary on /recaps, which copies a block of text
+// rather than a URL — same two-step fallback, same secure-context caveat.
+export async function copyText(text) {
   // Requires a secure context; localhost and vbatnight.com both qualify, but
   // a LAN address over plain http does not — hence the fallback below.
   try { await navigator.clipboard.writeText(text); return true; } catch {}

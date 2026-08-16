@@ -25,6 +25,18 @@ export const isActive = p =>
   p.kill + p.ace + p.stuff > 0;
 
 /**
+ * Attack efficiency: (kills − errors − blocked) / attempts, as a ratio.
+ * Null when they never swung — a rate over zero attempts is not 0, it's
+ * nothing, and the two must not render the same.
+ *
+ * Here rather than in a page because the stats board and the night summary
+ * both quote it, at different precisions (42% vs .421). Same number, two
+ * renderings; the number itself has one home.
+ */
+export const attackEff = p =>
+  p.attack > 0 ? (p.kill - p.atkErr - p.blocked) / p.attack : null;
+
+/**
  * @param rallies [{ id, game_id, outcome_type, outcome_cluster }]
  * @param plays   [{ id, rally_id, t, play_type, cluster_id, grade }] (t-ordered)
  * @param idents  [{ game_id, cluster_id, team, player_id, name }]

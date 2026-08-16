@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { attackEff } from "@/lib/player-stats";
 import NextSession from "../next-session";
 
 // VNL-style leaderboards. Points/faults come from rally outcomes; attempts
@@ -9,6 +10,8 @@ import NextSession from "../next-session";
 
 const pct = (num, den) => den > 0 ? `${Math.round((num / den) * 100)}%` : "–";
 const avg = (n, g) => g > 0 ? (n / g).toFixed(1) : "–";
+// an already-computed ratio, rendered the way pct() renders a pair
+const pctOf = r => r == null ? "–" : `${Math.round(r * 100)}%`;
 
 // Each countable cell deep-links to the watch page filtered to exactly the
 // rallies behind that number (stat keys defined in lib/grades.js STATS).
@@ -30,7 +33,7 @@ const BOARDS = {
     sort: p => p.kill,
     row: (p, L) => [<b key="k">{L(p.kill, "kill")}</b>, L(p.atkErr, "attack_error"),
       L(p.blocked, "blocked"), L(p.attack, "attack"),
-      pct(p.kill, p.attack), pct(p.kill - p.atkErr - p.blocked, p.attack)],
+      pct(p.kill, p.attack), pctOf(attackEff(p))],
     note: "efficiency = (kills − errors − blocked) / attempts",
   },
   blockers: {

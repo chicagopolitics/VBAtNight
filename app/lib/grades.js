@@ -182,12 +182,27 @@ export const OUTCOME = {
 export const outcomeLabel = t =>
   OUTCOME[t] ?? (t ? [String(t).replace(/_/g, " "), ""] : [null, ""]);
 
-// Derived score from rally outcomes.
+// Which team won a rally: 'A' | 'B', or null when it can't be attributed
+// (no outcome recorded, or the outcome player has no team assignment).
 //
 // kill/ace/block win the point for that player's team; every error hands it
-// to the opponent. A rally whose outcome belongs to a player with no team
-// assignment can't be counted either way, so the result carries `approx`
-// rather than silently reading low.
+// to the opponent. Extracted from scoreFrom so a serving run — a streak of
+// points won on one player's serve — reads the point winner the same way the
+// scoreboard does. Two spellings of "who won this rally" would eventually
+// disagree, and the run is checked against the score by whoever reads it.
+export function winnerOf(rally, teamOf) {
+  if (!teamOf || !rally?.outcome_type) return null;
+  const t = teamOf.get(rally.outcome_cluster);
+  if (!t) return null;
+  const wins = ["kill", "ace", "block"].includes(rally.outcome_type);
+  return wins ? t : t === "A" ? "B" : "A";
+}
+
+// Derived score from rally outcomes.
+//
+// A rally whose outcome belongs to a player with no team assignment can't be
+// counted either way, so the result carries `approx` rather than silently
+// reading low.
 //
 // Shared so the game card on /watch and a rally permalink can't drift: the
 // permalink passes only the rallies UP TO one moment and gets the score as it
@@ -197,10 +212,9 @@ export function scoreFrom(rallies, teamOf) {
   let A = 0, B = 0, uncounted = 0;
   for (const r of rallies || []) {
     if (!r.outcome_type) continue;
-    const t = teamOf.get(r.outcome_cluster);
-    if (!t) { uncounted++; continue; }
-    const wins = ["kill", "ace", "block"].includes(r.outcome_type);
-    if ((wins ? t : t === "A" ? "B" : "A") === "A") A++; else B++;
+    const w = winnerOf(r, teamOf);
+    if (!w) { uncounted++; continue; }
+    if (w === "A") A++; else B++;
   }
   return A + B > 0 ? { A, B, approx: uncounted > 0 } : null;
 }
