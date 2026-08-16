@@ -11,7 +11,7 @@
 // they read. A night page or a group email could render the same object
 // without re-deriving a thing.
 
-import { aggregate, attackEff } from "./player-stats";
+import { attackEff } from "./player-stats";
 import { scoreFrom, teamMap, winnerOf } from "./grades";
 import { dayLabel } from "./game-name";
 import { publicName } from "./public-name";
@@ -25,7 +25,7 @@ const MIN_ATTACKS = 8;
 const MIN_RUN = 3;
 
 // An identity nobody named yet reads as "P3". Fine in review, useless in a
-// chat post — "Best hitter: P3" is worse than leaving the line out.
+// chat post — "Most efficient scorer: P3" is worse than leaving the line out.
 const named = r => r.name && !/^P\d+$/.test(r.name);
 
 /**
@@ -34,8 +34,8 @@ const named = r => r.name && !/^P\d+$/.test(r.name);
  * First name only, per lib/public-name.js — this text gets pasted straight
  * into a group chat, which is precisely the case that rule exists for.
  *
- * But a roster with a Julio Jr AND a Julio Sr turns "Best hitter: Julio" into
- * a line two people can claim and neither can verify. So when a first name is
+ * But a roster with a Julio Jr AND a Julio Sr turns "…: Julio" into a line
+ * two people can claim and neither can verify. So when a first name is
  * shared that night, it carries an initial: "Julio S.", "Julio J.". Enough to
  * tell them apart, still short of publishing anyone's surname.
  */
@@ -132,31 +132,24 @@ function longestRun(games, rallies, plays, idents, label) {
   return { ...best, name: label(best.name) || best.name };
 }
 
-/** Per-game final score, and whose side won. */
-function gameLines(games, rallies, plays, idents, nameOf) {
+/** Per-game final score, and who was on the winning side. */
+function gameLines(games, rallies, idents, nameOf) {
   return games.map((g, i) => {
     const mine = idents.filter(x => x.game_id === g.id);
-    const rs = rallies.filter(r => r.game_id === g.id);
     const teamOf = teamMap(mine);
-    const score = scoreFrom(rs, teamOf);
+    const score = scoreFrom(rallies.filter(r => r.game_id === g.id), teamOf);
     const label = `Game ${g.slot ?? i + 1}`;
-    if (!score) return { id: g.id, label, score: null, side: null };
+    if (!score) return { id: g.id, label, score: null, winner: null, roster: [] };
 
-    // Name the winning side by its best scorer IN THIS GAME — "Team A" means
-    // nothing to someone reading this on their phone, and the rosters shuffle
-    // between games anyway.
+    // The whole winning roster, not "Team A" — the letter means nothing to
+    // someone reading this on their phone, and the sides shuffle between
+    // games anyway. Unnamed auto-detected clusters are left off, the same
+    // call the game card makes on /watch (roster() in app/watch/page.js).
     const winner = score.A === score.B ? null : score.A > score.B ? "A" : "B";
-    let side = null;
-    if (winner) {
-      const ids = new Set(rs.map(r => r.id));
-      const rows = aggregate(rs, plays.filter(p => ids.has(p.rally_id)), mine);
-      const teamOfKey = new Map(mine.map(x =>
-        [x.player_id != null ? `pid:${x.player_id}` : `name:${x.name}`, x.team]));
-      const top = leader(rows, pointsOf,
-        { label: nameOf, qualifies: r => teamOfKey.get(r.key) === winner });
-      side = top ? joinNames(top.names) : null;
-    }
-    return { id: g.id, label, score, winner, side };
+    const roster = winner
+      ? mine.filter(x => x.team === winner && named(x)).map(x => nameOf(x.name))
+      : [];
+    return { id: g.id, label, score, winner, roster };
   });
 }
 
@@ -180,7 +173,7 @@ export function nightSummary({ games, idents, rallies, plays, rows }, { date, or
   }
 
   const label = labeller(idents.map(i => i.name));
-  const gs = gameLines(games, rallies, plays, idents, label);
+  const gs = gameLines(games, rallies, idents, label);
   const scored = rows.filter(named);
 
   return {
@@ -191,7 +184,7 @@ export function nightSummary({ games, idents, rallies, plays, rows }, { date, or
       topScorer: leader(scored, pointsOf, { label }),
       // min: -Infinity because a negative efficiency is a real value, not a
       // missing one — the MIN_ATTACKS gate is what qualifies a hitter here
-      bestHitter: leader(scored, attackEff,
+      mostEfficient: leader(scored, attackEff,
         { label, min: -Infinity, qualifies: r => r.attack >= MIN_ATTACKS }),
       run: longestRun(games, rallies, plays, idents, label),
       aces: leader(scored, r => r.ace, { label, min: 2 }),
@@ -218,7 +211,8 @@ export function summaryText(s) {
     const [hi, lo] = g.winner === "B" ? [g.score.B, g.score.A]
                                       : [g.score.A, g.score.B];
     const line = `${hi}–${lo}${g.score.approx ? "*" : ""}`;
-    out.push(`${g.label}: ${g.side ? `${g.side}'s side ${line}` : line}`);
+    out.push(`${g.label}: ${g.roster.length
+      ? `${joinNames(g.roster)} — ${line}` : line}`);
   }
   if (s.games.some(g => g.score)) out.push("");
 
@@ -231,10 +225,10 @@ export function summaryText(s) {
     out.push(`⭐ Top scorer: ${joinNames(h.topScorer.names)} — `
       + `${h.topScorer.value} pts${bits.length ? ` (${bits.join(", ")})` : ""}`);
   }
-  if (h.bestHitter) {
-    const d = h.bestHitter.rows.length === 1 ? h.bestHitter.rows[0] : null;
-    out.push(`🎯 Best hitter: ${joinNames(h.bestHitter.names)} — `
-      + `${effStr(h.bestHitter.value)}${d ? ` on ${plural(d.attack, "swing")}` : ""}`);
+  if (h.mostEfficient) {
+    const d = h.mostEfficient.rows.length === 1 ? h.mostEfficient.rows[0] : null;
+    out.push(`🎯 Most efficient scorer: ${joinNames(h.mostEfficient.names)} — `
+      + `${effStr(h.mostEfficient.value)}${d ? ` on ${plural(d.attack, "swing")}` : ""}`);
   }
   if (h.run)
     out.push(`🔥 Serving run: ${h.run.name}, ${h.run.points} straight`);
