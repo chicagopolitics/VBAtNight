@@ -12,7 +12,7 @@
 // without re-deriving a thing.
 
 import { attackEff } from "./player-stats";
-import { scoreFrom, teamMap, winnerOf } from "./grades";
+import { deriveGrades, scoreFrom, teamMap, winnerOf } from "./grades";
 import { dayLabel } from "./game-name";
 import { publicName } from "./public-name";
 import { pointsOf } from "./recap";
@@ -132,6 +132,61 @@ function longestRun(games, rallies, plays, idents, label) {
   return { ...best, name: label(best.name) || best.name };
 }
 
+/**
+ * Who each setter kept feeding: Map(setter row key -> Map(hitter -> kills)).
+ *
+ * Both halves come from where the boards get them, so this can't disagree
+ * with either: the ASSIST from deriveGrades (the set immediately preceding
+ * the kill — the Setters board's definition), and the KILL from the rally
+ * outcome (the Scorers board's). Taking "the last set in the rally" instead
+ * would be close, and wrong in exactly the scrappy rallies people remember.
+ */
+function connections(rallies, plays, idents, nameOf) {
+  const byRally = new Map();
+  for (const p of plays) {
+    if (!byRally.has(p.rally_id)) byRally.set(p.rally_id, []);
+    byRally.get(p.rally_id).push(p);
+  }
+  const teamsByGame = new Map();
+  for (const i of idents) {
+    if (!teamsByGame.has(i.game_id)) teamsByGame.set(i.game_id, []);
+    teamsByGame.get(i.game_id).push(i);
+  }
+  for (const [gid, list] of teamsByGame) teamsByGame.set(gid, teamMap(list));
+  // same key rule as lib/player-stats.js, so a setter's row and their
+  // connections are looked up by the same string
+  const info = new Map(idents.map(i => [`${i.game_id}:${i.cluster_id}`,
+    { key: i.player_id != null ? `pid:${i.player_id}` : `name:${i.name}`, name: i.name }]));
+
+  const out = new Map();
+  for (const r of rallies) {
+    if (r.outcome_type !== "kill" || r.outcome_cluster == null) continue;
+    const touches = byRally.get(r.id);
+    if (!touches) continue;
+    const grades = deriveGrades(touches, r, teamsByGame.get(r.game_id));
+    const set = touches.find(t => grades.get(t.id) === "assist");
+    if (!set || set.cluster_id == null) continue;
+    const s = info.get(`${r.game_id}:${set.cluster_id}`);
+    const h = info.get(`${r.game_id}:${r.outcome_cluster}`);
+    if (!s || !h || !named(h)) continue;
+    if (!out.has(s.key)) out.set(s.key, new Map());
+    const m = out.get(s.key), who = nameOf(h.name) || h.name;
+    m.set(who, (m.get(who) || 0) + 1);
+  }
+  return out;
+}
+
+/** The hitter this setter fed most, when one clearly stands out. */
+function favourite(conns, key) {
+  const m = conns.get(key);
+  if (!m) return null;
+  let best = null;
+  for (const [who, kills] of m)
+    if (!best || kills > best.kills) best = { who, kills };
+  // one kill is a rally, not a connection
+  return best && best.kills >= 2 ? best : null;
+}
+
 /** Per-game final score, and who was on the winning side. */
 function gameLines(games, rallies, idents, nameOf) {
   return games.map((g, i) => {
@@ -176,6 +231,14 @@ export function nightSummary({ games, idents, rallies, plays, rows }, { date, or
   const gs = gameLines(games, rallies, idents, label);
   const scored = rows.filter(named);
 
+  // Setting is concentrated — one or two people take most of the sets — so
+  // the assist count alone would name the same person every week. The hitter
+  // they fed most is what makes the line about THIS night.
+  const setter = leader(scored, r => r.assist, { label, min: 1 });
+  if (setter && setter.rows.length === 1)
+    setter.top = favourite(connections(rallies, plays, idents, label),
+      setter.rows[0].key);
+
   return {
     date, when,
     games: gs,
@@ -186,6 +249,7 @@ export function nightSummary({ games, idents, rallies, plays, rows }, { date, or
       // missing one — the MIN_ATTACKS gate is what qualifies a hitter here
       mostEfficient: leader(scored, attackEff,
         { label, min: -Infinity, qualifies: r => r.attack >= MIN_ATTACKS }),
+      setter,
       run: longestRun(games, rallies, plays, idents, label),
       aces: leader(scored, r => r.ace, { label, min: 2 }),
       defense: leader(scored, r => r.digOk, { label, min: 1 }),
@@ -230,6 +294,10 @@ export function summaryText(s) {
     out.push(`🎯 Most efficient scorer: ${joinNames(h.mostEfficient.names)} — `
       + `${effStr(h.mostEfficient.value)}${d ? ` on ${plural(d.attack, "swing")}` : ""}`);
   }
+  if (h.setter)
+    out.push(`🤝 Setter of the night: ${joinNames(h.setter.names)} — `
+      + `${plural(h.setter.value, "assist")}`
+      + (h.setter.top ? `, ${h.setter.top.kills} to ${h.setter.top.who}` : ""));
   if (h.run)
     out.push(`🔥 Serving run: ${h.run.name}, ${h.run.points} straight`);
   // Skip the aces line when the top-scorer line already spelled out the same
