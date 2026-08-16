@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { getSessionUser, isOrganizer } from "@/lib/auth";
 import { loadGameJson, boxesAt } from "@/lib/gamejson";
+import { PLAY_TYPES, predictPlayType } from "@/lib/play-types";
 
 // D3 (ML-PLAN 0.1): keep `tracklet_id` meaning "the tracked body that made
 // this touch" whenever the reviewer names a player.
@@ -83,10 +84,24 @@ export async function PATCH(req) {
 export async function POST(req) {
   if (!isOrganizer(await getSessionUser()))
     return Response.json({ error: "forbidden" }, { status: 403 });
-  const { rally_id, t, x, y, cluster_id, tracklet_id } = await req.json();
-  const r = db().prepare(
+  const { rally_id, t, x, y, cluster_id, tracklet_id, play_type } = await req.json();
+  const d = db();
+  // The client predicts the type from the preceding touch and sends it. When it
+  // doesn't (older client, or a value outside the vocabulary), predict the same
+  // way here rather than falling back to a blanket 'attack' — one rule, no
+  // drift between the two sides. An unknown value falls through silently rather
+  // than 400ing, which would block an otherwise valid insert.
+  let type = PLAY_TYPES.includes(play_type) ? play_type : null;
+  if (!type) {
+    const prev = d.prepare(
+      `SELECT play_type FROM plays
+       WHERE rally_id = ? AND deleted = 0 AND t < ? ORDER BY t DESC LIMIT 1`)
+      .get(rally_id, t);
+    type = predictPlayType(prev?.play_type ?? null);
+  }
+  const r = d.prepare(
     `INSERT INTO plays (rally_id, t, x, y, play_type, cluster_id, tracklet_id, corrected)
-     VALUES (?, ?, ?, ?, 'attack', ?, ?, 1)`)
-    .run(rally_id, t, x ?? null, y ?? null, cluster_id ?? null, tracklet_id ?? null);
+     VALUES (?, ?, ?, ?, ?, ?, ?, 1)`)
+    .run(rally_id, t, x ?? null, y ?? null, type, cluster_id ?? null, tracklet_id ?? null);
   return Response.json({ id: Number(r.lastInsertRowid) });
 }

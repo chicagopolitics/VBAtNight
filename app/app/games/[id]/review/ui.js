@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { deriveGrades, teamMap, GRADE_OPTIONS, GOOD, BAD } from "@/lib/grades";
+import { PLAY_TYPES, predictPlayType } from "@/lib/play-types";
 import { ExportButton } from "@/app/publish-toggle";
 
-const TYPES = ["serve", "receive", "dig", "set", "attack", "block"];
 // number-key -> type (1..6); shown in the row and the legend
-const TYPE_KEY = Object.fromEntries(TYPES.map((t, i) => [String(i + 1), t]));
+const TYPE_KEY = Object.fromEntries(PLAY_TYPES.map((t, i) => [String(i + 1), t]));
 
 // decisive touch grades -> rally outcome. An error on ANY touch type ends the
 // rally (it's only marked when the ball went into the net / out of bounds / was
@@ -261,12 +261,18 @@ export default function Review({ rallies, idents, plays, video, gameId, driveRea
 
   async function addPlay() {
     editsRef.current++;
-    const t = clipStart(rally) + (vid.current?.currentTime ?? 0);
+    // round first: the DB stores 0.1s, so predicting (and ordering locally) off
+    // the raw playhead can disagree with the row that comes back
+    const t = Math.round((clipStart(rally) + (vid.current?.currentTime ?? 0)) * 10) / 10;
+    // guess the type from the touch this one lands AFTER. Found by time, not
+    // by list tail — the playhead is often parked mid-rally.
+    const prev = rallyPlays.filter(p => p.t < t).pop();
+    const play_type = predictPlayType(prev?.play_type ?? null);
     const res = await fetch("/api/plays", { method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rally_id: sel, t: Math.round(t * 10) / 10 }) });
+      body: JSON.stringify({ rally_id: sel, t, play_type }) });
     const { id } = await res.json();
-    setAllPlays(ps => [...ps, { id, rally_id: sel, t, play_type: "attack",
+    setAllPlays(ps => [...ps, { id, rally_id: sel, t, play_type,
       cluster_id: null, corrected: 1 }]);
     setFocusedId(id);
   }
