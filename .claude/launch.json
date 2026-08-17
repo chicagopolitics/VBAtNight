@@ -7,6 +7,12 @@
       "runtimeArgs": ["--prefix", "app", "run", "dev"],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "app (prod snapshot)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "app", "run", "dev:snapshot"],
+      "port": 3001
     }
   ]
 }
