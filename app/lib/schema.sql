@@ -101,6 +101,43 @@ CREATE TABLE IF NOT EXISTS shorts (
 CREATE INDEX IF NOT EXISTS shorts_game ON shorts(game_id);
 CREATE INDEX IF NOT EXISTS shorts_status ON shorts(status);
 
+-- One row per bundle waiting to become a game. Same "table IS the queue"
+-- shape as `shorts`, for the same reason: importing a bundle is minutes of
+-- downloading, unzipping and moving multi-GB video, which no HTTP request can
+-- hold. The point here is durability — six bundles queued at 9pm must still
+-- import if the page is closed, the laptop sleeps, or the droplet reboots, so
+-- the queue lives in SQLite rather than in React state.
+--
+--   source='drive'   drive_id is the file id; the worker downloads it. Fully
+--                    server-side, so nothing about it needs the page open.
+--   source='upload'  the browser streams the zip to /api/import/stage first.
+--                    Only once those bytes are on disk is the job durable —
+--                    the browser is the only place a picked file exists, so an
+--                    upload still in flight cannot survive navigating away.
+--
+--   staging -> queued -> importing -> done
+--                                  -> failed (error holds why)
+--
+-- `bytes` is staging progress and doubles as a liveness signal: `updated_at`
+-- stops moving when an upload dies, and that's what the worker reaps against.
+CREATE TABLE IF NOT EXISTS import_jobs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  source TEXT NOT NULL,                  -- drive | upload
+  drive_id TEXT,                         -- source='drive'
+  staged_path TEXT,                      -- source='upload'; NULL once consumed
+  name TEXT NOT NULL,                    -- display name (the zip's filename)
+  size INTEGER DEFAULT 0,                -- expected total bytes (0 = unknown)
+  bytes INTEGER DEFAULT 0,               -- staged so far
+  status TEXT NOT NULL DEFAULT 'queued',
+  game_id INTEGER REFERENCES games(id),  -- set on success
+  error TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  started_at TEXT,
+  finished_at TEXT
+);
+CREATE INDEX IF NOT EXISTS import_jobs_status ON import_jobs(status);
+
 CREATE TABLE IF NOT EXISTS page_views (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   path TEXT NOT NULL,

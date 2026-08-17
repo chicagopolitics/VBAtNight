@@ -1,8 +1,10 @@
 // Import a processed game bundle (game.json + clips/ + crops/) into the DB.
 import fs from "fs";
 import path from "path";
-import { db } from "./db";
-import { playedOnFrom } from "./game-name";
+// Extensions are required, not stylistic: scripts/import-worker.mjs loads this
+// module as plain node, which (unlike Next's resolver) will not guess ".js".
+import { db } from "./db.js";
+import { playedOnFrom } from "./game-name.js";
 
 /**
  * Number a night's games 1..N in the order they were RECORDED.

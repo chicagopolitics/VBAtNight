@@ -18,7 +18,9 @@ export async function GET() {
   }
 }
 
-// POST { id, name }: stream the bundle from Drive and import it
+// POST { id, name }: stream the bundle from Drive and import it, in-request.
+// The /import page queues instead (POST /api/import/jobs) so a batch outlives
+// the tab; this stays as the synchronous single-bundle path for scripts.
 export async function POST(req) {
   if (!isOrganizer(await getSessionUser()))
     return Response.json({ error: "forbidden" }, { status: 403 });

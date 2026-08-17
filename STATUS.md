@@ -1,6 +1,33 @@
 # Balltime replacement — project status
 
-_Updated 2026-07-23 (session 6)_
+_Updated 2026-08-17_
+
+## Durable import queue (six bundles, page optional)
+- New `import_jobs` table + `scripts/import-worker.mjs`, same "table IS the
+  queue" shape as `shorts`. /import writes rows and polls; nothing imports
+  inside a request any more, so a batch of six survives refreshing, closing
+  the tab, or a droplet reboot mid-queue.
+- Two job kinds. `drive`: pick N bundles with checkboxes, the worker
+  downloads + imports each in turn — fully server-side, needs no browser at
+  all. `upload`: the browser streams each zip to /api/import/stage (raw body,
+  one file at a time), which writes it to `data/staging/<job>.zip` and flips
+  the row to `queued`. That staging write is the durability boundary — a
+  picked file exists nowhere but the browser until its bytes land, so an
+  upload in flight is the one thing a refresh can still lose.
+- Progress is read back from the server (stage route writes `bytes` every
+  2s), not kept in React, so a reloaded tab — or a second one — shows the
+  same numbers. `updated_at` going stale is also how an abandoned upload gets
+  reaped instead of sitting at "uploading…" forever.
+- Interrupted imports are marked failed, NOT requeued (unlike a Short): an
+  import mutates the DB as it goes, so a blind retry could duplicate a
+  half-imported game. Drive jobs offer Retry; a failed upload can't, because
+  extraction consumes the staged zip to free disk — the UI says so instead of
+  showing a button that would fail.
+- Deploy: `vbatnight-import` systemd unit alongside `vbatnight-shorts`.
+  Locally, `npm run import-worker -- --watch` next to `npm run dev`; without
+  a worker, jobs just queue.
+- /api/import POST and /api/drive POST kept as the synchronous single-bundle
+  paths for scripts/curl; the page no longer uses either.
 
 ## Session 6: PRECISION reframe (Ken's #1 review pain) — wristless filter
 - Ken's key insight: attribution & type errors are 1-click fixes; the real

@@ -40,7 +40,12 @@ ORGANIZER_EMAILS=$ORGANIZERS
 EOF
   echo "wrote $APP_DIR/app/.env.local (edit to add Resend/Drive keys)"
 fi
-mkdir -p "$APP_DIR/app/data" "$APP_DIR/app/public/media" "$APP_DIR/keys" /opt/backups
+# data/staging holds uploaded bundles between the browser finishing its upload
+# and the import worker consuming them. Under data/ on purpose: these are
+# multi-GB and must never be reachable through /media, and /tmp would empty on
+# reboot while the import_jobs rows pointing at them survived.
+mkdir -p "$APP_DIR/app/data" "$APP_DIR/app/data/staging" \
+         "$APP_DIR/app/public/media" "$APP_DIR/keys" /opt/backups
 
 echo "=== [5/7] App user + systemd service ==="
 id -u vbat &>/dev/null || useradd -r -s /usr/sbin/nologin vbat
@@ -86,9 +91,33 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
+# Bundle import worker. Same reasoning as the Shorts service: importing a
+# bundle is minutes of downloading a multi-GB zip from Drive, unzipping it and
+# moving video into public/media, which no web request can hold. Having it here
+# rather than in the request is also what makes a queue of six survive the
+# organizer closing the tab.
+cat > /etc/systemd/system/vbatnight-import.service <<EOF
+[Unit]
+Description=VBAtNight bundle importer
+After=network.target
+
+[Service]
+Type=simple
+User=vbat
+WorkingDirectory=$APP_DIR/app
+ExecStart=/usr/bin/node scripts/import-worker.mjs --watch
+Nice=10
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 systemctl daemon-reload
 systemctl enable --now vbatnight
 systemctl enable --now vbatnight-shorts
+systemctl enable --now vbatnight-import
 
 echo "=== [6/7] Caddy ==="
 cat > /etc/caddy/Caddyfile <<EOF

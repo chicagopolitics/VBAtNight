@@ -9,7 +9,22 @@ Next.js + SQLite review UI for the volleyball pipeline.
 (`better-sqlite3` builds automatically; on Node 22+ the app falls back to the
 built-in `node:sqlite` if it's unavailable.)
 
-## Import a game
+## Import games (the queue)
+
+`/import` queues bundles; **`scripts/import-worker.mjs` does the importing**.
+Nothing imports inside a web request, so a batch of six keeps going with the
+page closed:
+
+    npm run import-worker -- --watch     # leave this running alongside `npm run dev`
+
+Without a worker running, queued jobs just sit there. In production systemd
+runs it (`vbatnight-import`, see `deploy/02-deploy-app.sh`).
+
+Drive bundles are fully server-side. Uploaded files are staged to
+`data/staging/` first — an upload still in flight is the one thing a refresh
+can lose, because until its bytes land the file exists only in the browser.
+
+## Import a game (CLI)
     npm run import -- path/to/game.json "Game name" [clips_dir] [crops_dir]
 
 - `game.json` — pipeline output (needs `clusters` + `rallies[].contacts`)

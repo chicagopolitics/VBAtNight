@@ -14,6 +14,7 @@
     "yt-auth": "node scripts/yt-auth.js",
     "yt-probe": "node scripts/yt-probe.mjs",
     "shorts-worker": "node scripts/shorts-worker.mjs",
+    "import-worker": "node scripts/import-worker.mjs",
     "backfill-gamejson": "node scripts/backfill-gamejson.mjs",
     "fetch-gamejson": "node scripts/fetch-gamejson.mjs",
     "backfill-players": "node scripts/backfill-players.mjs",

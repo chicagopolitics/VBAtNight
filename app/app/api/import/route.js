@@ -9,6 +9,11 @@ import { pipeline } from "stream/promises";
 // Bundles can be multi-GB (one clip per rally), so the zip is streamed raw to
 // disk. FormData is NOT used: undici buffers the whole multipart body in
 // memory and its parser fails on large uploads ("expected CRLF").
+//
+// The /import page no longer calls this — it stages to /api/import/stage and
+// lets scripts/import-worker.mjs do the work, so a batch survives the page
+// being closed. Kept as the one-shot path: it imports synchronously and needs
+// no worker, which is what a curl or a script wants.
 export async function POST(req) {
   if (!isOrganizer(await getSessionUser()))
     return Response.json({ error: "forbidden" }, { status: 403 });
