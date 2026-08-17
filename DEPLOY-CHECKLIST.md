@@ -37,7 +37,12 @@ _Deferred (fine for pilot): unpublished game media is URL-guessable under `publi
 ## Phase 4 — Ongoing workflow 🟡 MOSTLY DONE
 
 - [x] Nightly DB backup: 3am cron → /opt/backups, 14-day retention (media not backed up — originals live on your PC).
-- [x] Redeploy process: `ssh root@198.199.80.93` then `cd /opt/vbatnight && git pull && cd app && npm ci && npm run build && systemctl restart vbatnight`.
+- [x] Redeploy process: `ssh root@198.199.80.93` then `cd /opt/vbatnight && git pull && cd app && npm ci && npm run build && systemctl restart vbatnight vbatnight-shorts vbatnight-import vbatnight-publish`.
+      The three workers run code from the same checkout, so restarting only `vbatnight` leaves them on the previous
+      commit — which looks like "the new queue does nothing" rather than like a stale process.
+- [x] Four services: `vbatnight` (site), `-shorts` (renders), `-import` (bundles), `-publish` (uploads Shorts to
+      YouTube). `-publish` must be running before /shorts offers "Publish all", or rows queue and nothing uploads.
+      Check with `systemctl status vbatnight-publish` / `journalctl -u vbatnight-publish -f`.
 - [ ] **Server-side Drive import** (optional): copy service-account JSON to /opt/vbatnight/keys/drive-sa.json,
       set `GOOGLE_SA_KEY` + `DRIVE_FOLDER_ID` in .env.local. Without it, new games arrive via scp instead.
 - [ ] Do one full new-game cycle on the live server: pipeline → Drive → import → name → review → publish.

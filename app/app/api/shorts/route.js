@@ -1,40 +1,57 @@
 // Shorts queue — organizer only.
 //
+//   GET    one game's shorts (?game_id=N), or the whole review batch
 //   POST   queue a rally to be rendered as a Short
-//   PATCH  publish a rendered Short to YouTube, or edit its caption,
-//          or mark a whole game's Shorts finished (which unlocks purge)
+//   PATCH  edit a Short's caption, requeue it, or mark a whole game's Shorts
+//          finished (which unlocks purge)
 //   DELETE drop a queued/rendered Short
 //
-// Rendering itself happens in scripts/shorts-worker.mjs. Nothing here blocks
-// on ffmpeg: a render is 1-2 minutes on a 2-vCPU droplet, so the request just
-// writes a 'queued' row and returns.
+// Nothing here blocks on slow work. Rendering happens in
+// scripts/shorts-worker.mjs (1-2 minutes of ffmpeg on a 2-vCPU droplet) and
+// PUBLISHING happens in scripts/publish-worker.mjs — see
+// app/api/shorts/publish, which queues rather than uploads. This route used to
+// upload inside the PATCH that asked for it; that could never have supported
+// publishing a whole night's Shorts in one action.
 import fs from "fs";
 import { db } from "@/lib/db";
 import { getSessionUser, isOrganizer } from "@/lib/auth";
-import { blockedReason, shortsDir, absFromUrl, publicCaption } from "@/lib/shorts";
-import { uploadVideo, youtubeConfigured } from "@/lib/youtube";
-
-// Shorts default to PUBLIC, unlike full games. That's not an oversight: an
-// unlisted Short is invisible to the feed, so it does nothing at all. This is
-// the one thing in the system that exposes the league publicly, so the UI
-// confirms it explicitly and the value is overridable.
-const SHORT_PRIVACY = () => process.env.YT_SHORTS_PRIVACY || "public";
+import { blockedReason, shortsDir, absFromUrl, publicCaption, pendingWork }
+  from "@/lib/shorts";
+import { listReviewBatch } from "@/lib/publish-queue";
 
 async function guard() { return isOrganizer(await getSessionUser()); }
 
-// GET /api/shorts?game_id=N — current state of a game's shorts.
+// Is this Short mid-upload? Several things must refuse while it is —
+// re-rendering would swap the file out from under the worker, and deleting
+// would unlink it.
+function postInFlight(shortId) {
+  return db().prepare(
+    `SELECT count(*) n FROM short_posts WHERE short_id = ?
+       AND status IN ('queued','posting')`).get(shortId).n;
+}
+
+// GET /api/shorts?game_id=N — one game's shorts, exactly as before.
+// GET /api/shorts            — the whole review batch, for /shorts.
 //
-// Exists so the panel can poll while a render is in flight: a render takes a
-// minute or two on the droplet, and without this the pill reads "queued"
-// until you happen to reload. Organizer-only, like everything else here —
-// the public page neither polls nor receives this.
+// The per-game form exists so /watch can poll while a render is in flight: a
+// render takes a minute or two, and without it the pill reads "queued" until
+// you happen to reload. Its response shape is frozen — /watch seeds from the
+// same row shape its server component sends.
+//
+// The batch form is everything the review page renders, from the same
+// function that page's server component calls, so first paint and first poll
+// cannot disagree.
+//
+// Organizer-only either way; the public page neither polls nor receives this.
 export async function GET(req) {
   if (!await guard()) return Response.json({ error: "forbidden" }, { status: 403 });
   const gameId = new URL(req.url).searchParams.get("game_id");
-  if (!gameId) return Response.json({ error: "game_id required" }, { status: 400 });
-  const shorts = db().prepare(
-    "SELECT * FROM shorts WHERE game_id = ? ORDER BY id").all(gameId).map(s => ({ ...s }));
-  return Response.json({ ok: true, shorts });
+  if (gameId) {
+    const shorts = db().prepare(
+      "SELECT * FROM shorts WHERE game_id = ? ORDER BY id").all(gameId).map(s => ({ ...s }));
+    return Response.json({ ok: true, shorts });
+  }
+  return Response.json({ ok: true, ...listReviewBatch() });
 }
 
 export async function POST(req) {
@@ -92,12 +109,14 @@ export async function PATCH(req) {
   if (body.game_id !== undefined && body.shorts_done !== undefined) {
     const game = d.prepare("SELECT * FROM games WHERE id = ?").get(body.game_id);
     if (!game) return Response.json({ error: "no such game" }, { status: 404 });
-    const pendingRows = d.prepare(
-      `SELECT count(*) n FROM shorts WHERE game_id = ? AND status IN
-       ('queued','rendering')`).get(body.game_id).n;
-    if (body.shorts_done && pendingRows)
+    const { renders, posts } = pendingWork(body.game_id);
+    if (body.shorts_done && renders)
       return Response.json(
-        { error: `${pendingRows} short(s) still rendering — wait for them first` },
+        { error: `${renders} short(s) still rendering — wait for them first` },
+        { status: 409 });
+    if (body.shorts_done && posts)
+      return Response.json(
+        { error: `${posts} short(s) still uploading — wait for them first` },
         { status: 409 });
     d.prepare("UPDATE games SET shorts_done = ? WHERE id = ?")
       .run(body.shorts_done ? 1 : 0, body.game_id);
@@ -111,6 +130,11 @@ export async function PATCH(req) {
   if (body.requeue) {
     if (!["failed", "ready"].includes(short.status))
       return Response.json({ error: "only a failed or ready short can requeue" },
+        { status: 409 });
+    // A re-render overwrites the mp4 the publish worker is streaming — the
+    // upload would silently ship a mix of two files.
+    if (postInFlight(short.id))
+      return Response.json({ error: "it's uploading right now — wait for it" },
         { status: 409 });
     d.prepare("UPDATE shorts SET status='queued', error=NULL WHERE id=?").run(short.id);
     return Response.json({ ok: true });
@@ -127,40 +151,13 @@ export async function PATCH(req) {
     return Response.json({ ok: true });
   }
 
-  // publish
-  if (body.publish) {
-    if (short.status !== "ready")
-      return Response.json({ error: `short is ${short.status}, not ready` },
-        { status: 409 });
-    if (!youtubeConfigured())
-      return Response.json({ error: "YouTube not configured — run `npm run yt-auth`" },
-        { status: 400 });
-    const abs = absFromUrl(short.file);
-    if (!fs.existsSync(abs))
-      return Response.json({ error: "rendered file is missing — requeue it" },
-        { status: 404 });
-    const game = d.prepare("SELECT * FROM games WHERE id = ?").get(short.game_id);
-    const privacy = body.privacy || SHORT_PRIVACY();
-    try {
-      const v = await uploadVideo(abs, {
-        title: (short.caption || `${game.name} highlight`).slice(0, 100),
-        // YouTube classifies any <=3min 9:16 upload as a Short automatically;
-        // the hashtag is belt-and-braces and costs nothing.
-        description: `${short.subcaption || ""}\n\n${game.name}\n` +
-          `Full stats: https://vbatnight.com/watch?game=${game.id}\n#Shorts`.trim(),
-        tags: ["volleyball", "vbatnight", "shorts"],
-        privacy,
-      });
-      d.prepare(
-        `UPDATE shorts SET status='published', yt_video_id=?, published_at=?
-         WHERE id=?`).run(v.id, new Date().toISOString(), short.id);
-      return Response.json({ ok: true, ...v,
-        warning: v.privacyStatus !== privacy
-          ? `YouTube set this to "${v.privacyStatus}" instead of "${privacy}".` : null });
-    } catch (e) {
-      return Response.json({ error: e.message }, { status: 502 });
-    }
-  }
+  // Publishing used to live here, inline. It moved to POST
+  // /api/shorts/publish, which queues a short_posts row for
+  // scripts/publish-worker.mjs. Two ways to publish would be two things that
+  // can race onto the same Short, so this one is gone rather than deprecated.
+  if (body.publish)
+    return Response.json(
+      { error: "publishing moved to POST /api/shorts/publish" }, { status: 410 });
 
   return Response.json({ error: "nothing to do" }, { status: 400 });
 }
@@ -174,9 +171,17 @@ export async function DELETE(req) {
   if (short.status === "rendering")
     return Response.json({ error: "it's rendering right now — wait for it" },
       { status: 409 });
+  // Same reason: rmSync on a file the publish worker is streaming from.
+  if (postInFlight(short.id))
+    return Response.json({ error: "it's uploading right now — wait for it" },
+      { status: 409 });
   // Deleting the row does NOT unpublish anything already on YouTube; say so
   // rather than implying a takedown we can't perform (upload-only scope).
   if (short.file) fs.rmSync(absFromUrl(short.file), { force: true });
+  // The destination rows go with it — they're meaningless without the Short,
+  // and short_posts_once would otherwise refuse a future row for a re-picked
+  // play that happened to reuse the id.
+  d.prepare("DELETE FROM short_posts WHERE short_id = ?").run(id);
   d.prepare("DELETE FROM shorts WHERE id = ?").run(id);
   return Response.json({ ok: true,
     note: short.yt_video_id

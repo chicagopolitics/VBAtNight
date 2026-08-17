@@ -114,10 +114,33 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
+# Shorts publish worker. Third service rather than a branch inside the render
+# worker: that one is single-threaded because of ffmpeg and caps a job at 15
+# minutes, while this is network-bound. Sharing a loop would let "Publish all"
+# sit dead behind one slow render, which is exactly what /shorts exists to
+# stop. NOT nice'd — someone is watching the page while this runs.
+cat > /etc/systemd/system/vbatnight-publish.service <<EOF
+[Unit]
+Description=VBAtNight Shorts publisher
+After=network.target
+
+[Service]
+Type=simple
+User=vbat
+WorkingDirectory=$APP_DIR/app
+ExecStart=/usr/bin/node scripts/publish-worker.mjs --watch
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 systemctl daemon-reload
 systemctl enable --now vbatnight
 systemctl enable --now vbatnight-shorts
 systemctl enable --now vbatnight-import
+systemctl enable --now vbatnight-publish
 
 echo "=== [6/7] Caddy ==="
 cat > /etc/caddy/Caddyfile <<EOF

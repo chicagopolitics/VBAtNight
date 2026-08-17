@@ -9,7 +9,7 @@ import { useState } from "react";
 // a message about the parser, not about the thing that broke. Read the body
 // as text first so a bodyless or HTML error (a proxy timeout, a 502) reports
 // as what it is.
-async function callJson(url, method, body) {
+export async function callJson(url, method, body) {
   const res = await fetch(url, {
     method,
     headers: { "Content-Type": "application/json" },

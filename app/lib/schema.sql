@@ -101,6 +101,47 @@ CREATE TABLE IF NOT EXISTS shorts (
 CREATE INDEX IF NOT EXISTS shorts_game ON shorts(game_id);
 CREATE INDEX IF NOT EXISTS shorts_status ON shorts(status);
 
+-- One row per (Short, destination) we intend to post to.
+--
+-- Split out of shorts.status for two reasons. The first is today's: a batch
+-- publish is N resumable YouTube uploads, minutes of network that no HTTP
+-- request can hold — so posting needs a queue, exactly like rendering and
+-- importing. The second is next: a Short will soon have MORE THAN ONE
+-- destination (Instagram Reels — YOUTUBE-PLAN.md), and one status column
+-- cannot say "on YouTube, failed on Instagram".
+--
+-- The division of labour, which is the thing to keep straight:
+--   shorts.status      the RENDER lifecycle, and nothing else
+--   short_posts.status ONE destination's post
+--
+-- No new value was added to shorts.status, so every existing reader still
+-- works. shorts.status='published' and shorts.yt_video_id survive as a
+-- DENORMALIZED MIRROR of the youtube row here — /watch's public reel query
+-- reads them — maintained only by lib/publish-queue.js. Nothing else may
+-- write them.
+--
+--   queued -> posting -> posted
+--                     -> failed (error holds why; retry re-queues THIS row)
+CREATE TABLE IF NOT EXISTS short_posts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  short_id INTEGER NOT NULL REFERENCES shorts(id),
+  dest TEXT NOT NULL DEFAULT 'youtube',   -- youtube | instagram (later)
+  status TEXT NOT NULL DEFAULT 'queued',
+  remote_id TEXT,                         -- yt video id
+  url TEXT,
+  error TEXT,                             -- also a non-fatal note on 'posted'
+  attempts INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  started_at TEXT,
+  finished_at TEXT
+);
+-- The upload-once guarantee, same shape as recaps_once: a retry re-queues the
+-- EXISTING row instead of inserting a second one, so a double click or a
+-- second worker cannot put two copies of a clip on a public channel.
+CREATE UNIQUE INDEX IF NOT EXISTS short_posts_once ON short_posts(short_id, dest);
+CREATE INDEX IF NOT EXISTS short_posts_status ON short_posts(status);
+
 -- One row per bundle waiting to become a game. Same "table IS the queue"
 -- shape as `shorts`, for the same reason: importing a bundle is minutes of
 -- downloading, unzipping and moving multi-GB video, which no HTTP request can

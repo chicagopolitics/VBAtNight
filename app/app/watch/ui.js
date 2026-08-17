@@ -53,16 +53,23 @@ const fmtDate = d => {
   return `${MON[+m - 1]} ${+day}, ${y}`;
 };
 
-// --- admin: Shorts controls ------------------------------------------------
+// --- admin: PICKING Shorts -------------------------------------------------
 //
 // Only rendered for organizers, and the data behind them isn't sent to anyone
 // else. The flow this supports, in Ken's words: finish review → publish the
-// game → browse here for interesting rallies → pick some as Shorts → then,
-// and only then, reclaim the local video.
+// game → browse here for interesting rallies → pick some as Shorts.
 //
-// That ordering isn't a preference, it's a constraint. A Short is rendered
-// FROM the local mp4, so purging it permanently ends this game's ability to
-// produce highlights. Hence "Shorts done", which is what unlocks the purge.
+// Picking is ALL this page does now. Reviewing the rendered clips, publishing
+// them, marking a game done and reclaiming its video all moved to /shorts,
+// because doing them here meant scrolling between a game's clip grid and its
+// panel for every single clip. What's left is the half that belongs here: the
+// player and stat filters above are already the tool for finding a moment
+// worth clipping, and the ＋ button is one press at the moment you find it.
+//
+// The ordering constraint behind all of it is unchanged: a Short is rendered
+// FROM the local mp4, so reclaiming that file permanently ends this game's
+// ability to produce highlights. Hence "Shorts done" (now on /shorts), which
+// is what unlocks the purge.
 
 const STATUS_TONE = { queued: "", rendering: "info", ready: "good",
   published: "good", failed: "bad" };
@@ -131,106 +138,30 @@ function momentsFor(rally, label) {
     sub }];
 }
 
-// Game-level panel: what's rendered, publish buttons, and the done switch.
-function ShortsPanel({ game, shorts, setShorts }) {
-  const [done, setDone] = useState(!!game.shorts_done);
-  const [msg, setMsg] = useState(null);
-  const pending = shorts.filter(s => ["queued", "rendering"].includes(s.status));
-  const ready = shorts.filter(s => s.status === "ready");
-
-  // Poll ONLY while the worker has something to do. A render is a minute or
-  // two, so without this the pill sits on "queued" until you happen to
-  // reload. The dependency on pending.length means the interval is torn down
-  // the moment the queue drains — an idle panel makes no requests at all.
-  useEffect(() => {
-    if (!pending.length) return;
-    let stop = false;
-    const tick = async () => {
-      try {
-        const res = await fetch(`/api/shorts?game_id=${game.id}`);
-        if (!res.ok) return;
-        const j = await res.json();
-        // Re-check `stop`: a response can land after the panel unmounted or
-        // the queue drained, and writing state then would resurrect stale rows.
-        if (!stop && j.shorts) setShorts(j.shorts);
-      } catch { /* transient network blip — the next tick retries */ }
-    };
-    const id = setInterval(tick, 4000);
-    return () => { stop = true; clearInterval(id); };
-  }, [pending.length, game.id]);
-
-  async function act(fn, ok) {
-    setMsg("…");
-    try { const j = await fn(); setMsg(ok(j)); return j; }
-    catch (e) { setMsg("✗ " + e.message); }
-  }
-
+// What this game has waiting on /shorts. One line, not a panel: the moment
+// you've picked a clip the interesting question is "how many am I up to", and
+// everything you'd do about it lives on the other page.
+function ShortsBadge({ game, shorts }) {
+  if (!shorts.length && !game.shorts_blocked) return null;
+  // "Blocked" means no NEW Shorts can be made from this game — it says
+  // nothing about the ones already rendered, which may still be waiting to be
+  // published. So a game with Shorts always shows its counts, and the block
+  // becomes a ⚠ on the front rather than replacing them.
+  if (!shorts.length)
+    return <span className="abtn" title={game.shorts_blocked}
+      style={{ cursor: "default" }}>⚠ Shorts blocked</span>;
+  const n = k => shorts.filter(s => s.status === k).length;
+  const label = [
+    `${shorts.length} picked`,
+    n("queued") + n("rendering") && `${n("queued") + n("rendering")} rendering`,
+    n("ready") && `${n("ready")} ready`,
+  ].filter(Boolean).join(" · ");
   return (
-    <div className="card shortspanel">
-      <div className="row" style={{ justifyContent: "space-between" }}>
-        <strong>Shorts</strong>
-        <span className="muted">{msg || `${shorts.length} picked · ${pending.length} rendering`}</span>
-      </div>
-
-      {game.shorts_blocked && <p className="muted">⚠ {game.shorts_blocked}</p>}
-
-      {shorts.length === 0 && !game.shorts_blocked &&
-        <p className="muted">Press ＋ Short on any rally below to queue one.</p>}
-
-      {shorts.map(s => (
-        <div className="row shortrow" key={s.id}>
-          <span className={`pill ${STATUS_TONE[s.status] || ""}`}>{s.status}</span>
-          <span style={{ flex: 1 }}>{s.caption || `short #${s.id}`}</span>
-          {s.status === "ready" && (
-            <>
-              {/* watch it before it goes public — this is the only preview */}
-              <a className="abtn" href={s.file} target="_blank" rel="noreferrer">Preview</a>
-              <button className="primary" onClick={() => {
-                if (!confirm("Publish to YouTube as PUBLIC?\n\n" +
-                  "Unlike your full games (unlisted), Shorts must be public to " +
-                  "get any reach — this makes the clip visible to anyone.")) return;
-                act(() => api("PATCH", { id: s.id, publish: true }),
-                  j => (j.warning ? "⚠ " + j.warning : "✓ published"))
-                  .then(j => j && setShorts(shorts.map(x =>
-                    x.id === s.id ? { ...x, status: "published", yt_video_id: j.id } : x)));
-              }}>Publish</button>
-            </>
-          )}
-          {s.status === "published" && s.yt_video_id &&
-            <a className="abtn" href={`https://www.youtube.com/watch?v=${s.yt_video_id}`}
-              target="_blank" rel="noreferrer">On YouTube</a>}
-          {s.status === "failed" && (
-            <button onClick={() => act(() => api("PATCH", { id: s.id, requeue: true }),
-              () => "✓ requeued").then(() => setShorts(shorts.map(x =>
-                x.id === s.id ? { ...x, status: "queued", error: null } : x)))}
-              title={s.error || ""}>Retry</button>
-          )}
-          {s.status !== "rendering" && (
-            <button className="danger mini" onClick={() => {
-              if (!confirm("Remove this short?")) return;
-              act(() => api("DELETE", { id: s.id }), j => j.note || "✓ removed")
-                .then(() => setShorts(shorts.filter(x => x.id !== s.id)));
-            }}>✕</button>
-          )}
-        </div>
-      ))}
-
-      <label className="row" style={{ gap: 8, marginTop: 10 }}>
-        <input type="checkbox" checked={done} disabled={pending.length > 0}
-          onChange={async e => {
-            const next = e.target.checked;
-            const j = await act(() => api("PATCH",
-              { game_id: game.id, shorts_done: next }),
-              () => next ? "✓ done — purge unlocked" : "✓ reopened");
-            if (j) setDone(next);
-          }} />
-        <span>
-          Shorts finished for this game
-          <span className="muted"> — required before the local video can be reclaimed
-            {ready.length > 0 && `; ${ready.length} rendered but unpublished`}</span>
-        </span>
-      </label>
-    </div>
+    // stopPropagation: the whole game card is a click-to-expand button, so
+    // without it following this link also collapses the game behind you.
+    <a className="abtn" href="/shorts" onClick={e => e.stopPropagation()}
+      title={game.shorts_blocked || "Review and publish rendered Shorts"}>
+      {game.shorts_blocked ? "⚠ " : ""}{label} →</a>
   );
 }
 
@@ -267,6 +198,38 @@ export default function Highlights({ games, reel = [], admin = false, session = 
     Object.fromEntries(games.map(g => [g.id, g.shorts || []])));
   const setShorts = (gid, list) =>
     setShortsByGame(prev => ({ ...prev, [gid]: list }));
+
+  // ONE poll for the whole page, not one per game.
+  //
+  // This used to live in each game's panel. With the panels gone the badges
+  // would go stale, and re-adding a per-game interval would mean nine of them
+  // on a night with nine games — so it's lifted here and asks for the whole
+  // batch in a single request instead.
+  //
+  // Two properties from the old effect are load-bearing and kept: it tears
+  // down the moment the render queue drains, so an idle page makes NO
+  // requests at all; and the `stop` re-check stops a response that lands
+  // after unmount from resurrecting rows that are no longer current.
+  const anyRendering = Object.values(shortsByGame)
+    .some(list => list.some(s => ["queued", "rendering"].includes(s.status)));
+  useEffect(() => {
+    if (!admin || !anyRendering) return;
+    let stop = false;
+    const tick = async () => {
+      try {
+        const res = await fetch("/api/shorts");     // no game_id = whole batch
+        if (!res.ok) return;
+        const j = await res.json();
+        // Merge, don't replace: the batch payload only carries games with
+        // Shorts, and a game whose last Short was just deleted must not have
+        // its (now empty) local list silently reinstated from a stale key.
+        if (!stop && j.games) setShortsByGame(prev => ({ ...prev,
+          ...Object.fromEntries(j.games.map(g => [g.id, g.shorts])) }));
+      } catch { /* transient network blip — the next tick retries */ }
+    };
+    const id = setInterval(tick, 4000);
+    return () => { stop = true; clearInterval(id); };
+  }, [admin, anyRendering]);
   const toggle = id => setOpen(prev => {
     const next = new Set(prev);
     next.has(id) ? next.delete(id) : next.add(id);
@@ -452,11 +415,9 @@ export default function Highlights({ games, reel = [], admin = false, session = 
               </button>
               <a className="abtn" href={`/stats?game=${g.id}`}
                 onClick={e => e.stopPropagation()}>Game stats</a>
+              {admin && <ShortsBadge game={g} shorts={shortsByGame[g.id] || []} />}
             </div>
           </div>
-          {isOpen && admin &&
-            <ShortsPanel game={g} shorts={shortsByGame[g.id] || []}
-              setShorts={list => setShorts(g.id, list)} />}
           {isOpen && <div className="grid-clips">
             {g.rallies.map((r, idx) => {
               // one source of truth for "play [start,end] of this game" —

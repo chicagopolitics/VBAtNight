@@ -323,11 +323,41 @@ video { width: 100%; max-width: 900px; border-radius: 8px; background: #000; }
   color: #fff; font-size: 17px; line-height: 38px; text-align: center;
   transition: background .18s ease-out; }
 .ytfacade:hover .ytplay { background: #e02f2f; }
-/* admin-only Shorts controls on /watch (invisible to public visitors) */
-.shortspanel { margin: 10px 0; border-left: 3px solid var(--accent-edge); }
-.shortrow { gap: 8px; align-items: center; padding: 5px 0;
-  border-top: 1px solid var(--border-3); font-size: 13px; }
 button.mini, .mini { font-size: 12px; padding: 2px 8px; }
+/* a button that has to READ as a link — an inline "edit" beside a caption,
+   a disclosure chevron. It is a <button> because it acts, not navigates. */
+button.linkish { background: none; border: none; color: var(--accent);
+  padding: 0 4px; }
+button.linkish:hover { background: none; text-decoration: underline; }
+
+/* --- /shorts: review and publish ---------------------------------------- */
+.gamegroup { padding: 10px 12px; }
+.gamegroup-head { gap: 8px; align-items: center; }
+/* Auto-fill at 9:16: five per row on a wide screen, one on a phone. The
+   minimum is deliberately small — this is a page for judging "is this the
+   right clip", not for watching. */
+.grid-shorts { display: grid; gap: 10px; margin-top: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)); }
+/* The global rule is `video { width: 100%; max-width: 900px }`, which on a
+   vertical clip means a column-wide, screen-tall player. Constrain to the
+   card and let the 9:16 box do the work. */
+.grid-shorts video { max-width: none; width: 100%; aspect-ratio: 9 / 16;
+  object-fit: contain; }
+.shortcard { margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.shortcard-novid { aspect-ratio: 9 / 16; display: flex; align-items: center;
+  justify-content: center; background: var(--neutral-bg); border-radius: 8px; }
+.shortcard-pills { gap: 4px; }
+.shortcard-cap { font-size: 13px; line-height: 1.35; }
+.shortcard-err { font-size: 11px; margin: 0; word-break: break-word; }
+.shortcard-actions { gap: 4px; margin-top: auto; }
+.finish-list { overflow-y: auto; margin-top: 10px; }
+.finish-row { gap: 8px; font-size: 13px; padding: 4px 0;
+  border-top: 1px solid var(--border-3); flex-wrap: nowrap; }
+/* The two batch actions follow you down a long page — with eight games open,
+   scrolling back to the top to publish is the thing this page removes. */
+.shorts-footer { position: sticky; bottom: 0; z-index: 20; gap: 10px;
+  justify-content: flex-end; padding: 10px 0; margin-top: 10px;
+  background: var(--bg); border-top: 1px solid var(--border-2); }
 table { border-collapse: collapse; width: 100%; font-size: 14px; }
 th, td { padding: 7px 12px; text-align: center; border-bottom: 1px solid var(--border-3); }
 th { color: var(--muted); font-weight: 600; }

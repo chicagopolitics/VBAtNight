@@ -96,6 +96,21 @@ const MIGRATIONS = [
   // caught, so an index over a column the ALTER hasn't added yet would throw.
   `CREATE UNIQUE INDEX IF NOT EXISTS users_player ON users(player_id)
      WHERE player_id IS NOT NULL`,
+  // --- Shorts publishing (see short_posts in schema.sql) ------------------
+  // Shorts published before short_posts existed. Their yt_video_id is the
+  // only record that they went out, and the new page reads short_posts, so
+  // without this they'd offer a Publish button for a clip already on the
+  // channel. INSERT OR IGNORE against short_posts_once makes it idempotent,
+  // which matters because MIGRATIONS re-runs on every cold start of every
+  // process. Depends on the table existing — schema.sql is exec'd before this
+  // loop (below), which is exactly why the CREATE TABLE lives there and this
+  // backfill lives here.
+  `INSERT OR IGNORE INTO short_posts
+     (short_id, dest, status, remote_id, url, finished_at, updated_at)
+   SELECT id, 'youtube', 'posted', yt_video_id,
+          'https://www.youtube.com/watch?v=' || yt_video_id,
+          published_at, COALESCE(published_at, datetime('now'))
+     FROM shorts WHERE status = 'published' AND yt_video_id IS NOT NULL`,
 ];
 
 export function db() {

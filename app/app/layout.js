@@ -22,6 +22,7 @@ export default async function RootLayout({ children }) {
             {org && user && <a href="/">Manage</a>}
             {org && user && <a href="/players">Players</a>}
             {org && user && <a href="/roster">Roster</a>}
+            {org && user && <a href="/shorts">Shorts</a>}
             {org && user && <a href="/recaps">Recaps</a>}
             {org && user && <a href="/setup">Camera setup</a>}
             {org && user && <a href="/guide">Guide</a>}
