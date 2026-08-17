@@ -18,9 +18,28 @@ import { publicName } from "./public-name";
 import { pointsOf } from "./recap";
 
 // Rate leaders need a floor or the crown goes to whoever swung twice and got
-// lucky. 8 is roughly a third of a two-game night's attempts — low enough that
-// the line almost always appears, high enough that it means something.
-const MIN_ATTACKS = 8;
+// lucky — but a FIXED floor doesn't survive a change of night size. 8 is about
+// a third of a two-game night's volume and a fifth of a six-game one: on
+// 2026-08-14 it handed "most efficient" to a player who ranked 21st of 24 in
+// attempts, off 10 swings against a top hitter's 38.
+//
+// So scale it to the night: a bit under a third of what the busiest hitter
+// took. Checked against three real nights — 0.4 looked tidier but let one
+// 50-swing outlier drag the bar to 20 and shut out a 6-kill, 0-error night on
+// 15 swings, which is exactly the performance this line exists to find.
+// 0.3 keeps that in, still excludes the 10-swing case, and on a two-game
+// night falls back to the absolute floor, where this started.
+const MIN_ATTACK_SHARE = 0.3;
+const MIN_ATTACKS_FLOOR = 8;
+// `of` picks the volume column, so a rate over any counter gets the same
+// share-of-the-busiest rule rather than each one inventing its own number.
+const volumeFloor = (rows, of, min) => Math.max(min,
+  Math.ceil(MIN_ATTACK_SHARE * rows.reduce((m, r) => Math.max(m, of(r) || 0), 0)));
+const attackFloor = rows => volumeFloor(rows, r => r.attack, MIN_ATTACKS_FLOOR);
+// defensive touches (passes + digs), for the conversion award
+const defenceFloor = rows => volumeFloor(rows, r => r.receive + r.dig, 8);
+// enough serves that "no errors" means something
+const MIN_SERVES = 8;
 // A run of two is a coincidence, not a highlight.
 const MIN_RUN = 3;
 
@@ -133,15 +152,25 @@ function longestRun(games, rallies, plays, idents, label) {
 }
 
 /**
- * Who each setter kept feeding: Map(setter row key -> Map(hitter -> kills)).
+ * Walks every rally that ended in a kill and reads the two touches that built
+ * it. Returns:
+ *   conns   Map(setter row key -> Map(hitter -> kills))  — who fed whom
+ *   sparks  Map(row key -> count)  — whose pass or dig STARTED a scoring
+ *           possession, i.e. the touch immediately before the assist
  *
  * Both halves come from where the boards get them, so this can't disagree
  * with either: the ASSIST from deriveGrades (the set immediately preceding
  * the kill — the Setters board's definition), and the KILL from the rally
  * outcome (the Scorers board's). Taking "the last set in the rally" instead
  * would be close, and wrong in exactly the scrappy rallies people remember.
+ *
+ * `sparks` exists because the obvious passing stat doesn't work on this data:
+ * a shanked reception is scored as an ace for the SERVER and the receiver is
+ * never mentioned, so reception errors are ~0 and "reception efficiency"
+ * decays into "who got served the most". Counting the defensive touches that
+ * became points measures against something the scoring actually records.
  */
-function connections(rallies, plays, idents, nameOf) {
+function killChains(rallies, plays, idents, nameOf) {
   const byRally = new Map();
   for (const p of plays) {
     if (!byRally.has(p.rally_id)) byRally.set(p.rally_id, []);
@@ -158,22 +187,39 @@ function connections(rallies, plays, idents, nameOf) {
   const info = new Map(idents.map(i => [`${i.game_id}:${i.cluster_id}`,
     { key: i.player_id != null ? `pid:${i.player_id}` : `name:${i.name}`, name: i.name }]));
 
-  const out = new Map();
+  const conns = new Map(), sparks = new Map();
   for (const r of rallies) {
     if (r.outcome_type !== "kill" || r.outcome_cluster == null) continue;
     const touches = byRally.get(r.id);
     if (!touches) continue;
     const grades = deriveGrades(touches, r, teamsByGame.get(r.game_id));
-    const set = touches.find(t => grades.get(t.id) === "assist");
-    if (!set || set.cluster_id == null) continue;
-    const s = info.get(`${r.game_id}:${set.cluster_id}`);
-    const h = info.get(`${r.game_id}:${r.outcome_cluster}`);
-    if (!s || !h || !named(h)) continue;
-    if (!out.has(s.key)) out.set(s.key, new Map());
-    const m = out.get(s.key), who = nameOf(h.name) || h.name;
-    m.set(who, (m.get(who) || 0) + 1);
+    // touches arrive t-ordered (nightRows selects ORDER BY p.t), so the
+    // position before the assist really is the touch before it
+    const at = touches.findIndex(t => grades.get(t.id) === "assist");
+    if (at < 0) continue;
+    const set = touches[at];
+
+    if (set.cluster_id != null) {
+      const s = info.get(`${r.game_id}:${set.cluster_id}`);
+      const h = info.get(`${r.game_id}:${r.outcome_cluster}`);
+      if (s && h && named(h)) {
+        if (!conns.has(s.key)) conns.set(s.key, new Map());
+        const m = conns.get(s.key), who = nameOf(h.name) || h.name;
+        m.set(who, (m.get(who) || 0) + 1);
+      }
+    }
+
+    // the pass or dig this possession was built on. Kept independent of the
+    // connection credit above: an unnamed setter shouldn't cost the defender
+    // the touch that started the point.
+    const first = at > 0 ? touches[at - 1] : null;
+    if (first && first.cluster_id != null
+        && (first.play_type === "receive" || first.play_type === "dig")) {
+      const f = info.get(`${r.game_id}:${first.cluster_id}`);
+      if (f && named(f)) sparks.set(f.key, (sparks.get(f.key) || 0) + 1);
+    }
   }
-  return out;
+  return { conns, sparks };
 }
 
 /** The hitter this setter fed most, when one clearly stands out. */
@@ -185,6 +231,71 @@ function favourite(conns, key) {
     if (!best || kills > best.kills) best = { who, kills };
   // one kill is a rally, not a connection
   return best && best.kills >= 2 ? best : null;
+}
+
+// The shout-outs.
+//
+// The headline stats keep naming the same two or three people — a good night
+// wins several of them at once. Adding more categories doesn't fix that on its
+// own (the best hitter is usually also the most reliable one), so each award
+// here goes to the best player NOBODY HAS NAMED YET, and the block is framed
+// as shout-outs rather than superlatives. "Old Reliable" claims nothing;
+// "1 error in 23 swings" is checkable. That split is what lets the nickname be
+// loose without the line being untrue.
+//
+// Order is priority: the first award gets first pick of the unnamed pool.
+// Triple Threat goes last because a composite collides most often.
+// The icon is kept beside the label rather than baked into it, so a future
+// HTML rendering can use one without the other. None of these repeat an emoji
+// the headline lines already use.
+const SHOUTOUTS = [
+  { icon: "🪨", label: "Old Reliable",     // rock solid
+    // a MINIMUM, and leader() maximises — so rank on the negated rate
+    qualifies: (r, c) => r.attack >= c.attackFloor,
+    value: r => -(r.atkErr / r.attack),
+    detail: r => `${r.atkErr ? plural(r.atkErr, "error") : "no errors"} `
+      + `in ${plural(r.attack, "swing")}` },
+  { icon: "⚡", label: "The Spark",
+    qualifies: (r, c) => (r.receive + r.dig) >= c.defenceFloor && c.sparks.get(r.key) > 0,
+    value: (r, c) => c.sparks.get(r.key) / (r.receive + r.dig),
+    detail: (r, c) => `${c.sparks.get(r.key)} of ${r.receive + r.dig} `
+      + `digs & passes turned into kills` },
+  { icon: "🧱", label: "The Wall",
+    qualifies: r => r.stuff >= 2,
+    value: r => r.stuff,
+    detail: r => plural(r.stuff, "stuff block") },
+  { icon: "📮", label: "The Postman",      // always delivers
+    qualifies: r => r.srvErr === 0 && r.serve >= MIN_SERVES,
+    value: r => r.serve,
+    detail: r => `${plural(r.serve, "serve")}, no errors`
+      + (r.ace ? `, ${plural(r.ace, "ace")}` : "") },
+  { icon: "🃏", label: "Triple Threat",    // wildcard — scores every which way
+    qualifies: r => r.kill >= 1 && r.ace >= 1 && r.stuff >= 1,
+    value: r => r.kill + r.ace + r.stuff,
+    detail: r => `${plural(r.kill, "kill")}, ${plural(r.ace, "ace")}, `
+      + `${plural(r.stuff, "block")}` },
+];
+
+/**
+ * Award each shout-out to the best qualifying player not yet named.
+ *
+ * `used` holds DISPLAY names, not row keys: the serving-run name and the
+ * setter's connection target are already labels, and it's the printed name
+ * that must not appear twice. An award with nobody left to give it to is
+ * skipped rather than handed to someone with two touches.
+ */
+function shoutouts(rows, ctx, label) {
+  const used = new Set(ctx.used);
+  const out = [];
+  for (const a of SHOUTOUTS) {
+    const win = leader(rows, r => a.value(r, ctx), { label, min: -Infinity,
+      qualifies: r => a.qualifies(r, ctx) && !used.has(label(r.name) || r.name) });
+    if (!win) continue;
+    out.push({ icon: a.icon, label: a.label, names: win.names,
+      detail: a.detail(win.rows[0], ctx) });
+    for (const n of win.names) used.add(n);
+  }
+  return out;
 }
 
 /** Per-game final score, and who was on the winning side. */
@@ -201,10 +312,13 @@ function gameLines(games, rallies, idents, nameOf) {
     // games anyway. Unnamed auto-detected clusters are left off, the same
     // call the game card makes on /watch (roster() in app/watch/page.js).
     const winner = score.A === score.B ? null : score.A > score.B ? "A" : "B";
-    const roster = winner
-      ? mine.filter(x => x.team === winner && named(x)).map(x => nameOf(x.name))
-      : [];
-    return { id: g.id, label, score, winner, roster };
+    const side = winner ? mine.filter(x => x.team === winner) : [];
+    const roster = side.filter(named).map(x => nameOf(x.name));
+    // Someone on the winning side was never named in review. Printing "P3"
+    // would be worse, but silently listing five of six quietly drops a player
+    // from their own team's win — so say that one is missing.
+    return { id: g.id, label, score, winner, roster,
+      unnamed: side.length - roster.length };
   });
 }
 
@@ -231,31 +345,48 @@ export function nightSummary({ games, idents, rallies, plays, rows }, { date, or
   const gs = gameLines(games, rallies, idents, label);
   const scored = rows.filter(named);
 
+  const { conns, sparks } = killChains(rallies, plays, idents, label);
+
   // Setting is concentrated — one or two people take most of the sets — so
   // the assist count alone would name the same person every week. The hitter
   // they fed most is what makes the line about THIS night.
   const setter = leader(scored, r => r.assist, { label, min: 1 });
   if (setter && setter.rows.length === 1)
-    setter.top = favourite(connections(rallies, plays, idents, label),
-      setter.rows[0].key);
+    setter.top = favourite(conns, setter.rows[0].key);
+
+  const highlights = {
+    topScorer: leader(scored, pointsOf, { label }),
+    // min: -Infinity because a negative efficiency is a real value, not a
+    // missing one — the attempts floor is what qualifies a hitter here
+    mostEfficient: leader(scored, attackEff,
+      { label, min: -Infinity, qualifies: r => r.attack >= attackFloor(scored) }),
+    setter,
+    run: longestRun(games, rallies, plays, idents, label),
+    aces: leader(scored, r => r.ace, { label, min: 2 }),
+    digs: leader(scored, r => r.digOk, { label, min: 1 }),
+    longestRally: longest && longest.seconds > 0
+      ? { ...longest, url: `${origin}/r/${longest.id}` } : null,
+  };
+
+  // Every name the headline lines have already spent. Roster names are
+  // deliberately absent — they list everyone who played, so excluding them
+  // would leave no candidates at all.
+  const h = highlights;
+  const used = [
+    ...(h.topScorer?.names ?? []), ...(h.mostEfficient?.names ?? []),
+    ...(h.setter?.names ?? []), ...(h.setter?.top ? [h.setter.top.who] : []),
+    ...(h.run ? [h.run.name] : []),
+    ...(h.aces?.names ?? []), ...(h.digs?.names ?? []),
+  ];
+  highlights.shoutouts = shoutouts(scored,
+    { used, sparks, attackFloor: attackFloor(scored), defenceFloor: defenceFloor(scored) },
+    label);
 
   return {
     date, when,
     games: gs,
     approx: gs.some(g => g.score?.approx),
-    highlights: {
-      topScorer: leader(scored, pointsOf, { label }),
-      // min: -Infinity because a negative efficiency is a real value, not a
-      // missing one — the MIN_ATTACKS gate is what qualifies a hitter here
-      mostEfficient: leader(scored, attackEff,
-        { label, min: -Infinity, qualifies: r => r.attack >= MIN_ATTACKS }),
-      setter,
-      run: longestRun(games, rallies, plays, idents, label),
-      aces: leader(scored, r => r.ace, { label, min: 2 }),
-      defense: leader(scored, r => r.digOk, { label, min: 1 }),
-      longestRally: longest && longest.seconds > 0
-        ? { ...longest, url: `${origin}/r/${longest.id}` } : null,
-    },
+    highlights,
     links: {
       clips: `${origin}/watch?day=${date}`,
       stats: `${origin}/stats?day=${date}`,
@@ -275,8 +406,9 @@ export function summaryText(s) {
     const [hi, lo] = g.winner === "B" ? [g.score.B, g.score.A]
                                       : [g.score.A, g.score.B];
     const line = `${hi}–${lo}${g.score.approx ? "*" : ""}`;
-    out.push(`${g.label}: ${g.roster.length
-      ? `${joinNames(g.roster)} — ${line}` : line}`);
+    const names = g.roster.length
+      ? joinNames(g.roster) + (g.unnamed ? ` +${g.unnamed}` : "") : null;
+    out.push(`${g.label}: ${names ? `${names} — ${line}` : line}`);
   }
   if (s.games.some(g => g.score)) out.push("");
 
@@ -307,12 +439,24 @@ export function summaryText(s) {
     && h.aces.rows[0].key === h.topScorer.rows[0].key;
   if (h.aces && !acesToldAbove)
     out.push(`🎈 Aces: ${joinNames(h.aces.names)} — ${h.aces.value}`);
-  if (h.defense)
-    out.push(`🛡️ Best defense: ${joinNames(h.defense.names)} — ${plural(h.defense.value, "dig")}`);
+  // "Most digs", not "best defense": dig errors are seldom flagged, so digOk
+  // tracks the raw count. As a count it's true; as a claim about quality it
+  // would be overstated. The Spark below is the one that measures what came
+  // of them.
+  if (h.digs)
+    out.push(`🛡️ Most digs: ${joinNames(h.digs.names)} — ${plural(h.digs.value, "dig")}`);
   if (h.longestRally) {
     out.push(`🏆 Longest rally: ${h.longestRally.seconds}s, `
       + `${plural(h.longestRally.touches, "touch", "touches")}`);
     out.push(`   ${h.longestRally.url}`);
+  }
+
+  // One icon per line, matching the headline block above — a run of bare
+  // labels under a row of emoji lines reads as an afterthought.
+  if (h.shoutouts?.length) {
+    out.push("", "👏 Shout-outs");
+    for (const s2 of h.shoutouts)
+      out.push(`${s2.icon} ${s2.label}: ${joinNames(s2.names)} — ${s2.detail}`);
   }
 
   out.push("", `All clips: ${s.links.clips}`, `Stats: ${s.links.stats}`);

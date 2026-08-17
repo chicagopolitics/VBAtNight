@@ -13,13 +13,13 @@
 // lib/db.js already honours DB_PATH; nothing in the app changes for this.
 import fs from "fs";
 import path from "path";
-import { spawn } from "child_process";
 import { createRequire } from "module";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 
 const require_ = createRequire(import.meta.url);
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DB = process.env.DB_PATH || path.join(APP, "data", "prod-snapshot.db");
+const PORT = process.env.PORT || "3001";
 
 if (!fs.existsSync(DB)) {
   console.error(`no snapshot at ${DB}\n`
@@ -27,10 +27,17 @@ if (!fs.existsSync(DB)) {
   process.exit(1);
 }
 
-console.log(`snapshot: ${DB}\nhttp://localhost:3001\n`);
-// Next's own JS entry point under this node, rather than the `next`/`npx`
-// shim: Windows won't let child_process spawn a .cmd without a shell, and
-// going through a shell would mean quoting a path with spaces in it.
-spawn(process.execPath, [require_.resolve("next/dist/bin/next"), "dev", "-p", "3001"],
-  { cwd: APP, stdio: "inherit", env: { ...process.env, DB_PATH: DB } })
-  .on("exit", code => process.exit(code ?? 0));
+console.log(`snapshot: ${DB}\nhttp://localhost:${PORT}\n`);
+
+// Next's CLI is loaded INTO this process rather than spawned as a child.
+// Two reasons, both learned the hard way:
+//   - Windows refuses to spawn the `next`/`npx` .cmd shim without a shell,
+//     and going through a shell means quoting a path with spaces in it.
+//   - A child outlives a parent that gets force-killed (which is exactly how
+//     a preview runner stops a server), leaving an orphan holding the port
+//     and serving a database you think you deleted. One process, one PID,
+//     nothing to leak.
+process.env.DB_PATH = DB;
+process.chdir(APP);                        // next resolves config from cwd
+process.argv = [process.argv[0], "next", "dev", "-p", String(PORT)];
+await import(pathToFileURL(require_.resolve("next/dist/bin/next")).href);

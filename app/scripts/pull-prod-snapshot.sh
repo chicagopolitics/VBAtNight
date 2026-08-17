@@ -2,7 +2,9 @@
 # Pull a SANITIZED copy of the production database for local development.
 #
 #   app/scripts/pull-prod-snapshot.sh [--from-nightly] [--keep-embeddings]
-#   VBAT_HOST=root@example.com app/scripts/pull-prod-snapshot.sh
+#
+# Connects to the ssh host `vbatnight` — define it in ~/.ssh/config, or point
+# somewhere else with VBAT_HOST=root@example.com.
 #
 # The scrub happens ON THE DROPLET, on a temp copy, before anything crosses the
 # wire — so no email address or session token ever reaches this machine. That
@@ -27,7 +29,10 @@
 # touches anything on the droplet outside /tmp.
 set -euo pipefail
 
-HOST="${VBAT_HOST:-root@198.199.80.93}"
+# Bare alias, not user@host: it defers entirely to ~/.ssh/config, so the user
+# and the address the droplet actually lives at are yours to change without
+# touching this file. Override with VBAT_HOST if the alias isn't defined.
+HOST="${VBAT_HOST:-vbatnight}"
 FROM_NIGHTLY=0
 KEEP_EMBEDDINGS=0
 
